@@ -13,9 +13,9 @@ $uninstaller = Join-Path $installPath ('Uninstall ' + $ProductName + '.exe')
 $processes = [Collections.Generic.List[Diagnostics.Process]]::new()
 $results = [Collections.Generic.List[string]]::new()
 $expected = Get-Content (Join-Path $PSScriptRoot 'expected/windows-installer.json') -Raw | ConvertFrom-Json
-$localizedCopy = @{ ENGLISH = @{}; SIMPCHINESE = @{} }
+$localizedCopy = @{ ENGLISH = @{}; SIMPCHINESE = @{}; SPANISH = @{} }
 Get-Content (Join-Path $PSScriptRoot '../installer/strings.nsh') -Encoding UTF8 | ForEach-Object {
-    if ($_ -match '^LangString (INSTALLER_\w+) \$\{LANG_(ENGLISH|SIMPCHINESE)\} "(.*)"$') {
+    if ($_ -match '^LangString (INSTALLER_\w+) \$\{LANG_(ENGLISH|SIMPCHINESE|SPANISH)\} "(.*)"$') {
         $localizedCopy[$Matches[2]][$Matches[1]] = $Matches[3]
     }
 }

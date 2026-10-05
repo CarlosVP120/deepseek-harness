@@ -89,7 +89,7 @@ SectionEnd
   await execute(compiler.path, ['/V2', payloadSource], { ...childOptions, env: { ...childOptions.env, ...compiler.env } })
   if (sign) await sign({ path: join(payload, `${productName}.exe`), hash: 'sha256', isNest: false })
   const sourceStrings = await readFile(join(appRoot, 'installer', 'strings.nsh'), 'utf8')
-  for (const language of ['en_US', 'zh_CN']) {
+  for (const language of uninstallOnly ? ['en_US', 'zh_CN'] : ['es_ES', 'en_US', 'zh_CN']) {
     const config = createElectronBuilderConfig()
     if (sign) {
       config.win.forceCodeSigning = true
@@ -98,13 +98,13 @@ SectionEnd
     const languageOutput = join(output, language)
     await mkdir(languageOutput)
     const strings = join(languageOutput, 'strings.nsh')
-    const languageId = language === 'en_US' ? 'ENGLISH' : 'SIMPCHINESE'
+    const languageId = { es_ES: 'SPANISH', en_US: 'ENGLISH', zh_CN: 'SIMPCHINESE' }[language]
     await writeFile(strings, sourceStrings.split('\n').filter((line) =>
       !line.startsWith('LangString ') || line.includes(`\${LANG_${languageId}}`)).join('\n'))
     const include = join(languageOutput, 'include.nsh')
     await writeFile(include, `!define INSTALLER_BUILD_DIR "${join(output, 'ui')}"\n!define INSTALLER_STRINGS_FILE "${strings}"\n!include "${join(appRoot, 'scripts', 'installer.nsh')}"\n`)
     await build({ projectDir: appRoot, prepackaged: payload, targets: Platform.WINDOWS.createTarget(['nsis'], Arch.x64), publish: 'never',
-      config: { ...config, productName, extraMetadata: { ...config.extraMetadata, name: packageName },
+      config: { ...config, productName, extraMetadata: { ...config.extraMetadata, name: packageName, productName },
         artifactName: 'installer-test.exe', directories: { output: languageOutput },
         nsis: { ...config.nsis, guid, include, installerLanguages: [language] }, beforeBuild: undefined, afterPack: undefined, afterSign: undefined, artifactBuildCompleted: undefined },
     })

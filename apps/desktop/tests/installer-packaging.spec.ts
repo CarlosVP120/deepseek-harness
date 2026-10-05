@@ -12,6 +12,33 @@ vi.mock('node:child_process', async (importOriginal) => {
 })
 
 describe('installer preparation preserves application dependencies', () => {
+  it('ships complete installer translations with native formatting placeholders', () => {
+    const catalog = new Map<string, Map<string, string>>()
+    const source = readFileSync(new URL('../installer/strings.nsh', import.meta.url), 'utf8')
+    for (const line of source.split('\n')) {
+      const match = /^LangString (INSTALLER_\w+) \$\{LANG_(\w+)\} "(.*)"$/.exec(line)
+      if (!match) continue
+      const [, id, language, value] = match
+      if (!id || !language || value === undefined) continue
+      const entries = catalog.get(language) ?? new Map<string, string>()
+      expect(entries.has(id)).toBe(false)
+      entries.set(id, value)
+      catalog.set(language, entries)
+    }
+    const english = catalog.get('ENGLISH') ?? new Map<string, string>()
+    expect(english.size).toBeGreaterThan(0)
+    for (const language of ['SPANISH', 'SIMPCHINESE']) {
+      const entries = catalog.get(language) ?? new Map<string, string>()
+      expect([...entries.keys()].sort()).toEqual([...english.keys()].sort())
+      for (const [id, original] of english) {
+        const translated = entries.get(id) ?? ''
+        expect(translated).not.toBe('')
+        expect(translated.match(/%[ds]|%%/g)).toEqual(original.match(/%[ds]|%%/g))
+      }
+    }
+    expect(source).not.toContain('DeepSeek Harness')
+  })
+
   it.each(['win32', 'darwin'] as const)('rejects a missing production policy before signing on %s', async (platform) => {
     const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
     expect(() => createElectronBuilderConfig({ DSH_DESKTOP_APP_ID: 'com.example.installer',
