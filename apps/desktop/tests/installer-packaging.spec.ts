@@ -68,7 +68,7 @@ describe('installer preparation preserves application dependencies', () => {
     const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
     const { validateDesktopPackageEnvironment } = await import('../scripts/desktop-package-environment.mjs')
     const env = { DSH_DESKTOP_APP_ID: 'com.eqidis.ai', DSH_DESKTOP_UNSIGNED: '1' }
-    expect(() => validateDesktopPackageEnvironment(env, { platform: 'darwin', arch: 'arm64' }, { unsigned: true })).not.toThrow()
+    expect(() => { validateDesktopPackageEnvironment(env, { platform: 'darwin', arch: 'arm64' }, { unsigned: true }) }).not.toThrow()
     const config = createElectronBuilderConfig(env, 'darwin', 'arm64')
     expect(config.mac.identity).toBe('-')
     expect(config.mac.notarize).toBe(false)
@@ -76,7 +76,7 @@ describe('installer preparation preserves application dependencies', () => {
     expect(config.publish).toBeNull()
     expect(config.extraMetadata.dshMandatoryUpdatePolicy).toBeUndefined()
     expect(config.mac.extendInfo.CFBundleLocalizations).toContain('es')
-    expect(() => validateDesktopPackageEnvironment(env, { platform: 'darwin', arch: 'arm64' })).toThrow()
+    expect(() => { validateDesktopPackageEnvironment(env, { platform: 'darwin', arch: 'arm64' }) }).toThrow()
   })
 
   it('uses the EQIDIS release feed when internal updates are explicitly configured', async () => {

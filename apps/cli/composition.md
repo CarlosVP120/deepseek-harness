@@ -58,9 +58,9 @@ flowchart LR
   cfg --> plugin_dsh_base_credentials
   plugin_dsh_base_llm_pi_ai["llm-pi-ai<br/>@deepseek-ai/dsh-llm-pi-ai"]
   cfg --> plugin_dsh_base_llm_pi_ai
-  plugin_dsh_base_deepseek_deepseek_v4_1_flash["deepseek/deepseek-v4.1-flash<br/>DeepSeek: DeepSeek V4.1 Flash"]
+  plugin_dsh_base_deepseek_deepseek_v4_1_flash["deepseek/deepseek-v4.1-flash<br/>Flash"]
   cfg --> plugin_dsh_base_deepseek_deepseek_v4_1_flash
-  plugin_dsh_base_deepseek_deepseek_v4_pro["deepseek/deepseek-v4-pro<br/>DeepSeek: DeepSeek V4 Pro 0423"]
+  plugin_dsh_base_deepseek_deepseek_v4_pro["deepseek/deepseek-v4-pro<br/>Pro"]
   cfg --> plugin_dsh_base_deepseek_deepseek_v4_pro
   plugin_dsh_base_session_persistence_jsonl["session-persistence-jsonl<br/>@deepseek-ai/dsh-session-persistence-jsonl"]
   cfg --> plugin_dsh_base_session_persistence_jsonl
@@ -229,8 +229,8 @@ flowchart LR
 | `deepseek-account` | `@deepseek-ai/dsh-deepseek-account-platform` |
 | `credentials` | `@deepseek-ai/dsh-credentials-local` |
 | `llm-pi-ai` | `@deepseek-ai/dsh-llm-pi-ai` |
-| `deepseek/deepseek-v4.1-flash` | `DeepSeek: DeepSeek V4.1 Flash` |
-| `deepseek/deepseek-v4-pro` | `DeepSeek: DeepSeek V4 Pro 0423` |
+| `deepseek/deepseek-v4.1-flash` | `Flash` |
+| `deepseek/deepseek-v4-pro` | `Pro` |
 | `session-persistence-jsonl` | `@deepseek-ai/dsh-session-persistence-jsonl` |
 | `attachment-local` | `@deepseek-ai/dsh-attachment-local` |
 | `session-query-sqlite` | `@deepseek-ai/dsh-session-query-sqlite` |
