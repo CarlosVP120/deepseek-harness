@@ -81,6 +81,26 @@ Function ${PREFIX}InstallerValidatePath
                 Return
             ${EndIf}
         ${EndIf}
+        ${GetParent} $2 $2
+    ${Loop}
+    System::Call 'kernel32::GetFullPathNameW(w "$InstallerPath", i ${NSIS_MAX_STRLEN}, w .r4, p 0) i.r0'
+    ${If} $0 == 0
+    ${OrIf} $0 >= ${NSIS_MAX_STRLEN}
+        Return
+    ${EndIf}
+    ; Validate canonical ancestors so repeated separators cannot hide drive or protected roots.
+    StrLen $0 $4
+    ${If} $0 < 4
+    ${OrIf} $0 > 180
+        Return
+    ${EndIf}
+    StrCpy $InstallerPath $4
+    StrCpy $2 $InstallerPath
+    ${Do}
+        StrLen $0 $2
+        ${If} $0 <= 3
+            ${ExitDo}
+        ${EndIf}
         System::Call 'kernel32::GetFileAttributesW(w r2) i.r0'
         ${If} $0 != -1
             IntOp $1 $0 & 0x400
@@ -105,12 +125,6 @@ Function ${PREFIX}InstallerValidatePath
         ${EndIf}
         ${GetParent} $2 $2
     ${Loop}
-    System::Call 'kernel32::GetFullPathNameW(w "$InstallerPath", i ${NSIS_MAX_STRLEN}, w .r4, p 0) i.r0'
-    ${If} $0 == 0
-    ${OrIf} $0 >= ${NSIS_MAX_STRLEN}
-        Return
-    ${EndIf}
-    StrCpy $InstallerPath $4
     StrCpy $InstallerError ""
 FunctionEnd
 !macroend
