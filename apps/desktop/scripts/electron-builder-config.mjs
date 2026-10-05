@@ -106,6 +106,7 @@ export function createElectronBuilderConfig(
     appId,
     protocols: [{ name: 'EQIDIS AI', schemes: ['dsh'] }],
     extraMetadata: {
+      name: '@eqidis/desktop-internal',
       productName: 'EQIDIS AI',
       dshDesktopAppId: appId,
       dshMandatoryUpdatePolicy: policy,

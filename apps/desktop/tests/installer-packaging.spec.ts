@@ -97,6 +97,8 @@ describe('installer preparation preserves application dependencies', () => {
     const env = { DSH_DESKTOP_APP_ID: 'com.eqidis.ai', DSH_DESKTOP_UNSIGNED: '1' }
     expect(() => { validateDesktopPackageEnvironment(env, { platform: 'darwin', arch: 'arm64' }, { unsigned: true }) }).not.toThrow()
     const config = createElectronBuilderConfig(env, 'darwin', 'arm64')
+    expect(config.extraMetadata.name).toBe('@eqidis/desktop-internal')
+    expect(config.extraMetadata.productName).toBe('EQIDIS AI')
     expect(config.mac.identity).toBe('-')
     expect(config.mac.notarize).toBe(false)
     expect(config.mac.forceCodeSigning).toBe(false)
