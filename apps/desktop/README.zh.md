@@ -184,9 +184,11 @@ Desktop 在 Host 启动后、打开工作区前检查模型 API Key 引用是否
 
 ## EQIDIS internal distribution
 
-EQIDIS 安装包使用 `com.eqidis.ai` 和 `eqidis-ai` 文件名。通过 `pnpm --dir apps/desktop run` 运行 `package:mac:arm64:unsigned`、`package:mac:x64:unsigned` 或 `package:win:x64:unsigned`。目标 dotenv 文件只需配置 `DSH_DESKTOP_APP_ID=com.eqidis.ai`；无付费证书构建不配置强制更新策略或自动更新源。macOS 使用临时签名，不进行 Apple 公证；可用 `DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY` 选择已安装的自签名证书，并在不同版本中保留同一证书。Windows 构建要求 Windows x64 主机。安装包通过运行时检查后写入 `.desktop-build/targets/<target>/unsigned-artifacts/`。
+EQIDIS 安装包使用 `com.eqidis.ai`、EQIDIS AI 客户端标题和 `eqidis-ai` 文件名。通过 `pnpm --dir apps/desktop run` 运行 `package:mac:arm64:unsigned`、`package:mac:x64:unsigned` 或 `package:win:x64:unsigned`。目标 dotenv 文件只需配置 `DSH_DESKTOP_APP_ID=com.eqidis.ai`；无付费证书构建不配置强制更新策略或自动更新源。macOS 使用临时签名，不进行 Apple 公证；可用 `DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY` 选择已安装的自签名证书，并在不同版本中保留同一证书。Windows 构建要求 Windows x64 主机。安装包通过运行时检查后写入 `.desktop-build/targets/<target>/unsigned-artifacts/`。
 
 通过私有仓库 `CarlosVP120/eqidis-ai-releases` 分发安装包，接收者需要仓库访问权限。每台设备在 Models 设置中单独输入 OpenRouter API 密钥。安装包不包含开发配置或凭据。当前更新需要从同一私有仓库下载替换安装包，应用不嵌入共享 GitHub 令牌。macOS 首次启动时可能需要在隐私与安全性中批准可信的内部应用；Windows 可能提示发布者未知。本地签名不等于 Apple 公证。
+
+若安装包仓库公开，可在目标 dotenv 文件中设置 `DSH_DESKTOP_INTERNAL_UPDATE_REPOSITORY=owner/repository`。内部安装包会写入该仓库最新发布的 HTTPS 通用更新源，并生成 Nightly 更新元数据。运行时检查通过后，应一起发布安装包、blockmap 和更新元数据。包含两种 Mac 架构的发布必须合并其 `nightly-mac.yml` 文件列表，不能用一种架构的更新源覆盖另一种。临时签名模式使用稳定的应用标识符要求，沿用 FiscalCFDI 的降级签名方案；选定自签名身份时保留证书要求。此选项不会验证私有 GitHub 下载，也不会嵌入 GitHub 令牌。
 
 ## 打包
 

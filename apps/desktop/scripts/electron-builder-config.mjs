@@ -89,7 +89,13 @@ export function createElectronBuilderConfig(
   if (windowsSigner !== undefined) {
     installWindowsNsisBootstrapSigner({ sign: windowsSigner })
   }
-  const update = unsigned ? undefined : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
+  const internalRepository = env.DSH_DESKTOP_INTERNAL_UPDATE_REPOSITORY?.trim()
+  if (internalRepository !== undefined && !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(internalRepository)) {
+    throw new Error('desktop package: DSH_DESKTOP_INTERNAL_UPDATE_REPOSITORY must be owner/repository')
+  }
+  const update = unsigned
+    ? internalRepository === undefined ? undefined : { publicUrl: `https://github.com/${internalRepository}/releases/latest/download/` }
+    : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
   if (preparedRuntime !== undefined) buildPaths.dsh = preparedRuntime
   // electron-builder merges extraMetadata into the packaged manifest, so a build version here reaches
   // the artifact names, the update feed, and the installed app.getVersion() the updater compares against.
@@ -100,6 +106,7 @@ export function createElectronBuilderConfig(
     appId,
     protocols: [{ name: 'EQIDIS AI', schemes: ['dsh'] }],
     extraMetadata: {
+      productName: 'EQIDIS AI',
       dshDesktopAppId: appId,
       dshMandatoryUpdatePolicy: policy,
       ...buildVersion === productVersion ? {} : { version: buildVersion },
@@ -205,6 +212,10 @@ export function createElectronBuilderConfig(
       if (context.electronPlatformName !== 'darwin') return
       if (unsigned) {
         const appPath = join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`)
+        if (internalRepository !== undefined && !env.DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY?.trim()) {
+          await promisify(execFile)('/usr/bin/codesign', ['--force', '--sign', '-', '--identifier', appId,
+            '--preserve-metadata=entitlements,flags', `-r=designated => identifier "${appId}"`, appPath])
+        }
         await promisify(execFile)('/usr/bin/codesign', ['--verify', '--deep', '--strict', appPath])
         return
       }

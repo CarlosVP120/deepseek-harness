@@ -79,6 +79,16 @@ describe('installer preparation preserves application dependencies', () => {
     expect(() => validateDesktopPackageEnvironment(env, { platform: 'darwin', arch: 'arm64' })).toThrow()
   })
 
+  it('uses the EQIDIS release feed when internal updates are explicitly configured', async () => {
+    const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
+    const env = { DSH_DESKTOP_APP_ID: 'com.eqidis.ai', DSH_DESKTOP_UNSIGNED: '1',
+      DSH_DESKTOP_INTERNAL_UPDATE_REPOSITORY: 'CarlosVP120/eqidis-ai-releases' }
+    const config = createElectronBuilderConfig(env, 'darwin', 'arm64')
+    expect(config.publish).toEqual([{ provider: 'generic',
+      url: 'https://github.com/CarlosVP120/eqidis-ai-releases/releases/latest/download/', channel: 'nightly' }])
+    expect(() => createElectronBuilderConfig({ ...env, DSH_DESKTOP_INTERNAL_UPDATE_REPOSITORY: 'https://github.com/token' }, 'darwin', 'arm64')).toThrow('owner/repository')
+  })
+
   it('names unsigned Windows artifacts so they cannot pass for release builds', async () => {
     const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
     const config = createElectronBuilderConfig({
