@@ -102,7 +102,7 @@ SectionEnd
     await writeFile(strings, sourceStrings.split('\n').filter((line) =>
       !line.startsWith('LangString ') || line.includes(`\${LANG_${languageId}}`)).join('\n'))
     const include = join(languageOutput, 'include.nsh')
-    await writeFile(include, `!define INSTALLER_BUILD_DIR "${join(output, 'ui')}"\n!define INSTALLER_STRINGS_FILE "${strings}"\n!include "${join(appRoot, 'scripts', 'installer.nsh')}"\n`)
+    await writeFile(include, `!define INSTALLER_BUILD_DIR "${join(output, 'ui')}"\n!define INSTALLER_STRINGS_FILE "${strings}"\n!define INSTALLER_TRACE_FILE "${join(languageOutput, 'path-trace.log')}"\n!include "${join(appRoot, 'scripts', 'installer.nsh')}"\n`)
     await build({ projectDir: appRoot, prepackaged: payload, targets: Platform.WINDOWS.createTarget(['nsis'], Arch.x64), publish: 'never',
       config: { ...config, productName, extraMetadata: { ...config.extraMetadata, name: packageName, productName },
         artifactName: 'installer-test.exe', directories: { output: languageOutput },
@@ -115,7 +115,10 @@ SectionEnd
       join(appRoot, 'tests', uninstallOnly ? 'windows-uninstall-smoke.ps1' : 'windows-installer-smoke.ps1'),
       '-Installer', join(languageOutput, 'installer-test.exe'),
       '-ProductName', productName, '-RegistryKey', guid, '-OutputDirectory', languageOutput,
-      ...uninstallOnly ? ['-Language', languageId, '-PackageName', packageName] : []], childOptions)
+      ...uninstallOnly ? ['-Language', languageId, '-PackageName', packageName] : []], childOptions).catch(error => {
+      if (typeof error.stdout === 'string') process.stdout.write(error.stdout)
+      throw error
+    })
     process.stdout.write(`${language}\n${result.stdout}`)
   }
   succeeded = true

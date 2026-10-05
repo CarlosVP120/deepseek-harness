@@ -241,6 +241,8 @@ try {
     $results.Add('invalid-destination-rejection')
 } catch {
     Write-Output "Installer check failed: $_"
+    $trace = Join-Path $OutputDirectory 'path-trace.log'
+    if (Test-Path -LiteralPath $trace) { Get-Content -LiteralPath $trace | Write-Output }
     throw
 } finally {
     foreach ($process in $processes) {

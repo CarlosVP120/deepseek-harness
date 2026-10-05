@@ -209,7 +209,21 @@ FunctionEnd
 ; Page leave callbacks also run when Enter activates NSIS's hidden default button.
 Function InstallerWelcomeLeave
     ${NSD_GetText} $InstallerEdit $InstallerPath
+    !ifdef INSTALLER_TRACE_FILE
+        Push $R9
+        FileOpen $R9 "${INSTALLER_TRACE_FILE}" a
+        FileWrite $R9 "before: edit=$InstallerEdit path=$InstallerPath$\r$\n"
+        FileClose $R9
+        Pop $R9
+    !endif
     Call InstallerPreflight
+    !ifdef INSTALLER_TRACE_FILE
+        Push $R9
+        FileOpen $R9 "${INSTALLER_TRACE_FILE}" a
+        FileWrite $R9 "after: path=$InstallerPath error=$InstallerError$\r$\n"
+        FileClose $R9
+        Pop $R9
+    !endif
     ${If} $InstallerError != ""
         MessageBox MB_OK|MB_ICONEXCLAMATION "$InstallerError"
         Abort
