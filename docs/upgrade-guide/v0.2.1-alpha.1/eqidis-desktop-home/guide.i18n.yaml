@@ -1,0 +1,16 @@
+# Bilingual-pair consistency record for guide.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/upgrade-guide/v0.2.1-alpha.1/eqidis-desktop-home/guide.md
+/:
+  en: 2768bc984a3b73f2
+  zh: 71de215a9b71dadc
+/independent-eqidis-desktop-data:
+  en: 1ad73c2b5c0b4b3c
+  zh: 070041b7dfb11f4e
+/independent-eqidis-desktop-data/change:
+  en: 2621c9776beac146
+  zh: 0ae185b899be69fa
+/independent-eqidis-desktop-data/migration:
+  en: 7bec2e3995339ef4
+  zh: b7ef198639bcebdb

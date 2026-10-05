@@ -184,6 +184,8 @@ Desktop 在 Host 启动后、打开工作区前检查模型 API Key 引用是否
 
 ## EQIDIS internal distribution
 
+已安装的 EQIDIS 将 Harness 数据存储在 `~/.eqidis-ai`，与 DeepSeek Harness 独立。`EQIDIS_AI_HOME` 是仅用于安装版本的覆盖选项；继承的 `DSH_HOME` 会被忽略。开发版本保留其临时 `DSH_HOME`。不会导入原有账户、设置或会话数据。EQIDIS 套件禁用 DeepSeek 账户界面，默认使用 OpenRouter Flash、固定 high 推理和标准预设。
+
 EQIDIS 安装包使用 `com.eqidis.ai`、EQIDIS AI 客户端标题和 `eqidis-ai` 文件名。通过 `pnpm --dir apps/desktop run` 运行 `package:mac:arm64:unsigned`、`package:mac:x64:unsigned` 或 `package:win:x64:unsigned`。目标 dotenv 文件只需配置 `DSH_DESKTOP_APP_ID=com.eqidis.ai`；无付费证书构建不配置强制更新策略或自动更新源。macOS 使用临时签名，不进行 Apple 公证；可用 `DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY` 选择已安装的自签名证书，并在不同版本中保留同一证书。`DSH_DESKTOP_MACOS_LOCAL_SIGNING_KEYCHAIN` 可指定可读的私有钥匙串，签名时显式使用该钥匙串，不修改系统信任设置。Windows 构建要求 Windows x64 主机。安装包通过运行时检查后写入 `.desktop-build/targets/<target>/unsigned-artifacts/`。
 
 通过私有仓库 `CarlosVP120/eqidis-ai-releases` 分发安装包，接收者需要仓库访问权限。每台设备在 Models 设置中单独输入 OpenRouter API 密钥。安装包不包含开发配置或凭据。当前更新需要从同一私有仓库下载替换安装包，应用不嵌入共享 GitHub 令牌。macOS 首次启动时可能需要在隐私与安全性中批准可信的内部应用；Windows 可能提示发布者未知。本地签名不等于 Apple 公证。
