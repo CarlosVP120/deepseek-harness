@@ -142,10 +142,17 @@ public static class InstallerCapture {
         return result;
     }
 
+    // Foreign edit controls require WM_GETTEXT/WM_SETTEXT rather than cached window captions.
+    [DllImport("user32.dll", EntryPoint = "SendMessageW", CharSet = CharSet.Unicode)]
+    static extern IntPtr ReadControlText(IntPtr control, uint message, IntPtr count, StringBuilder text);
     public static string ControlText(IntPtr control) {
         var text = new StringBuilder(1024);
-        GetWindowText(control, text, text.Capacity);
+        ReadControlText(control, 0xD, new IntPtr(text.Capacity), text);
         return text.ToString();
+    }
+    public static void SetControlText(IntPtr control, string text) {
+        if (SendMessage(control, 0xC, IntPtr.Zero, text) == IntPtr.Zero)
+            throw new InvalidOperationException("Could not set native edit text");
     }
 
     public static string VisibleText(int process) {

@@ -126,7 +126,7 @@ function Finish-Setup([Diagnostics.Process]$Process, [bool]$Launch, [string]$The
     if (-not $Process.WaitForExit(10000) -or $Process.ExitCode -ne 0) { throw 'Finish did not exit successfully' }
 }
 function Set-Path([IntPtr]$Edit, [string]$Path) {
-    if (-not [InstallerCapture]::SetWindowText($Edit, $Path)) { throw 'Could not set installation path' }
+    [InstallerCapture]::SetControlText($Edit, $Path)
     $actual = [InstallerCapture]::ControlText($Edit)
     if ($actual -ne $Path) { throw "Path edit did not accept '$Path': '$actual'" }
     Write-Output "Validating path: $actual"
