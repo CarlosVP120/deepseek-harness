@@ -27,7 +27,7 @@ describe('installer preparation preserves application dependencies', () => {
     }
     const english = catalog.get('ENGLISH') ?? new Map<string, string>()
     expect(english.size).toBeGreaterThan(0)
-    for (const language of ['SPANISH', 'SIMPCHINESE']) {
+    for (const language of ['SPANISHINTERNATIONAL', 'SIMPCHINESE']) {
       const entries = catalog.get(language) ?? new Map<string, string>()
       expect([...entries.keys()].sort()).toEqual([...english.keys()].sort())
       for (const [id, original] of english) {

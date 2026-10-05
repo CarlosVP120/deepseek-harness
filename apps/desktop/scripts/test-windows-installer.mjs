@@ -98,7 +98,7 @@ SectionEnd
     const languageOutput = join(output, language)
     await mkdir(languageOutput)
     const strings = join(languageOutput, 'strings.nsh')
-    const languageId = { es_ES: 'SPANISH', en_US: 'ENGLISH', zh_CN: 'SIMPCHINESE' }[language]
+    const languageId = { es_ES: 'SPANISHINTERNATIONAL', en_US: 'ENGLISH', zh_CN: 'SIMPCHINESE' }[language]
     await writeFile(strings, sourceStrings.split('\n').filter((line) =>
       !line.startsWith('LangString ') || line.includes(`\${LANG_${languageId}}`)).join('\n'))
     const include = join(languageOutput, 'include.nsh')
@@ -106,7 +106,9 @@ SectionEnd
     await build({ projectDir: appRoot, prepackaged: payload, targets: Platform.WINDOWS.createTarget(['nsis'], Arch.x64), publish: 'never',
       config: { ...config, productName, extraMetadata: { ...config.extraMetadata, name: packageName, productName },
         artifactName: 'installer-test.exe', directories: { output: languageOutput },
-        nsis: { ...config.nsis, guid, include, installerLanguages: [language] }, beforeBuild: undefined, afterPack: undefined, afterSign: undefined, artifactBuildCompleted: undefined },
+        nsis: { ...config.nsis, guid, include, installerLanguages: [language],
+          installerSidebar: join(output, 'ui', 'uninstaller-sidebar.bmp'),
+          uninstallerSidebar: join(output, 'ui', 'uninstaller-sidebar.bmp') }, beforeBuild: undefined, afterPack: undefined, afterSign: undefined, artifactBuildCompleted: undefined },
     })
     if (process.argv.includes('--compile-only')) continue
     const result = await execute('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
