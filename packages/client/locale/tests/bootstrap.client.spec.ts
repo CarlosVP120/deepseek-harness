@@ -73,3 +73,14 @@ describe('native locale initialization', () => {
     }
   })
 })
+
+it('selects Spanish from regional native languages and persists an explicit Spanish choice', async () => {
+  const ctx = new Context()
+  const host = stubConfigForm<LocaleSettings>()
+  const locale = new LocaleRuntime(ctx, host.scope, { languages: ['es-MX', 'en-US'], preference: null })
+  expect(locale.getLocale().active).toBe('es')
+  expect(host.set).not.toHaveBeenCalled()
+  locale.setLocale('es')
+  expect(host.set).toHaveBeenCalledExactlyOnceWith('preference', 'es')
+  await ctx.fiber.dispose()
+})

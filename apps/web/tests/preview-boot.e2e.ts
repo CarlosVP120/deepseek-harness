@@ -316,9 +316,8 @@ async function bootPreview(origin: string, browser: Browser): Promise<void> {
     const continueButton = page.getByRole('button', { name: 'Continue' })
     await continueButton.waitFor({ timeout: HERO_TIMEOUT_MS })
     await continueButton.click()
-    const configureLater = page.getByRole('button', { name: 'Configure later' })
-    await configureLater.waitFor({ timeout: 30_000 })
-    await configureLater.click()
+    // EQIDIS completes setup in its deployment defaults and opens the composer directly.
+    expect(await page.getByRole('button', { name: 'Configure later' }).count()).toBe(0)
     await page.locator('[data-composer-input][data-placeholder="Describe what you want to build, / commands, @ files or sessions"]')
       .waitFor({ timeout: 30_000 })
 

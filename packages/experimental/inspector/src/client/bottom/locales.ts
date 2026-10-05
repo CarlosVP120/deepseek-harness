@@ -22,3 +22,12 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     inspectorPanel: keyof typeof zh
   }
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'title': 'Inspector de NodeJS',
+  'toggle': 'Alternar inspector de NodeJS',
+  'close': 'Colapso',
+  'resize': 'Cambiar el tamaño del panel Inspector de NodeJS',
+  'frameTitle': 'Inspector de NodeJS',
+} satisfies Record<keyof typeof en, string>

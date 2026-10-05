@@ -32,3 +32,16 @@ export const en = {
   'crumbs.aria': 'Folder navigation',
   'suggestions.aria': 'Trigger suggestions',
 } satisfies Record<MenuKey, string>
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'command': 'Comandos',
+  'skill': 'Habilidades',
+  'subagent': 'Subagentes',
+  'loading': 'Cargando…',
+  'drill.aria': 'Explorar carpeta',
+  'drill.hint': 'Explorar carpeta',
+  'drill.key': 'Pestaña',
+  'crumbs.aria': 'Navegación de carpetas',
+  'suggestions.aria': 'Sugerencias de activación',
+} satisfies Record<keyof typeof en, string>

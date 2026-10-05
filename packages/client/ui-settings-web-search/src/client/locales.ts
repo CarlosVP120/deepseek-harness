@@ -62,3 +62,25 @@ export const zh: Record<WebSearchSettingsLocaleKey, string> = {
 export function formLabels(t: (key: WebSearchSettingsLocaleKey) => string): SettingsFormLabels {
   return { unavailable: t('unavailable'), readOnly: t('readOnly'), saveFailed: t('saveFailed'), save: t('save'), saving: t('saving') }
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'title': 'búsqueda web',
+  'description': 'Configure el proveedor de búsqueda DeepSeek.',
+  'apiKey': 'clave API',
+  'apiKeyHint': 'Almacenado fuera del archivo de configuración. Déjelo en blanco para conservar la clave actual.',
+  'apiKeySet': 'Se configura una clave.',
+  'apiKeyUnset': 'No hay ninguna clave configurada; solo se pueden buscar conversaciones que utilicen un modelo de cuenta DeepSeek, a través del punto final predeterminado.',
+  'baseUrl': 'Punto final',
+  'baseUrlHint': 'Déjelo en blanco para utilizar el proveedor predeterminado.',
+  'maxUses': 'Búsquedas máximas por solicitud',
+  'maxUsesHint': 'Cuántas veces puede buscarse una solicitud antes de responder.',
+  'overridden': 'Anulado',
+  'reset': 'Restablecer los valores predeterminados',
+  'readOnly': 'Esta implementación almacena configuraciones de solo lectura.',
+  'unavailable': 'Este complemento no está cargado, por lo que no se puede configurar en este momento.',
+  'save': 'Guardar',
+  'saving': 'Guardando…',
+  'saveFailed': 'El despliegue no aceptó estos valores; quedaron para que usted los corrigiera.',
+  'invalidNumber': 'Ingrese un número o déjelo en blanco para usar el valor predeterminado.',
+} satisfies Record<keyof typeof en, string>

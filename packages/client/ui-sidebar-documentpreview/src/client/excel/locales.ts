@@ -31,3 +31,22 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     sidebarExcel: ExcelPreviewKey
   }
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'title': 'Hoja de cálculo',
+  'language': 'es',
+  'loading': 'Representando documento...',
+  'invalid': 'Esta hoja de cálculo no se pudo abrir. Comprueba su formato, contenidos o protección con contraseña.',
+  'tooLarge': 'Este libro excede el límite de tamaño de vista previa.',
+  'timeout': 'Se agotó el tiempo de apertura de este libro. Pruebe con un archivo más pequeño.',
+  'encoding': 'Esta codificación de texto no se pudo leer. Guarde el archivo como UTF-8 o UTF-16 con una lista de materiales y vuelva a intentarlo.',
+  'formulaWarning': 'Este libro contiene fórmulas. Los resultados mostrados pueden faltar o ser inexactos.',
+  'unsupportedNotice': 'Esta vista previa no admite {features} en este libro. Ábralo en una aplicación del sistema para disfrutar de la experiencia completa.',
+  'charts': 'gráficos',
+  'images': 'imágenes',
+  'shapes': 'formas',
+  'conditionalFormatting': 'formato condicional',
+  'featureSeparator': ', ',
+  'retry': 'Reintentar',
+} satisfies Record<keyof typeof en, string>

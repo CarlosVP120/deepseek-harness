@@ -20,3 +20,13 @@ export const zoomEn = {
 
 /** Shared zoom dictionary keys. */
 export type ZoomLocaleKey = keyof typeof zoomZh
+
+/** Spanish dictionary, checked against the English key set. */
+export const zoomEs = {
+  'zoomControls': 'Controles de zoom',
+  'zoomMenu': 'Elige zoom',
+  'zoomOut': 'alejar',
+  'zoomIn': 'Acercar',
+  'zoomFitWidth': 'Ancho de ajuste',
+  'zoomValue': '{percent}%',
+} satisfies Record<keyof typeof zoomEn, string>

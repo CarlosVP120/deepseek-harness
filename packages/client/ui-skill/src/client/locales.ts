@@ -29,3 +29,15 @@ export const en = {
   'row.inspect': 'Inspect',
   'menu.userOnly': 'user-only',
 } satisfies Record<SkillKey, string>
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'row.title': 'Habilidad',
+  'row.running': 'Habilidad de carga',
+  'row.preparing': 'Preparándose para cargar una habilidad',
+  'row.failed': 'La carga de habilidades falló',
+  'row.stopped': 'Carga de habilidades detenida',
+  'row.instructions': 'Instrucciones',
+  'row.inspect': 'inspeccionar',
+  'menu.userOnly': 'solo usuario',
+} satisfies Record<keyof typeof en, string>

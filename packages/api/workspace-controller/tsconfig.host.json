@@ -9,6 +9,7 @@
     "src/index.ts",
     "src/types.ts",
     "src/commands.ts",
+    "src/project-context.ts",
     "src/default-workspace.ts",
     "src/directory-picker.ts",
     "src/feed.ts",

@@ -23,3 +23,11 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     documentHtml: HtmlPreviewKey
   }
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'title': 'HTML',
+  'frame': 'Vista previa del documento HTML',
+  'loading': 'Representando documento...',
+  'failed': 'No se pudo obtener una vista previa de este documento HTML.',
+} satisfies Record<keyof typeof en, string>

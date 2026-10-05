@@ -925,7 +925,7 @@ async function main(): Promise<void> {
   const applicationIconPath = development ? join(app.getAppPath(), 'resources', 'icon-windows.png')
     : join(process.resourcesPath, 'icon.png')
   app.setAboutPanelOptions({
-    applicationName: 'DeepSeek Harness',
+    applicationName: 'EQIDIS AI',
     applicationVersion: app.getVersion(),
     // The release has no separate build number; omit Electron's bundle version.
     version: '',
@@ -936,9 +936,27 @@ async function main(): Promise<void> {
   // its standard menus and application hide commands declared explicitly.
   // Keep app.name stable: Electron derives its default userData directory from it.
   const darwin = process.platform === 'darwin'
-  const platformMenus = (): MenuItemConstructorOptions[] => darwin
-    ? [shortcuts.fileMenu(currentDesktopLocale().messages), { role: 'editMenu' }, { role: 'windowMenu' }]
-    : [{ role: 'editMenu' }]
+  const platformMenus = (): MenuItemConstructorOptions[] => {
+    const messages = currentDesktopLocale().messages
+    const editMenu: MenuItemConstructorOptions = {
+      role: 'editMenu', label: messages.edit,
+      submenu: [
+        { role: 'undo', label: messages.undo }, { role: 'redo', label: messages.redo }, { type: 'separator' },
+        { role: 'cut', label: messages.cut }, { role: 'copy', label: messages.copy },
+        { role: 'paste', label: messages.paste }, { role: 'pasteAndMatchStyle', label: messages.pasteAndMatchStyle },
+        { role: 'delete', label: messages.delete }, { role: 'selectAll', label: messages.selectAll },
+        ...(darwin ? [{ type: 'separator' } as MenuItemConstructorOptions, {
+          label: messages.speech,
+          submenu: [{ role: 'startSpeaking', label: messages.startSpeaking }, { role: 'stopSpeaking', label: messages.stopSpeaking }],
+        } as MenuItemConstructorOptions] : []),
+      ],
+    }
+    return darwin ? [shortcuts.fileMenu(messages), editMenu, {
+      role: 'windowMenu', label: messages.windowMenu,
+      submenu: [{ role: 'minimize', label: messages.minimize }, { role: 'zoom', label: messages.zoom },
+        { type: 'separator' }, { role: 'front', label: messages.front }],
+    }] : [editMenu]
+  }
   const hideCommands: MenuItemConstructorOptions[] = darwin
     ? [{ role: 'hide', label: currentDesktopLocale().messages.hideApplication },
       { role: 'hideOthers', label: currentDesktopLocale().messages.hideOtherApplications },

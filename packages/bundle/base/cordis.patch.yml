@@ -82,8 +82,9 @@
     - id: agent-default-model
       name: '@deepseek-ai/dsh-agent-default-model'
       config:
-        provider: deepseek-official
-        model: deepseek-flash
+        provider: openrouter
+        model: deepseek/deepseek-v4.1-flash
+        reasoningEffort: high
 
     - id: jobs
       name: '@deepseek-ai/dsh-jobs-local'
@@ -117,15 +118,27 @@
     - id: credentials
       name: '@deepseek-ai/dsh-credentials-local'
 
-    # The pi-ai multi-provider twin, mounted dormant: zero routes (and no extra
-    # models in the picker) until a `llm-pi-ai:` settings section supplies provider
-    # profiles — then those routes register live, keys resolving per request
-    # through their apiKeyEnv references, and drop again when the section empties.
-    # Supplying those profiles is exactly what the web Models page does. Which
-    # adapters exist is composition; which providers run is the user's settings
-    # document.
+    # EQIDIS AI routes inference through the managed OpenRouter credential.
     - id: llm-pi-ai
       name: '@deepseek-ai/dsh-llm-pi-ai'
+      config:
+        providers:
+          openrouter:
+            apiKeyEnv: OPENROUTER_API_KEY
+            fixedReasoning: high
+            models:
+              - id: deepseek/deepseek-v4.1-flash
+                name: 'Flash'
+                contextWindow: 1048576
+                maxTokens: 943718
+                input: [text, image]
+                reasoningEfforts: { high: high }
+              - id: deepseek/deepseek-v4-pro
+                name: 'Pro'
+                contextWindow: 1048576
+                maxTokens: 384000
+                input: [text]
+                reasoningEfforts: { high: high }
 
     - id: session-persistence-jsonl
       name: '@deepseek-ai/dsh-session-persistence-jsonl'
@@ -524,6 +537,8 @@
     # choice.
     - id: llm-deepseek
       name: '@deepseek-ai/dsh-llm-deepseek-api-key'
+      disabled: true
 
     - id: llm-deepseek-account
       name: '@deepseek-ai/dsh-llm-deepseek-account'
+      disabled: true

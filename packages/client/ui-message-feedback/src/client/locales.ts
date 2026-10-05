@@ -57,3 +57,27 @@ export const en = {
   'error.generic': 'Could not save feedback',
   'error.noteTooLarge': 'The description is too long; shorten it and submit again',
 } satisfies Record<MessageFeedbackKey, string>
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'action.like': 'buena respuesta',
+  'action.likeActive': 'Eliminar calificación',
+  'action.dislike': 'Mala respuesta',
+  'action.dislikeActive': 'Eliminar calificación',
+  'dialog.title': 'Enviar comentarios',
+  'dialog.categories': 'Categoría de comentarios',
+  'dialog.detail': 'Detalles de comentarios',
+  'dialog.hint': 'Añade detalles para ayudarnos a mejorar. Su envío incluirá el registro de conversación actual.',
+  'category.task-result': 'Resultado de la tarea',
+  'category.instruction-following': 'Comprensión y seguimiento de instrucciones.',
+  'category.product-interaction': 'Características del producto e interacción.',
+  'category.service-stability': 'Estabilidad y velocidad',
+  'category.resource-cost': 'Uso y costo de recursos',
+  'category.security-privacy-permission': 'Seguridad, privacidad y permisos',
+  'category.other': 'Otro',
+  'toast.recorded': 'Gracias por tus comentarios',
+  'error.conflict': 'Esta retroalimentación cambió en otros lugares; se muestra el último estado',
+  'error.load': 'No se pudieron cargar los comentarios',
+  'error.generic': 'No se pudieron guardar los comentarios',
+  'error.noteTooLarge': 'La descripción es demasiado larga; acortarlo y enviarlo de nuevo',
+} satisfies Record<keyof typeof en, string>

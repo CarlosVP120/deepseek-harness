@@ -3594,6 +3594,30 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     description: 'Host service backing the generated `ctx.remote.workspace` namespace.',
     methods: [
       {
+        signature: '@Remote(\'getProjectContext\') getProjectContext(request: ProjectContextRequest): Promise<ProjectContext>',
+        description: 'Read local project instructions and document metadata.',
+        parameters: [{ name: 'request', description: 'registered project.' }],
+        returns: 'its instructions and document list.',
+      },
+      {
+        signature: '@Remote(\'saveProjectInstructions\') saveProjectInstructions(request: ProjectInstructionsRequest): Promise<ProjectContext>',
+        description: 'Save the complete project instruction document.',
+        parameters: [{ name: 'request', description: 'project and complete instruction text.' }],
+        returns: 'saved context metadata.',
+      },
+      {
+        signature: '@Remote(\'uploadProjectDocument\') uploadProjectDocument(request: ProjectUploadRequest): Promise<ProjectContext>',
+        description: 'Add a document copy to the local project context.',
+        parameters: [{ name: 'request', description: 'project, filename and encoded document.' }],
+        returns: 'updated context metadata.',
+      },
+      {
+        signature: '@Remote(\'removeProjectDocument\') removeProjectDocument(request: ProjectRemoveRequest): Promise<ProjectContext>',
+        description: 'Remove an uploaded copy from the local project context.',
+        parameters: [{ name: 'request', description: 'project and uploaded filename.' }],
+        returns: 'remaining context metadata.',
+      },
+      {
         signature: '@Remote(\'create\') create(request: WorkspaceCreateRequest): Promise<WorkspaceCreateValue>',
         description: 'Create or idempotently resolve one Workspace over an existing directory.',
         parameters: [{ name: 'request', description: 'directory path to register.' }],
@@ -6161,6 +6185,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ProfilePnpmInvocation {\n    readonly command: string;\n    readonly args: readonly string[];\n    readonly env: Readonly<Record<string, string>>;\n}',
   },
   {
+    name: 'ProjectContext',
+    declaration: 'export interface ProjectContext {\n    instructions: string;\n    files: ProjectContextFile[];\n    maxDocumentBytes: number;\n}',
+  },
+  {
+    name: 'ProjectContextFile',
+    declaration: 'export interface ProjectContextFile {\n    name: string;\n    bytes: number;\n}',
+  },
+  {
+    name: 'ProjectContextRequest',
+    declaration: 'export interface ProjectContextRequest {\n    workspaceId: WorkspaceId;\n}',
+  },
+  {
+    name: 'ProjectInstructionsRequest',
+    declaration: 'export interface ProjectInstructionsRequest extends ProjectContextRequest {\n    instructions: string;\n}',
+  },
+  {
     name: 'ProjectionChangeListener',
     declaration: 'export type ProjectionChangeListener = (session: Session, key: Extract<keyof SessionProjectionMap, string>, value: unknown, seq: SessionSeq) => void;',
   },
@@ -6179,6 +6219,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ProjectionSnapshot',
     declaration: 'export interface ProjectionSnapshot {\n    asOfSeq: SessionSeqCursor;\n    values: Partial<SessionProjectionMap>;\n}',
+  },
+  {
+    name: 'ProjectRemoveRequest',
+    declaration: 'export interface ProjectRemoveRequest extends ProjectContextRequest {\n    name: string;\n}',
+  },
+  {
+    name: 'ProjectUploadRequest',
+    declaration: 'export interface ProjectUploadRequest extends ProjectContextRequest {\n    name: string;\n    base64: string;\n}',
   },
   {
     name: 'PromptAssembly',

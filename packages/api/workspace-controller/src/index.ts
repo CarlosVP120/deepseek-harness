@@ -3,6 +3,8 @@
 import { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
+import { ProjectContextFiles } from './project-context.ts'
+import type { ProjectContext, ProjectContextRequest, ProjectInstructionsRequest, ProjectUploadRequest, ProjectRemoveRequest } from './types.ts'
 import { WorkspaceCommands } from './commands.ts'
 import { DirectoryPickerController } from './directory-picker.ts'
 import { WorkspaceFeed, workspaceView } from './feed.ts'
@@ -33,12 +35,14 @@ export { DirectoryPickerController } from './directory-picker.ts'
 export interface Config {
   /** Override the system Documents directory with a fully qualified path. */
   documentsDirectory?: string
+  /** Maximum bytes in one uploaded project document; local folders have no upload limit. */
+  maxProjectDocumentBytes?: number
   /** Maximum duration of the operating system's Documents lookup. */
   documentsLookupTimeoutMs?: number
 }
 
 /** Directory policy after schema defaults have been applied. */
-type ResolvedConfig = Config & { documentsLookupTimeoutMs: number }
+type ResolvedConfig = Config & { documentsLookupTimeoutMs: number; maxProjectDocumentBytes: number }
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -53,8 +57,11 @@ export class WorkspaceController extends TypertRemoteService {
 
   static Config: z<Config, ResolvedConfig> = z.object({
     documentsDirectory: z.string(),
+    maxProjectDocumentBytes: z.natural().min(1).max(200 * 1024 * 1024).default(30 * 1024 * 1024),
     documentsLookupTimeoutMs: z.natural().min(1).default(10_000),
   })
+
+  private readonly projectFiles: ProjectContextFiles
 
   private readonly config: ResolvedConfig
   private readonly commands: WorkspaceCommands
@@ -67,6 +74,7 @@ export class WorkspaceController extends TypertRemoteService {
   constructor(ctx: Context, config: Config = {}) {
     super(ctx, 'workspaceController', { namespace: 'workspace' })
     this.config = WorkspaceController.Config(config)
+    this.projectFiles = new ProjectContextFiles(this.config.maxProjectDocumentBytes)
     if (this.config.documentsDirectory !== undefined) validateDocumentsDirectory(this.config.documentsDirectory)
     this.commands = new WorkspaceCommands(ctx)
     this.feed = new WorkspaceFeed(ctx)
@@ -75,6 +83,52 @@ export class WorkspaceController extends TypertRemoteService {
     // stays pending until a picking backend is composed, so a host without one
     // registers no picking namespace instead of answering an unservable verb.
     ctx.plugin(DirectoryPickerController)
+  }
+
+  private projectPath(request: ProjectContextRequest): string {
+    const workspace = this.ctx.workspaceRegistry.get(request.workspaceId)
+    if (workspace === undefined) throw new Error('Project was not found.')
+    return workspace.path
+  }
+
+  /**
+   * Read local project instructions and document metadata.
+   * @param request - registered project.
+   * @returns its instructions and document list.
+   */
+  @Remote('getProjectContext')
+  getProjectContext(request: ProjectContextRequest): Promise<ProjectContext> {
+    return this.projectFiles.read(this.projectPath(request))
+  }
+
+  /**
+   * Save the complete project instruction document.
+   * @param request - project and complete instruction text.
+   * @returns saved context metadata.
+   */
+  @Remote('saveProjectInstructions')
+  saveProjectInstructions(request: ProjectInstructionsRequest): Promise<ProjectContext> {
+    return this.projectFiles.save(this.projectPath(request), request.instructions)
+  }
+
+  /**
+   * Add a document copy to the local project context.
+   * @param request - project, filename and encoded document.
+   * @returns updated context metadata.
+   */
+  @Remote('uploadProjectDocument')
+  uploadProjectDocument(request: ProjectUploadRequest): Promise<ProjectContext> {
+    return this.projectFiles.upload(this.projectPath(request), request.name, request.base64)
+  }
+
+  /**
+   * Remove an uploaded copy from the local project context.
+   * @param request - project and uploaded filename.
+   * @returns remaining context metadata.
+   */
+  @Remote('removeProjectDocument')
+  removeProjectDocument(request: ProjectRemoveRequest): Promise<ProjectContext> {
+    return this.projectFiles.remove(this.projectPath(request), request.name)
   }
 
   /**

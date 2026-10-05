@@ -45,6 +45,10 @@ Documents lookup holds the registry mutation queue, so other Workspace mutations
 -----
 
 <a id="model-experience"></a>
+### Local project context
+
+Project context operations edit `AGENTS.md` and upload document copies into `.eqidis-context` inside a registered Workspace. A managed block in `AGENTS.local.md` instructs the agent to consult relevant documents. Existing local guidance outside this block is retained. Uploaded documents default to 30 MiB each (`maxProjectDocumentBytes`, configurable up to 200 MiB), with no document-count cap. Associated workspace folders are accessed directly and have no upload-size cap; instructions are limited to 48 KiB. Duplicate uploads and symbolic links are refused. Removal deletes only the uploaded copy. New sessions load saved instructions; reopen existing sessions to refresh them.
+
 ## Model Experience
 
 None, as Workspace organization is browser and Host control state and registers no prompt, tool, or session event.

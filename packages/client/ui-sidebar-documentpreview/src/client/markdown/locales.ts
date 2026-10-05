@@ -23,3 +23,11 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     documentMarkdown: MarkdownPreviewKey
   }
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'viewer.label': 'Rebaja',
+  'code.copy': 'Copiar',
+  'code.copied': 'Copiado',
+  'footnotes': 'Notas a pie de página',
+} satisfies Record<keyof typeof en, string>

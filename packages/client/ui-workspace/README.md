@@ -80,6 +80,10 @@ Once both Workspace and Session startup baselines are ready, an empty installati
 The first-use directory name and its stored title are fixed, so neither follows the reader's language: `workspaces.initializeDefault` carries no names, and one installation keeps one on-disk path and one stored title across language switches. A Workspace still carrying that automatic title is labeled with the localized default name wherever this package shows it — sidebar rows and their hover card, search result meta, the hero picker menu, and the rename and delete dialogs — through the controller's `workspaceDisplayTitle`. The rename dialog is seeded with the label on screen while the stored title decides whether confirming saves, so confirming the untouched prefill on such a Workspace pins that name and the row stops following the language; the duplicate-title check excludes the target by Workspace identity rather than by title.
 
 <a id="understand-the-implementation"></a>
+### Project settings
+
+Choose **Project settings** from a Workspace row menu to edit its name and instructions, add context documents, or remove uploaded copies. **Save** persists name and instructions; uploads and confirmed removals persist immediately. Everything stays in the local Workspace folder. The existing folder picker adds new projects. The agent consults relevant documents as needed rather than receiving all document contents in every request.
+
 ## Understand the implementation
 
 <details>

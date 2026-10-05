@@ -2,7 +2,7 @@
  * `schedule.catalog` namespace dictionaries: the Session header catalog and the
  * Sidebar row mark with its hover-card task section.
  */
-import { frequencyEn, frequencyZh } from './frequency-locales.ts'
+import { frequencyEn, frequencyZh  } from './frequency-locales.ts'
 
 /** Dictionary namespace owned by this plugin. */
 export const NS = 'schedule.catalog'
@@ -51,3 +51,77 @@ export const en: Record<ScheduleCatalogKey, string> = {
 
 /** Key domain of the Schedule catalog namespace. */
 export type ScheduleCatalogKey = keyof typeof zh
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'trigger.label': 'Recordatorios',
+  'list.loading': 'Cargando recordatorios…',
+  'list.error': 'No se pudieron cargar los recordatorios.',
+  'list.retry': 'Reintentar',
+  'delete.action': 'Eliminar',
+  'delete.pending': 'Eliminando…',
+  'delete.label': 'Eliminar recordatorio: {title}',
+  'list.open': 'Abrir detalles del recordatorio: {title}',
+  'trigger.one': '{count} recordatorio',
+  'trigger.other': '{count} recordatorios',
+  'list.aria': 'Recordatorios activos',
+  'list.nextRun': 'Próxima ejecución',
+  'frequency.once': 'Una vez',
+  'frequency.every': 'Cada {value} {unit}',
+  'time.locale': 'es',
+  'time.utcPrefix': 'UTC',
+  'frequency.daily': 'Diariamente a las {time} ({timeZone})',
+  'frequency.dailyLocal': 'Diariamente a las {time}',
+  'frequency.weekly': 'Semanalmente el {weekdays} a las {time} ({timeZone})',
+  'frequency.weeklyLocal': 'Semanalmente el {weekdays} a las {time}',
+  'frequency.cron': 'Cron {expression} ({timeZone})',
+  'frequency.cronLocal': 'Cron {expression}',
+  'frequency.cronRule': '{rule} ({timeZone})',
+  'cron.list.join': ', ',
+  'cron.part.join': '  ',
+  'cron.weekday.name': '{weekday}',
+  'cron.weekday.range': '{from}–{to}',
+  'cron.months': ' en {months}',
+  'cron.day.every': 'Todos los días{months}',
+  'cron.day.weekdays': '{weekdays}{months}',
+  'cron.day.monthDays': 'Día {days} de cada mes{months}',
+  'cron.day.both': 'Día {days} de cada mes o {weekdays}{months}',
+  'cron.day.bothStarred': 'Día {days} de cada mes y {weekdays}{months}',
+  'cron.hours.range': '{from}–{to}',
+  'cron.hours.list': '{hours}',
+  'cron.time.everyMinute': 'cada minuto',
+  'cron.time.everyMinutes': 'Cada {step} minutos',
+  'cron.time.joinedEveryMinute': 'cada minuto',
+  'cron.time.joinedEveryMinutes': 'cada {step} minutos',
+  'cron.time.everyHour': 'cada hora',
+  'cron.time.joinedEveryHour': 'cada hora',
+  'cron.time.everyNHours': 'Cada {count} horas',
+  'cron.time.joinedEveryNHours': 'cada {count} horas',
+  'cron.time.hourlyAt': 'Cada hora en el minuto {minutes}',
+  'cron.time.joinedHourlyAt': 'cada hora en el minuto {minutes}',
+  'cron.time.hoursEveryMinute': 'cada minuto durante las horas {hours}',
+  'cron.time.hoursEveryMinutes': 'cada {step} minutos durante las horas {hours}',
+  'cron.time.at': 'en {times}',
+  'cron.time.hoursAt': 'en el minuto {minutes} de las horas {hours}',
+  'frequency.weekday.join': ', ',
+  'frequency.weekday.1': 'lun',
+  'frequency.weekday.2': 'mar',
+  'frequency.weekday.3': 'mié',
+  'frequency.weekday.4': 'jueves',
+  'frequency.weekday.5': 'viernes',
+  'frequency.weekday.6': 'sábado',
+  'frequency.weekday.7': 'sol',
+  'unit.day.one': 'dia',
+  'unit.day.other': 'dias',
+  'unit.hour.one': 'hora',
+  'unit.hour.other': 'horas',
+  'unit.minute.one': 'minuto',
+  'unit.minute.other': 'minutos',
+  'unit.second.one': 'segundo',
+  'unit.second.other': 'segundos',
+  'relative.now': 'Vencimiento ahora',
+  'relative.future': 'en {value} {unit}',
+  'relative.overdue': '{value} {unit} vencido',
+  'mark.aria': '{count} tareas programadas',
+  'hover.more': '{count} más',
+} satisfies Record<keyof typeof en, string>

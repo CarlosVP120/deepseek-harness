@@ -19,6 +19,9 @@ const CLIENT_ARTIFACT_PATTERNS = [
   'packages/*/*/lib/client.js.map',
   'packages/*/*/lib/client.*.js',
   'packages/*/*/lib/client.*.js.map',
+  // Restore the edited plugin's compiler outputs and cache as well as its bundles.
+  'packages/client/ui-conversation/lib/types/**/*',
+  'packages/client/ui-conversation/lib/tsconfig.client.tsbuildinfo',
 ]
 
 /** Return every artifact that `pnpm run dev:web` can rewrite. */

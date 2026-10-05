@@ -13,3 +13,11 @@ export const zh: Record<keyof typeof en, string> = {
   saved: '设置已保存',
   failed: '无法保存设置',
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'title': 'Cargue el registro de sesión cuando utilice la API del modelo oficial',
+  'description': 'Ayude a mejorar los modelos y productos de DeepSeek.',
+  'saved': 'Preferencia guardada',
+  'failed': 'No se pudo guardar la preferencia',
+} satisfies Record<keyof typeof en, string>

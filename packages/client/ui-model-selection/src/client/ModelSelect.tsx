@@ -119,7 +119,7 @@ export function ModelSelect(
   const currentChoice = choices[selectedIndex]
   const reasoning = currentChoice?.model.reasoning
   const effectiveEffort = state.current?.reasoningEffort ?? reasoning?.defaultEffort
-  const effortLabel = reasoning === undefined
+  const effortLabel = reasoning?.efforts.length === 1 && reasoning.defaultEffort !== undefined ? undefined : reasoning === undefined
     ? state.retainedEffort
     : effectiveEffort === undefined
       ? t('effort.providerDefault')
@@ -492,7 +492,7 @@ export function ModelSelect(
                 <span className={css.cellValue}>{modelLabel}</span>
                 <IconChevronRightOutlineRegular className={css.cellChevron} />
               </button>
-              {reasoning !== undefined && (
+              {reasoning !== undefined && (reasoning.efforts.length > 1 || reasoning.defaultEffort === undefined) && (
                 <button ref={itemRef()} type="button" role="menuitem" className={css.cell} onClick={() => { drill('effort') }}>
                   <span className={css.cellLabel}>{t('menu.effort')}</span>
                   <span className={css.cellValue}>{effortLabel}</span>

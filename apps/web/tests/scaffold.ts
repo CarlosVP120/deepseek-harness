@@ -316,6 +316,8 @@ export interface LaunchOptions {
    * ordering.
    */
   extraOverlayPath?: string | readonly string[]
+  /** Preserve deployment providers instead of the empty provider-management fixture. */
+  deploymentProviders?: boolean
   /**
    * Additional package manifests whose dependency closures supply experimental
    * profile layers named by {@link extraOverlayPath}.
@@ -564,13 +566,20 @@ export async function launchWebScaffold(options: LaunchOptions = {}): Promise<We
   const surfaceContext = webRuntimeConfig?.surfaceContext !== false
   // The scaffold's own overrides, above every bundle layer like `--patch` overlays.
   const overlayPatches: PatchOptions[] = [
+    // Provider-management scenarios explicitly start from an empty test catalog.
+    // The EQIDIS deployment’s OpenRouter defaults are checked separately.
+    ...options.deploymentProviders === true ? [] : [
+      { id: 'llm-pi-ai', config: { providers: {} } },
+      { id: 'llm-deepseek-account', disabled: false },
+    ],
     // Without HMR the profile applies configuration changes at its next start.
     ...options.profile?.hmr === false ? [{ id: 'hmr', disabled: true }] : [],
     { id: 'session-log-deepseek', config: { enabled: false } },
     { id: 'ui-plugin-manager', config: { registryProbeEnabled: false } },
-    ...mode === 'record' || options.deepSeekMissingCredential === true
+    ...mode === 'record' || options.deploymentProviders === true
       ? []
-      : [{ id: 'agent-default-model', config: { provider: 'deepseek-official', model: 'deepseek-v4-flash' } }],
+      : [{ id: 'agent-default-model', config: { provider: 'deepseek-official',
+        model: options.deepSeekMissingCredential === true ? 'deepseek-flash' : 'deepseek-v4-flash' } }],
     ...extraOverlayPatches,
     { id: 'agent-preset-registry', config: { default: 'standard' } },
     { id: 'session-persistence-jsonl', config: { root: persistenceRoot } },
@@ -676,7 +685,7 @@ export async function launchWebScaffold(options: LaunchOptions = {}): Promise<We
           baseURL: options.deepSeekSearch.baseURL,
         },
       }],
-    { id: 'llm-deepseek', disabled: mode !== 'record' && !maskDeepSeekCredential },
+    { id: 'llm-deepseek', disabled: options.deploymentProviders === true || (mode !== 'record' && !maskDeepSeekCredential) },
   ]
 
   // Live fields use a shared deployment layer; process-specific ports and roots stay in CLI overlays.

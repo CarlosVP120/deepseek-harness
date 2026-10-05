@@ -34,3 +34,19 @@ export const en = {
   'action.edit': 'Edit goal',
   'action.clear': 'Clear goal',
 } satisfies Record<GoalKey, string>
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'phase.active': 'Meta en curso',
+  'phase.active.disarmed': 'Meta inactiva',
+  'phase.paused': 'Objetivo en pausa',
+  'phase.blocked': 'Meta bloqueada',
+  'objective.aria': 'Objetivo de meta',
+  'commandInput.aria': 'Entrada de comando',
+  'action.save': 'Guardar gol',
+  'action.cancel': 'Cancelar edición',
+  'action.pause': 'Pausar objetivo',
+  'action.resume': 'Reanudar objetivo',
+  'action.edit': 'Editar objetivo',
+  'action.clear': 'Objetivo claro',
+} satisfies Record<keyof typeof en, string>

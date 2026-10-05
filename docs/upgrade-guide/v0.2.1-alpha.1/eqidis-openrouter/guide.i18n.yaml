@@ -1,0 +1,16 @@
+# Bilingual-pair consistency record for guide.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/upgrade-guide/v0.2.1-alpha.1/eqidis-openrouter/guide.md
+/:
+  en: ea14b4731d10fad9
+  zh: 4f2ffcd7dca071b0
+/eqidis-ai-uses-openrouter:
+  en: db44026f5bed533c
+  zh: 966af3cc188fe220
+/eqidis-ai-uses-openrouter/change:
+  en: 53067bf8b0742c01
+  zh: 78013d36b4445c26
+/eqidis-ai-uses-openrouter/migration:
+  en: debedcfe250be587
+  zh: 8e94dfd19fb25946

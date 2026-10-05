@@ -52,7 +52,7 @@ import { PinSessionMenuItem, PinSessionRowButton } from './session-actions/PinSe
 import { RenameSessionMenuItem, SessionRenameDialog } from './session-actions/RenameSession.tsx'
 import { RowActionToast } from './session-actions/RowActionToast.tsx'
 import { WorkspacePicker } from './WorkspacePicker.tsx'
-import { en, zh, type WorkspaceKey } from './locales.ts'
+import { en, zh, type WorkspaceKey , es } from './locales.ts'
 
 export type { StartSessionOptions, UiWorkspace } from './navigation.ts'
 export type {
@@ -94,7 +94,7 @@ const NS = 'workspace'
  * declaration through `slots.inject()` instead of assuming order.
  */
 export const inject = [
-  'slots', 'sessions', 'workspaces', 'locale', 'remote', 'remote.directoryPicker', 'layout', 'shortcuts',
+  'slots', 'sessions', 'workspaces', 'locale', 'remote', 'remote.directoryPicker', 'remote.workspace', 'layout', 'shortcuts',
 ]
 
 /**
@@ -119,7 +119,7 @@ export function apply(ctx: Context): void {
     ctx, ctx.remote.directoryPicker, workspaces, sessions, viewInstance.actions, notify,
   )
   ctx.slots.provideRoot({ hooks: { workspaces: workspaces.list } })
-  ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-workspace: dictionaries')
+  ctx.effect(() => ctx.locale.register(NS, { zh, en , es: es }), 'ui-workspace: dictionaries')
   const shortcutControls = createWorkspaceShortcutControls()
 
   const searchSessions: WorkspaceBrowserInjected['searchSessions'] = async (query, signal) => {
@@ -237,6 +237,26 @@ export function apply(ctx: Context): void {
     searchResultLimit: sessions.searchResultLimit,
     requestSessionRename,
     notifyArchivedNotOpenable: () => { notify({ kind: 'archivedNotOpenable' }) },
+    readProjectContext: async (workspaceId) => {
+      const result = await ctx.remote.workspace.getProjectContext({ workspaceId })
+      if (!result.ok) throw new Error(result.error.message)
+      return result.value
+    },
+    saveProjectInstructions: async (workspaceId, instructions) => {
+      const result = await ctx.remote.workspace.saveProjectInstructions({ workspaceId, instructions })
+      if (!result.ok) throw new Error(result.error.message)
+      return result.value
+    },
+    uploadProjectDocument: async (workspaceId, name, base64) => {
+      const result = await ctx.remote.workspace.uploadProjectDocument({ workspaceId, name, base64 })
+      if (!result.ok) throw new Error(result.error.message)
+      return result.value
+    },
+    removeProjectDocument: async (workspaceId, name) => {
+      const result = await ctx.remote.workspace.removeProjectDocument({ workspaceId, name })
+      if (!result.ok) throw new Error(result.error.message)
+      return result.value
+    },
     renameWorkspace: async (workspaceId, title) => { await workspaces.rename(workspaceId, title) },
     deleteWorkspace: async (workspaceId) => { await workspaces.delete(workspaceId) },
     insertWorkspaceBefore: async (workspaceId, beforeWorkspaceId) => {

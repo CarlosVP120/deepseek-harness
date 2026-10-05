@@ -67,3 +67,33 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     sidebarBrowser: SidebarBrowserKey
   }
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'type.label': 'Navegador',
+  'guide.title': 'Navegador',
+  'guide.description': 'Navegar por páginas web',
+  'shortcut.noSession': 'Primero abra una sesión',
+  'address.placeholder': 'Introduzca una dirección HTTP(S)',
+  'address.changed': 'URL cambiada',
+  'back': 'Volver',
+  'forward': 'Adelante',
+  'reload': 'recargar',
+  'go': 'ir',
+  'external': 'Abrir en el navegador del sistema',
+  'sandbox.disable': 'Deshabilitar restricciones de zona de pruebas',
+  'sandbox.enable': 'Restaurar restricciones de zona de pruebas',
+  'sandbox.warning': 'Las restricciones de la zona de pruebas están deshabilitadas; la página puede navegar por la aplicación de nivel superior y usar descargas, cuadros de diálogo modales y bloqueos de entrada.',
+  'start': 'Ingrese una dirección HTTP(S) para comenzar a navegar',
+  'loading': 'Abriendo…',
+  'restore.previous': 'Abierto previamente',
+  'restore.action': 'Restaurar página',
+  'error.empty': 'Introduzca una dirección.',
+  'error.invalid': 'Esa dirección no es válida o es demasiado larga.',
+  'error.protocol': 'Sólo se admiten direcciones HTTP y HTTPS; utilice la vista previa del documento para archivos locales.',
+  'error.credentials': 'Las direcciones no pueden contener un nombre de usuario o contraseña.',
+  'error.application-origin': 'El navegador integrado no puede abrir la aplicación DSH.',
+  'load.failed': 'La página no se pudo cargar; recargarlo o abrirlo en el navegador del sistema.',
+  'load.failed.detail': 'Error al cargar la página ({code}): {description}',
+  'address.unknown': 'La página navegó; este operador no puede leer su nueva URL.',
+} satisfies Record<keyof typeof en, string>

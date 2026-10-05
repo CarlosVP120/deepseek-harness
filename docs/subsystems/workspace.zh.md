@@ -6,6 +6,12 @@
 
 源码：[`packages/workspace/workspace/src/types.ts`](../../packages/workspace/workspace/src/types.ts)
 
+## 本地项目上下文
+
+[工作区控制器](../../packages/api/workspace-controller/README.zh.md) 提供本地项目指令和上下文文档操作。[工作区界面](../../packages/client/ui-workspace/README.zh.md) 在每个工作区行菜单中提供 **项目设置**。指令使用 `AGENTS.md`；文档保存在 `.eqidis-context`，托管引用列表写入 `AGENTS.local.md`。此功能基于文件系统，不更改工作区记录或会话格式。指令加载器在创建或恢复会话基线时引入指导，助手通过已有文件工具读取相关文档。
+
+`ProjectContext` 返回 `instructions` 和 `ProjectContextFile` 列表（`name`、`bytes`），以及配置的 `maxDocumentBytes` 上传限制。`ProjectContextRequest` 用已注册的 `workspaceId` 标识项目；`ProjectInstructionsRequest` 添加完整的 `instructions`，`ProjectUploadRequest` 添加 `name` 与 `base64`，`ProjectRemoveRequest` 添加已上传文件的 `name`。定义见 [工作区控制器类型](../../packages/api/workspace-controller/src/types.ts)。
+
 ## 标识
 
 ```ts type-equiv
@@ -331,6 +337,34 @@ Source: [`packages/api/terminal-controller/src/index.ts`](../../packages/api/ter
 Host service backing the generated `ctx.remote.workspace` namespace.
 
 ```ts cordis-catalog
+/**
+ * Read local project instructions and document metadata.
+ * @param request - registered project.
+ * @returns its instructions and document list.
+ */
+@Remote('getProjectContext') getProjectContext(request: ProjectContextRequest): Promise<ProjectContext>
+
+/**
+ * Save the complete project instruction document.
+ * @param request - project and complete instruction text.
+ * @returns saved context metadata.
+ */
+@Remote('saveProjectInstructions') saveProjectInstructions(request: ProjectInstructionsRequest): Promise<ProjectContext>
+
+/**
+ * Add a document copy to the local project context.
+ * @param request - project, filename and encoded document.
+ * @returns updated context metadata.
+ */
+@Remote('uploadProjectDocument') uploadProjectDocument(request: ProjectUploadRequest): Promise<ProjectContext>
+
+/**
+ * Remove an uploaded copy from the local project context.
+ * @param request - project and uploaded filename.
+ * @returns remaining context metadata.
+ */
+@Remote('removeProjectDocument') removeProjectDocument(request: ProjectRemoveRequest): Promise<ProjectContext>
+
 /**
  * Create or idempotently resolve one Workspace over an existing directory.
  * @param request - directory path to register.

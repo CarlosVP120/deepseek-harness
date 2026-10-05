@@ -63,3 +63,32 @@ export const en = {
   'status.in_progress': 'In progress',
   'status.completed': 'Completed',
 } satisfies Record<TeamKey, string>
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'trigger': 'Equipo de agentes',
+  'loading': 'Cargando equipo…',
+  'unavailable': 'El equipo no está disponible',
+  'failure': 'Registro de equipo persistente no válido: {message}',
+  'empty': 'Aún no hay tareas compartidas. Créelos a través de la conversación.',
+  'roster': 'Miembros',
+  'tasks': 'Tareas compartidas',
+  'model': 'modelo',
+  'open': 'Abrir conversación de miembros',
+  'current': 'charla actual',
+  'owner': 'propietario',
+  'unowned': 'Sin dueño',
+  'blockedBy': 'Bloqueado por',
+  'writeScopes': 'Escribir alcances',
+  'ready': 'Listo',
+  'blocked': 'Bloqueado por dependencias',
+  'task.expand': 'Mostrar más',
+  'task.collapse': 'Mostrar menos',
+  'memberStatus.running': 'corriendo',
+  'memberStatus.inactive': 'Inactivo',
+  'memberStatus.provisioning': 'Aprovisionamiento',
+  'memberStatus.failed': 'Fallido',
+  'status.pending': 'Pendiente',
+  'status.in_progress': 'En progreso',
+  'status.completed': 'Completado',
+} satisfies Record<keyof typeof en, string>

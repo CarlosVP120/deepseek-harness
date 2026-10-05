@@ -1,3 +1,4 @@
+import { ProjectSettings } from '../ProjectSettings.tsx'
 /**
  * The workspace/session browsing region filling the sidebar shell's
  * `sidebar.workspaces` hole: section header (title + view options + add
@@ -250,6 +251,7 @@ type SessionTreeProps = Pick<
   /** Switch the archived filter back to the default hide-archived view. */
   onLeaveArchivedOnly: () => void
   /** Open the browser-owned rename dialog for a real Workspace group. */
+  onProjectRequest: (workspaceId: WorkspaceId) => void
   onRenameRequest: (workspaceId: WorkspaceId, currentTitle: string) => void
   /** Open the browser-owned delete-confirmation dialog for a real Workspace group. */
   onDeleteRequest: (workspaceId: WorkspaceId, currentTitle: string) => void
@@ -282,7 +284,7 @@ function SessionTree({
   list, useSessionStatus, startSession, open, workspaces, ungroupedSessionIds,
   rowState, onLeaveArchivedOnly,
   workspaceReady, animationResetKey, usePanelInfo,
-  onRenameRequest, onDeleteRequest, onSessionRenameRequest,
+  onRenameRequest, onDeleteRequest, onSessionRenameRequest, onProjectRequest,
   renderSlot,
   insertWorkspaceBefore,
   nestWorkspaces, groupExpansion, setGroupExpanded,
@@ -515,6 +517,7 @@ function SessionTree({
           actions={group.workspaceId === undefined
             ? undefined
             : {
+              settings: () => { if (group.workspaceId !== undefined) onProjectRequest(group.workspaceId) },
               rename: () => {
               /* v8 ignore next -- narrowing guard: the actions object exists only for real-workspace groups. */
                 if (group.workspaceId !== undefined) onRenameRequest(group.workspaceId, group.label)
@@ -847,6 +850,7 @@ export function WorkspaceBrowser({
   requestSessionRename,
   notifyArchivedNotOpenable,
   renameWorkspace,
+  readProjectContext, saveProjectInstructions, uploadProjectDocument, removeProjectDocument,
   deleteWorkspace,
   insertWorkspaceBefore,
   unarchiveSession,
@@ -1027,7 +1031,6 @@ export function WorkspaceBrowser({
   // states; the menu anchors on this button).
   const wsPickerOpen = shortcutState.addRequested
   const wsPlusRef = useRef<HTMLButtonElement>(null)
-  const composingRef = useRef(false)
 
   const openSearchResult = (sessionId: SessionId): void => {
     if (archivedSessionIds.includes(sessionId)) {
@@ -1131,7 +1134,9 @@ export function WorkspaceBrowser({
   // The stored title decides whether confirming is a real rename; the draft is
   // seeded with the label on screen. They differ for a Workspace still
   // carrying its automatic title, so confirming the prefill pins that name.
+  const [projectTarget, setProjectTarget] = useState<WorkspaceView | null>(null)
   const [renameTarget, setRenameTarget] = useState<{ workspaceId: WorkspaceId; storedTitle: string } | null>(null)
+  const composingRef = useRef(false)
   const [renameDraft, setRenameDraft] = useState('')
   const [renaming, setRenaming] = useState(false)
   const [renameError, setRenameError] = useState<string | null>(null)
@@ -1403,13 +1408,15 @@ export function WorkspaceBrowser({
                 onSessionRevealed={acknowledgeSessionReveal}
                 home={home}
                 t={t}
+                onProjectRequest={(workspaceId) => {
+                  setProjectTarget(workspaces.find(workspace => workspace.workspaceId === workspaceId) ?? null)
+                }}
                 onRenameRequest={(workspaceId, displayTitle) => {
                   setRenameTarget({
                     workspaceId,
                     storedTitle: storedWorkspaces.find(w => w.workspaceId === workspaceId)?.title ?? displayTitle,
                   })
                   setRenameDraft(displayTitle)
-                  setRenameError(null)
                 }}
                 onDeleteRequest={(workspaceId, title) => {
                   setDeleteTarget({ workspaceId, title })
@@ -1453,6 +1460,19 @@ export function WorkspaceBrowser({
         )}
         {renameError !== null && <div className={css.renameError} role="alert">{renameError}</div>}
       </Modal>
+      {projectTarget !== null && <ProjectSettings
+        key={projectTarget.workspaceId}
+        workspaceId={projectTarget.workspaceId}
+        title={projectTarget.title}
+        path={projectTarget.path}
+        onClose={() =>{  setProjectTarget(null) }}
+        t={t}
+        readProjectContext={readProjectContext}
+        saveProjectInstructions={saveProjectInstructions}
+        uploadProjectDocument={uploadProjectDocument}
+        removeProjectDocument={removeProjectDocument}
+        renameWorkspace={renameWorkspace}
+      />}
 
       <Modal
         open={deleteTarget !== null}

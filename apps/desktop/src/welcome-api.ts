@@ -66,10 +66,11 @@ export interface WelcomeAuthentication {
 }
 
 /**
- * Decide whether a startup or sign-out requires the welcome entry.
- * @param authentication - current account and independently stored API-key facts.
- * @returns true only when neither authentication route is configured.
+ * EQIDIS AI enters the workspace independently of provider credentials.
+ * @param authentication - account and API-key metadata retained for callers.
+ * @returns false; provider credentials are configured inside the workspace.
  */
 export function needsWelcome(authentication: WelcomeAuthentication): boolean {
-  return !authentication.loggedIn && !authentication.hasApiKey
+  void authentication
+  return false
 }

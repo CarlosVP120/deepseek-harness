@@ -3,7 +3,7 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/locale/README.md
 /:
-  en: d2aaa955e01c2679
+  en: 8ad4b00badda2fe5
   zh: 9d264cf8be1536cf
 /deepseek-ai-dsh-client-locale:
   en: 9365090d78467dea
@@ -21,7 +21,7 @@
   en: 8527d77583824eff
   zh: 2ac53ced0a32ba19
 /deepseek-ai-dsh-client-locale/use-this-package/registering-a-dictionary:
-  en: 9b2fcfa8cae8dc4b
+  en: f0ca8a90e21ff028
   zh: 293012a4d364ef59
 /deepseek-ai-dsh-client-locale/use-this-package/resolving-package-text:
   en: 3b63e84fe0fdf8f4
@@ -45,7 +45,7 @@
   en: f8dcc4035830e738
   zh: 8452ac63ee148c61
 /deepseek-ai-dsh-client-locale/understand-the-implementation/source-map:
-  en: a382e032c06ced3f
+  en: ef3850561632fd58
   zh: 419cb5f60b075388
 /deepseek-ai-dsh-client-locale/further-exploration:
   en: f73d411c9e90dead
@@ -60,5 +60,5 @@
   en: 500ede048ef44c6a
   zh: f741fae55b29a627
 /deepseek-ai-dsh-client-locale/known-limitations-and-deferred-work/dev-note:
-  en: e67f633dc6fe7773
-  zh: 3bb0c20c93f16f98
+  en: 4b573b64075d1c41
+  zh: 4022612e4319b893

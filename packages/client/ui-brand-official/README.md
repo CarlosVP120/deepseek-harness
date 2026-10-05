@@ -1,5 +1,5 @@
 ---
-description: "Official DeepSeek Harness brand occupants for the sidebar, active only in official builds; for users and maintainers choosing or replacing brand presentation."
+description: "EQIDIS AI brand occupants for sidebar and conversation surfaces; for maintainers replacing company artwork."
 kind: "package-reference"
 ---
 
@@ -7,9 +7,11 @@ kind: "package-reference"
 
 English | [中文](README.zh.md)
 
+This EQIDIS AI fork registers the company’s existing coral/purple symbol and theme-colored vector wordmark in the sidebar and conversation hero for every build profile. Desktop application icons and browser favicons use the same symbol. The upstream package name remains unchanged for composition compatibility.
+
 ## Summary
 
-This package gives an `official` client build the DeepSeek Harness mark and name in the sidebar. Other build profiles keep the shell's fish mark and local-build label, while the conversation hero always uses the animated fish. Choose it for deployments branded as DeepSeek Harness; deployments with another identity should provide a replacement brand package. It has no runtime state and does not affect model requests.
+This package renders the EQIDIS symbol and wordmark in the sidebar and the symbol in the conversation hero. It registers in every build profile, has no runtime state and does not affect model requests.
 
 ## Table of Contents
 
@@ -25,15 +27,15 @@ This package gives an `official` client build the DeepSeek Harness mark and name
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount this plugin in the browser roster of a deployment whose identity is DeepSeek's own, then build the client with the `official` profile so the occupants register.
+Mount this plugin in the browser roster of the EQIDIS deployment.
 
 ### Choosing the profile
 
-`DSH_CLIENT_BUILD_PROFILE` selects which brand renders. An `official` build shows the official mark and name in the sidebar; any other value leaves the shell fallbacks — the fish mark and the local-build label — in place. The conversation hero shows the animated hero fish from `dsh-client-ui-conversation` regardless of profile, because that fallback is already the official mark. The plugin still loads and validates in both cases; only the registration is profile-gated.
+Brand registration is independent of `DSH_CLIENT_BUILD_PROFILE`; both local and official builds show EQIDIS artwork.
 
 ### Replacing the brand
 
-A deployment with its own identity leaves this package out and composes another package that occupies the sidebar slots — and the hero slot, which this package leaves on its fallback. Occupying a slot is the only composition route; there is no brand configuration surface here.
+Replacing the brand requires replacing the occupants of the sidebar and conversation hero slots. This package has no runtime brand configuration.
 
 -----
 
@@ -43,7 +45,7 @@ A deployment with its own identity leaves this package out and composes another 
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The two occupants install as one declaration-aware registration set: nested `ctx.slots.inject()` calls wait on the sidebar declaration, so the set works whether this row activates before or after the declarer, withdraws both occupants when the declaration collapses, and leaves no partial brand mix during HMR. The browser half is [`src/client/index.ts`](src/client/index.ts); the node half is an empty Loader seat. The browser title is a build-environment concern (`DSH_CLIENT_TITLE`), outside the slot system.
+The three occupants register together after the sidebar and conversation hero slots are declared. Nested `ctx.slots.inject()` calls dispose the registrations when declarations disappear. The browser entry is [`src/client/index.ts`](src/client/index.ts); the Node entry is inert. Browser titles are selected by `DSH_CLIENT_TITLE` outside the slot system.
 
 </details>
 

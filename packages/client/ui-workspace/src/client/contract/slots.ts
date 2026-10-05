@@ -256,6 +256,14 @@ export type WorkspaceBrowserInjected = {
   requestSessionRename: (sessionId: SessionId, currentTitle: string) => void
   /** Tell the user an archived row cannot be opened (a click on it). */
   notifyArchivedNotOpenable: () => void
+  /** Read local project instructions and document metadata. */
+  readProjectContext: (workspaceId: WorkspaceId) => Promise<import('@deepseek-ai/dsh-api-workspace-controller/types').ProjectContext>
+  /** Persist local instructions. */
+  saveProjectInstructions: (workspaceId: WorkspaceId, instructions: string) => Promise<import('@deepseek-ai/dsh-api-workspace-controller/types').ProjectContext>
+  /** Copy an uploaded document into the project. */
+  uploadProjectDocument: (workspaceId: WorkspaceId, name: string, base64: string) => Promise<import('@deepseek-ai/dsh-api-workspace-controller/types').ProjectContext>
+  /** Remove an uploaded document. */
+  removeProjectDocument: (workspaceId: WorkspaceId, name: string) => Promise<import('@deepseek-ai/dsh-api-workspace-controller/types').ProjectContext>
   /** Rename a Host Workspace (rejects on name conflict; resolves on durability). */
   renameWorkspace: (workspaceId: WorkspaceId, title: string) => Promise<void>
   /** Delete only a Host Workspace registration; directory and Session logs remain. */

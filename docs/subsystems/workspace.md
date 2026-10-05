@@ -6,6 +6,12 @@ A workspace is the persistent record of a directory the user works in: a stable 
 
 Source: [`packages/workspace/workspace/src/types.ts`](../../packages/workspace/workspace/src/types.ts)
 
+## Local project context
+
+The [Workspace Controller](../../packages/api/workspace-controller/README.md) exposes local project instructions and context-document operations. The [Workspace UI](../../packages/client/ui-workspace/README.md) provides **Project settings** in each workspace row menu. Instructions use `AGENTS.md`; documents are stored in `.eqidis-context`, with a managed reference list in `AGENTS.local.md`. This is filesystem-backed context rather than a change to the Workspace record or Session format. The instruction loader incorporates guidance when the next session baseline is created or resumed, and the agent reads relevant documents through its existing file tools.
+
+`ProjectContext` returns `instructions` and a list of `ProjectContextFile` entries (`name`, `bytes`), plus the configured `maxDocumentBytes` upload limit. `ProjectContextRequest` identifies a registered `workspaceId`; `ProjectInstructionsRequest` adds the complete `instructions`, `ProjectUploadRequest` adds `name` and `base64`, and `ProjectRemoveRequest` adds the uploaded `name`. Their definitions live in [Workspace Controller types](../../packages/api/workspace-controller/src/types.ts).
+
 ## Identity
 
 ```ts type-equiv
@@ -331,6 +337,34 @@ Source: [`packages/api/terminal-controller/src/index.ts`](../../packages/api/ter
 Host service backing the generated `ctx.remote.workspace` namespace.
 
 ```ts cordis-catalog
+/**
+ * Read local project instructions and document metadata.
+ * @param request - registered project.
+ * @returns its instructions and document list.
+ */
+@Remote('getProjectContext') getProjectContext(request: ProjectContextRequest): Promise<ProjectContext>
+
+/**
+ * Save the complete project instruction document.
+ * @param request - project and complete instruction text.
+ * @returns saved context metadata.
+ */
+@Remote('saveProjectInstructions') saveProjectInstructions(request: ProjectInstructionsRequest): Promise<ProjectContext>
+
+/**
+ * Add a document copy to the local project context.
+ * @param request - project, filename and encoded document.
+ * @returns updated context metadata.
+ */
+@Remote('uploadProjectDocument') uploadProjectDocument(request: ProjectUploadRequest): Promise<ProjectContext>
+
+/**
+ * Remove an uploaded copy from the local project context.
+ * @param request - project and uploaded filename.
+ * @returns remaining context metadata.
+ */
+@Remote('removeProjectDocument') removeProjectDocument(request: ProjectRemoveRequest): Promise<ProjectContext>
+
 /**
  * Create or idempotently resolve one Workspace over an existing directory.
  * @param request - directory path to register.

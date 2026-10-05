@@ -153,6 +153,27 @@ describe('PiAiAdapter provider routing', () => {
     expect(server.requests[0]).not.toHaveProperty('dsh_plugin_packages')
   })
 
+  it('enforces the deployment effort over request selections and exposes only that effort', async () => {
+    const server = await mockServer([{ events: textEvents }, { events: textEvents }])
+    const ctx = await harness(server.url, { fixedReasoning: 'high', reasoning: 'max' })
+    for (const effort of ['off', 'max']) {
+      const result = await assemble(ctx, { model: 'deepseek-v4-pro', reasoningEffort: ReasoningEffortId(effort), messages: [] })
+      expect(result.finish).toMatchObject({ kind: 'error', failure: { code: 'UNSUPPORTED_REASONING_EFFORT' } })
+    }
+    expect(server.requests).toHaveLength(0)
+    for (const effort of [undefined, ReasoningEffortId('high')]) {
+      const result = await assemble(ctx, { model: 'deepseek-v4-pro', ...(effort === undefined ? {} : { reasoningEffort: effort }), messages: [] })
+      expect(result.finish).toEqual({ kind: 'stop' })
+    }
+    expect(server.requests).toHaveLength(2)
+    for (const request of server.requests) expect(request).toMatchObject({ reasoning_effort: 'high' })
+    const model = await ctx.llm.resolveModelInfo('deepseek', 'deepseek-v4-pro')
+    expect(model.reasoning).toEqual({
+      defaultEffort: ReasoningEffortId('high'),
+      efforts: [{ id: ReasoningEffortId('high'), name: 'High' }],
+    })
+  })
+
   it('uses a dynamic request effort and reports unsupported efforts before network I/O', async () => {
     const server = await mockServer([{ events: textEvents }, { events: textEvents }])
     const ctx = await harness(server.url, { reasoning: 'max' })

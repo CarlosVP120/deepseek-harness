@@ -121,6 +121,19 @@ describe('constructible-but-inert fakes', () => {
 })
 
 describe('replaced external packages', () => {
+  it('inspects configured pi-ai models while refusing unsupported transport', () => {
+    quiet()
+    const models = piAi.builtinModels()
+    const model = { id: 'preview-model', name: 'Preview model' }
+    models.setProvider({ id: 'openrouter', getModels: () => [model] })
+    expect(models.getModels('openrouter')).toEqual([model])
+    expect(models.getModel('openrouter', 'preview-model')).toBe(model)
+    expect(models.getModel('openrouter', 'missing')).toBeUndefined()
+    expect(() => models.streamSimple()).toThrow(/streamSimple is not available/)
+    models.clearProviders()
+    expect(models.getModels('openrouter')).toEqual([])
+  })
+
   it('reports Office conversion as unavailable without creating a Node worker', async () => {
     quiet()
     await expect(libreofficeKit.createConverter()).rejects.toMatchObject({

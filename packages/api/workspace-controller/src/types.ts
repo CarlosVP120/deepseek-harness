@@ -169,3 +169,16 @@ export type WorkspaceFollowIncrement =
 export type WorkspaceFollowFrame =
   | { readonly type: 'baseline'; readonly value: WorkspaceBaseline }
   | WorkspaceFollowIncrement
+
+/** One project reference document stored in its local folder. */
+export interface ProjectContextFile { name: string; bytes: number }
+/** Editable instructions plus local project document metadata. */
+export interface ProjectContext { instructions: string; files: ProjectContextFile[]; maxDocumentBytes: number }
+/** A project context operation targeting a registered Workspace. */
+export interface ProjectContextRequest { workspaceId: WorkspaceId }
+/** Save the complete project instruction document. */
+export interface ProjectInstructionsRequest extends ProjectContextRequest { instructions: string }
+/** Upload one document without overwriting an existing name. */
+export interface ProjectUploadRequest extends ProjectContextRequest { name: string; base64: string }
+/** Remove one document from the project's managed context folder. */
+export interface ProjectRemoveRequest extends ProjectContextRequest { name: string }

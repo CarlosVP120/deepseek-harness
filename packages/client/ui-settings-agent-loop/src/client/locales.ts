@@ -48,3 +48,19 @@ export const zh: Record<AgentLoopSettingsLocaleKey, string> = {
 export function formLabels(t: (key: AgentLoopSettingsLocaleKey) => string): SettingsFormLabels {
   return { unavailable: t('unavailable'), readOnly: t('readOnly'), saveFailed: t('saveFailed'), save: t('save'), saving: t('saving') }
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'title': 'Bucle de agente',
+  'description': 'Controle cómo el Agente distribuye las llamadas a la herramienta.',
+  'maxParallel': 'Llamadas a herramientas paralelas',
+  'maxParallelHint': 'Límite superior de llamadas seguras en paralelo que se ejecutan al mismo tiempo en un solo paso.',
+  'overridden': 'Anulado',
+  'reset': 'Restablecer los valores predeterminados',
+  'readOnly': 'Esta implementación almacena configuraciones de solo lectura.',
+  'unavailable': 'Este complemento no está cargado, por lo que no se puede configurar en este momento.',
+  'save': 'Guardar',
+  'saving': 'Guardando…',
+  'saveFailed': 'El despliegue no aceptó estos valores; quedaron para que usted los corrigiera.',
+  'invalidNumber': 'Ingrese un número o déjelo en blanco para usar el valor predeterminado.',
+} satisfies Record<keyof typeof en, string>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { en, formatDesktopMessage, resolveDesktopLocale, resolveDesktopStartupLocale, zh } from '../src/locale.ts'
+import { es, en, formatDesktopMessage, resolveDesktopLocale, resolveDesktopStartupLocale, zh } from '../src/locale.ts'
 
 describe('desktop locale dictionaries', () => {
   it('ships the same key set in English and Chinese', () => {
@@ -24,4 +24,13 @@ describe('desktop locale dictionaries', () => {
     expect(resolveDesktopStartupLocale('ja', ['zh-CN']).id).toBe('zh-CN')
   })
 
+})
+
+it('uses Spanish for regional OS languages and persisted choices, preserving every native message placeholder', () => {
+  expect(resolveDesktopStartupLocale(null, ['es-MX', 'en-US'])).toEqual({ id: 'es', messages: es })
+  expect(resolveDesktopStartupLocale('es', ['en-US']).messages.cancel).toBe('Cancelar')
+  expect(Object.keys(es)).toEqual(Object.keys(en))
+  for (const key of Object.keys(en) as Array<keyof typeof en>) {
+    expect(es[key].match(/\{[^{}]+\}/g)?.sort() ?? []).toEqual(en[key].match(/\{[^{}]+\}/g)?.sort() ?? [])
+  }
 })

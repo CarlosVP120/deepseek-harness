@@ -4,5 +4,5 @@
  * — a missing or extra en key is a compile error.
  */
 export { zh } from './zh.ts'
-export { en } from './en.ts'
+export { en, es } from './en.ts'
 export type { CommonKey } from './zh.ts'

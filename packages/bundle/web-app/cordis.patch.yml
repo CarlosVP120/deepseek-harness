@@ -65,6 +65,13 @@
     # delegation tools. The Plugins page edits this settings namespace.
     - id: subagent-model-selection-settings
       name: '@deepseek-ai/dsh-tool-subagent/model-selection-settings'
+      config:
+        enabled: true
+        allowedModels:
+          - provider: openrouter
+            model: deepseek/deepseek-v4.1-flash
+          - provider: openrouter
+            model: deepseek/deepseek-v4-pro
 
     - id: message-feedback
       name: '@deepseek-ai/dsh-message-feedback'
@@ -143,6 +150,9 @@
     # reports an actionable error when its settings-domain provider is absent.
     - id: ui-settings-account
       name: '@deepseek-ai/dsh-client-ui-settings-account'
+      config:
+        step: done
+        completion: skipped
 
     - id: account-controller
       name: '@deepseek-ai/dsh-api-account-controller'
@@ -410,6 +420,7 @@
     # sessions created later. Absent a roster it renders nothing.
     - id: ui-agent-preset
       name: '@deepseek-ai/dsh-client-ui-agent-preset'
+      disabled: true
 
     - id: ui-settings-session-log
       name: '@deepseek-ai/dsh-client-ui-settings-session-log'
@@ -581,3 +592,4 @@
       name: '@deepseek-ai/dsh-agent-preset-registry'
       config:
         default: standard
+        selectedDefault: standard

@@ -20,3 +20,12 @@ export const zh: Record<PluginsSettingsLocaleKey, string> = {
   tabs: '插件视图',
   empty: '本部署没有开放任何插件视图。',
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'nav': 'Complementos',
+  'title': 'Complementos integrados',
+  'intro': 'Inspeccione los complementos que incluye esta implementación.',
+  'tabs': 'Vistas de complementos',
+  'empty': 'Esta implementación no expone vistas de complementos.',
+} satisfies Record<keyof typeof en, string>

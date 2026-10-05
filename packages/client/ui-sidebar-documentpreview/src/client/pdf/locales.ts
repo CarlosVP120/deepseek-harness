@@ -37,3 +37,22 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     sidebarPdf: PdfLocaleKey
   }
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'zoomControls': 'Controles de zoom',
+  'zoomMenu': 'Elige zoom',
+  'zoomOut': 'alejar',
+  'zoomIn': 'Acercar',
+  'zoomFitWidth': 'Ancho de ajuste',
+  'zoomValue': '{percent}%',
+  'title': 'PDF',
+  'pageImage': 'Página PDF {page}',
+  'loading': 'Representando documento...',
+  'rendering': 'Página de renderizado...',
+  'failed': 'No se puede mostrar PDF: {message}',
+  'password': 'Este PDF requiere una contraseña; No se admiten vistas previas protegidas con contraseña.',
+  'workerFailed': 'El proceso de renderizado de PDF no pudo continuar. Vuelva a intentarlo.',
+  'unsupported': 'La vista previa de PDF requiere el contenido completo del archivo.',
+  'retry': 'Reintentar',
+} satisfies Record<keyof typeof en, string>

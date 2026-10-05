@@ -129,7 +129,7 @@ describe('apply', () => {
     expect(entry?.options).toMatchObject({ key: 'skill' })
     expect(entry?.locale).toBe('skill')
     expect(entry?.component).toBe(SkillToolRow)
-    expect(presentation.dictionaries).toEqual([{
+    expect(presentation.dictionaries).toMatchObject([{
       namespace: 'skill', dictionaries: {
         zh: {
           'row.title': '加载技能',

@@ -82,3 +82,40 @@ export const accessEn = {
   'auto.confirm.acknowledge': 'I understand these risks and want to continue',
   'auto.confirm.enable': 'Enable Auto review',
 } satisfies Record<PermissionAccessKey, string>
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'title': 'Permiso',
+  'description': 'Elige el modo de permiso predeterminado para nuevas sesiones',
+  'loading': 'Cargando',
+  'unavailable': 'No disponible',
+  'preset.readOnly': 'Sólo lectura',
+  'preset.workspaceWrite': 'Escritura en el espacio de trabajo',
+  'preset.fullAccess': 'Acceso completo',
+  'confirm.title': '¿Habilitar acceso completo?',
+  'confirm.description': 'El acceso completo permite que las nuevas sesiones reduzcan los pasos de confirmación y realicen más acciones directamente, incluidas operaciones confidenciales, cambios de archivos o comandos externos. Úselo sólo cuando confíe en las tareas posteriores.',
+  'confirm.acknowledge': 'Entiendo los riesgos y quiero continuar.',
+  'confirm.cancel': 'Cancelar',
+  'confirm.enable': 'Habilitar acceso completo',
+} satisfies Record<keyof typeof en, string>
+
+/** Spanish dictionary, checked against the English key set. */
+export const accessEs = {
+  'mode': 'Modo de acceso, actual: {name}',
+  'close': 'Cerrar',
+  'preset.readOnly': 'Sólo lectura',
+  'preset.workspaceWrite': 'Escritura en el espacio de trabajo',
+  'preset.fullAccess': 'Acceso completo',
+  'confirm.title': '¿Habilitar acceso completo?',
+  'confirm.description': 'El acceso completo reduce los pasos de confirmación y permite que el agente realice más acciones directamente, incluidas operaciones confidenciales, cambios de archivos o comandos externos. Úselo solo cuando confíe en la tarea actual.',
+  'confirm.acknowledge': 'Entiendo los riesgos y quiero continuar.',
+  'confirm.cancel': 'Cancelar',
+  'confirm.enable': 'Habilitar acceso completo',
+  'auto.label': 'Revisión automática',
+  'auto.badge': 'EXP',
+  'auto.description': 'Ejecute sin una zona de pruebas después de una revisión experimental del mismo modelo de cada llamada de herramienta nativa y llamada interna de PTC.',
+  'auto.confirm.title': '¿Habilitar revisión automática (experimental)?',
+  'auto.confirm.description': 'La revisión automática se ejecuta sin zona de pruebas. Antes de cada llamada a la herramienta nativa y llamada interna de PTC, el mismo modelo que el agente actual revisa si se permite; usted aprueba o rechaza cada llamada que rechaza. Esta característica es experimental, puede permitir o denegar acciones falsamente y utiliza tokens adicionales.',
+  'auto.confirm.acknowledge': 'Entiendo estos riesgos y quiero continuar',
+  'auto.confirm.enable': 'Habilitar revisión automática',
+} satisfies Record<keyof typeof accessEn, string>

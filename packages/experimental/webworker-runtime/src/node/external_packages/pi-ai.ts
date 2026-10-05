@@ -20,6 +20,38 @@ export const createProvider = notImplementedFail(MODULE, 'createProvider')
 /** Model-list factory (unavailable). */
 export const createModels = notImplementedFail(MODULE, 'createModels')
 
+/** Model identity needed by the preview's catalog lookup. */
+interface PreviewModel { id: string }
+
+/** Provider shape needed for transport-free catalog inspection. */
+interface PreviewProvider { id: string; getModels: () => readonly PreviewModel[] }
+
+/** Inspection methods and the explicit unsupported transport boundary. */
+interface PreviewModels {
+  clearProviders: () => void
+  setProvider: (provider: PreviewProvider) => void
+  getModel: (provider: string, model: string) => PreviewModel | undefined
+  getModels: (provider: string) => readonly PreviewModel[]
+  streamSimple: (...args: never[]) => never
+}
+
+/**
+ * Catalog collection for activation and inspection in the browser preview.
+ * Configured providers remain describable; transport requests explicitly fail.
+ * @returns an initially empty collection with no Node transport.
+ */
+export function builtinModels(): PreviewModels {
+  const providers = new Map<string, PreviewProvider>()
+  return {
+    clearProviders: () => { providers.clear() },
+    setProvider: (provider: PreviewProvider) => { providers.set(provider.id, provider) },
+    getModel: (provider: string, model: string): PreviewModel | undefined =>
+      providers.get(provider)?.getModels().find(candidate => candidate.id === model),
+    getModels: (provider: string): readonly PreviewModel[] => providers.get(provider)?.getModels() ?? [],
+    streamSimple: notImplementedFail(MODULE, 'streamSimple'),
+  }
+}
+
 /** Thinking-level catalog (unavailable). */
 export const getSupportedThinkingLevels = notImplementedFail(MODULE, 'getSupportedThinkingLevels')
 
@@ -86,7 +118,7 @@ export const __esModule = true
 
 /** CommonJS default export: the members `require()` hands a caller of this module. */
 export default {
-  createProvider, createModels, getSupportedThinkingLevels, isContextOverflow, builtinProviders,
+  createProvider, createModels, getSupportedThinkingLevels, isContextOverflow, builtinProviders, builtinModels,
   getBuiltinModels, getBuiltinProviders, anthropicMessagesApi, openAICompletionsApi,
   openAIResponsesApi,
 }

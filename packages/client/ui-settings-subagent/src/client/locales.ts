@@ -107,3 +107,42 @@ export const zh: Record<SubagentSettingsLocaleKey, string> = {
 export function formLabels(t: (key: SubagentSettingsLocaleKey) => string): SettingsFormLabels {
   return { unavailable: t('unavailable'), readOnly: t('readOnly'), saveFailed: t('saveFailed'), save: t('save'), saving: t('saving') }
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'overridden': 'Anulado',
+  'reset': 'Restablecer los valores predeterminados',
+  'readOnly': 'Esta implementación almacena configuraciones de solo lectura.',
+  'unavailable': 'Este complemento no está cargado, por lo que no se puede configurar en este momento.',
+  'save': 'Guardar',
+  'saving': 'Guardando…',
+  'saveFailed': 'El despliegue no aceptó estos valores; quedaron para que usted los corrigiera.',
+  'subagentTitle': 'Subagente',
+  'subagentDescription': 'Establezca la profundidad, el recuento y los modelos de recursividad del subagente.',
+  'subagentLimitsTitle': 'Límites',
+  'subagentMaxDepth': 'Profundidad máxima de recursividad',
+  'subagentDepthHelpLabel': 'Acerca de la profundidad máxima de recursividad',
+  'subagentDepthHelp': 'Limita cuántos niveles de Subagentes puede crear un Agente.',
+  'subagentDepthZero': 'Deshabilitar subagentes',
+  'subagentDepthOne': 'Sólo el Agente principal puede crear Subagentes',
+  'subagentDepthOverride': 'Si una herramienta define su propia profundidad de recursividad máxima, esa configuración tiene prioridad.',
+  'subagentMaxActive': 'Límite de paralelismo de subagente',
+  'subagentCapacityHelpLabel': 'Acerca del límite de paralelismo del subagente',
+  'subagentCapacityHelp': 'Total de subagentes activos bajo el mismo agente principal, en todos los niveles de recursividad. El Agente principal está excluido. Las nuevas solicitudes de inicio se rechazan cuando se alcanza el límite.',
+  'subagentDepthInvalid': 'Introduzca un número entero de 0 o más.',
+  'subagentCapacityInvalid': 'Introduzca un número entero de 1 o más.',
+  'subagentModelSelectionTitle': 'Selección de modelo',
+  'subagentModelSelectionToggle': 'Permitir a los agentes elegir modelos para Subagentes',
+  'subagentModelSelectionChoose': 'Cuando está habilitado, los agentes pueden elegir un proveedor, modelo y esfuerzo de razonamiento para cada subagente entre los modelos autorizados a continuación. Aplica sólo para sesiones nuevas.',
+  'subagentModelSelectionAllowed': 'Los agentes modelos pueden elegir',
+  'subagentModelSelectionLoading': 'Cargando modelos…',
+  'subagentModelSelectionLoadFailed': 'No se pudieron cargar los modelos.',
+  'subagentModelSelectionRetry': 'Reintentar',
+  'subagentModelSelectionPartial': 'No se pudieron cargar algunos proveedores de modelos; Las opciones guardadas siguen siendo extraíbles.',
+  'subagentModelSelectionUnavailable': 'Actualmente no disponible',
+  'subagentModelSelectionUnavailableGroup': 'Guardado pero actualmente no disponible',
+  'subagentModelSelectionEmpty': 'Ningún proveedor de modelos anuncia actualmente un modelo.',
+  'subagentModelSelectionRequired': 'Selecciona al menos un modelo antes de guardar.',
+  'subagentModelSelectionConflict': 'La configuración cambió en otros lugares. Descarta tu borrador y vuelve a intentarlo.',
+  'subagentModelSelectionOff': 'Los subagentes utilizan valores predeterminados configurados o heredan el modelo del agente principal. Las opciones de modelo guardadas se conservan.',
+} satisfies Record<keyof typeof en, string>

@@ -53,3 +53,21 @@ export const zh: Record<ShellSettingsLocaleKey, string> = {
 export function formLabels(t: (key: ShellSettingsLocaleKey) => string): SettingsFormLabels {
   return { unavailable: t('unavailable'), readOnly: t('readOnly'), saveFailed: t('saveFailed'), save: t('save'), saving: t('saving') }
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'title': 'Concha',
+  'description': 'Limite cuánto tiempo puede ejecutarse cada comando y cuánto puede generar.',
+  'timeoutMs': 'Tiempo de espera del comando (ms)',
+  'timeoutMsHint': 'Cuánto tiempo puede ejecutarse un comando antes de finalizar.',
+  'maxOutputBytes': 'Límite de salida por flujo (bytes)',
+  'maxOutputBytesHint': 'La salida más allá de esto se transfiere a un archivo temporal en lugar de perderse.',
+  'overridden': 'Anulado',
+  'reset': 'Restablecer los valores predeterminados',
+  'readOnly': 'Esta implementación almacena configuraciones de solo lectura.',
+  'unavailable': 'Este complemento no está cargado, por lo que no se puede configurar en este momento.',
+  'save': 'Guardar',
+  'saving': 'Guardando…',
+  'saveFailed': 'El despliegue no aceptó estos valores; quedaron para que usted los corrigiera.',
+  'invalidNumber': 'Ingrese un número o déjelo en blanco para usar el valor predeterminado.',
+} satisfies Record<keyof typeof en, string>

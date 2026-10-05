@@ -78,6 +78,8 @@
 /* Keep hover detection on a stationary box while the mark moves within it;
    hover rules target the hitbox so a slot-occupant mark swims too. */
 .fishHitbox {
+  /* Optical alignment with the headline’s visible letterforms. */
+  translate: 0 2px;
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -229,4 +231,25 @@
   font-size: 12px;
   line-height: 18px;
   color: var(--dsw-alias-state-error-primary);
+}
+
+/* EQIDIS brand gradient, shared with the company's website assets. */
+.headlineAccent {
+  color: #e86a6e;
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .headlineAccent {
+    background-image: linear-gradient(151deg, #664899, #674899, #e86a6e);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+}
+
+@media (forced-colors: active) {
+  .headlineAccent {
+    background-image: none;
+    color: CanvasText;
+  }
 }

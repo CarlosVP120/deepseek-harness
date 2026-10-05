@@ -131,6 +131,9 @@ function HeroFish({ hovering }: { hovering: boolean }) {
  */
 export function HeroShell({ t, renderSlot, children }: HeroShellProps) {
   const [hovering, setHovering] = useState(false)
+  const headline = t('hero.headline')
+  const accent = 'Extraordinario'
+  const accentIndex = headline.indexOf(accent)
   return (
     <div className={css.root}>
       <div className={css.stack}>
@@ -151,8 +154,11 @@ export function HeroShell({ t, renderSlot, children }: HeroShellProps) {
           </span>
           <span className={css.titleGroup}>
             {/* Own element: keeps the headline text addressable apart from the badge. */}
-            <span>{t('hero.headline')}</span>
-            <span className={css.previewBadge}>{t('hero.preview')}</span>
+            <span>{accentIndex < 0 ? headline : <>
+              {headline.slice(0, accentIndex)}
+              <span className={css.headlineAccent}>{accent}</span>
+              {headline.slice(accentIndex + accent.length)}
+            </>}</span>
           </span>
         </div>
         <div className={css.body}>

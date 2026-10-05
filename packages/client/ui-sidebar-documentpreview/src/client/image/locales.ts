@@ -29,3 +29,18 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     sidebarImage: ImagePreviewKey
   }
 }
+
+/** Spanish dictionary, checked against the English key set. */
+export const es = {
+  'zoomControls': 'Controles de zoom',
+  'zoomMenu': 'Elige zoom',
+  'zoomOut': 'alejar',
+  'zoomIn': 'Acercar',
+  'zoomFitWidth': 'Ancho de ajuste',
+  'zoomValue': '{percent}%',
+  'title': 'Imagen',
+  'preview': 'Vista previa de imagen: {name}',
+  'loading': 'Representando documento...',
+  'failed': 'Esta imagen no se pudo mostrar.',
+  'unsupported': 'La vista previa de la imagen requiere el contenido completo del archivo.',
+} satisfies Record<keyof typeof en, string>
