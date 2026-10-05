@@ -125,6 +125,12 @@ function Finish-Setup([Diagnostics.Process]$Process, [bool]$Launch, [string]$The
     }
     if (-not $Process.WaitForExit(10000) -or $Process.ExitCode -ne 0) { throw 'Finish did not exit successfully' }
 }
+function Set-Path([IntPtr]$Edit, [string]$Path) {
+    if (-not [InstallerCapture]::SetWindowText($Edit, $Path)) { throw 'Could not set installation path' }
+    $actual = [InstallerCapture]::ControlText($Edit)
+    if ($actual -ne $Path) { throw "Path edit did not accept '$Path': '$actual'" }
+    Write-Output "Validating path: $actual"
+}
 function Run-Silent([string]$Arguments, [int]$Code) {
     $process = Start-Process -FilePath $Installer -ArgumentList $Arguments -PassThru -WindowStyle Hidden
     $processes.Add($process)
@@ -143,11 +149,11 @@ try {
     Dismiss $process $copy.INSTALLER_CHOOSE_PATH
     [void][InstallerCapture]::SendMessage($window, 0x28, $edit, [IntPtr]1)
     foreach ($invalidPath in @('C:\Windows\Harness Installer Test', [IO.Path]::GetPathRoot($installPath), ([IO.Path]::GetPathRoot($installPath) + '\'))) {
-        [void][InstallerCapture]::SendMessage($edit, 0xC, [IntPtr]::Zero, $invalidPath)
+        Set-Path $edit $invalidPath
         [void][InstallerCapture]::PostMessage($edit, 0x100, [IntPtr]13, [IntPtr]::Zero)
         Dismiss $process $copy.INSTALLER_PATH_INVALID
     }
-    [void][InstallerCapture]::SendMessage($edit, 0xC, [IntPtr]::Zero, $installPath)
+    Set-Path $edit $installPath
     [InstallerCapture]::MoveBy($window, 73, -41)
     $bounds = [InstallerCapture]::Bounds($window)
     Click-Control $process $copy.INSTALLER_INSTALL
@@ -161,7 +167,7 @@ try {
     $process = Start-Setup dark ''
     Click-Control $process $copy.INSTALLER_CHOOSE_PATH
     $edit = Wait-Control $process $installPath
-    [void][InstallerCapture]::SendMessage($edit, 0xC, [IntPtr]::Zero, ($installPath + '\\'))
+    Set-Path $edit ($installPath + '\\')
     [void][InstallerCapture]::Save([InstallerCapture]::Find($process.Id), (Join-Path $OutputDirectory 'dark-welcome.png'))
     $bounds = [InstallerCapture]::Bounds([InstallerCapture]::Find($process.Id))
     Click-Control $process $copy.INSTALLER_INSTALL

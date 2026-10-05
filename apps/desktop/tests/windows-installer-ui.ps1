@@ -142,6 +142,12 @@ public static class InstallerCapture {
         return result;
     }
 
+    public static string ControlText(IntPtr control) {
+        var text = new StringBuilder(1024);
+        GetWindowText(control, text, text.Capacity);
+        return text.ToString();
+    }
+
     public static string VisibleText(int process) {
         var output = new StringBuilder();
         EnumWindows(delegate(IntPtr window, IntPtr data) {
