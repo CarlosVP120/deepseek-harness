@@ -38,6 +38,9 @@
 /deepseek-harness-desktop/develop/welcome-window-appearance:
   en: ae319a496639b38d
   zh: ef044103240ac9da
+/deepseek-harness-desktop/eqidis-internal-distribution:
+  en: 765f23b1f7b483c3
+  zh: 373232f9892a0807
 /deepseek-harness-desktop/package:
   en: 4cd8a8da6977928d
   zh: 9f624855a2edac37
@@ -57,14 +60,14 @@
   en: 94ddb11f514d8dea
   zh: 15021ae8e3bc8a9c
 /deepseek-harness-desktop/package/windows-ev-signing:
-  en: 8efe3498dbe8686d
-  zh: a88c16f20a9430f3
+  en: e89736c3cdc1e42e
+  zh: 5e0574e6025a1009
 /deepseek-harness-desktop/updates:
   en: d0df867b69cbffa4
   zh: eeb47b79b86fe5ee
 /deepseek-harness-desktop/updates/mandatory-update-policy:
-  en: c00a0e7d32056ba9
-  zh: a76dae44cb513d6f
+  en: 97a1e038f5f406e0
+  zh: 7f07a98b92af980c
 /deepseek-harness-desktop/updates/local-updater-qualification:
   en: bc50fd8a4d96c227
   zh: fb0a6ce80c31cda6

@@ -64,6 +64,21 @@ describe('installer preparation preserves application dependencies', () => {
     }
   })
 
+  it('builds internal Mac packages without paid credentials or upstream services', async () => {
+    const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
+    const { validateDesktopPackageEnvironment } = await import('../scripts/desktop-package-environment.mjs')
+    const env = { DSH_DESKTOP_APP_ID: 'com.eqidis.ai', DSH_DESKTOP_UNSIGNED: '1' }
+    expect(() => validateDesktopPackageEnvironment(env, { platform: 'darwin', arch: 'arm64' }, { unsigned: true })).not.toThrow()
+    const config = createElectronBuilderConfig(env, 'darwin', 'arm64')
+    expect(config.mac.identity).toBe('-')
+    expect(config.mac.notarize).toBe(false)
+    expect(config.mac.forceCodeSigning).toBe(false)
+    expect(config.publish).toBeNull()
+    expect(config.extraMetadata.dshMandatoryUpdatePolicy).toBeUndefined()
+    expect(config.mac.extendInfo.CFBundleLocalizations).toContain('es')
+    expect(() => validateDesktopPackageEnvironment(env, { platform: 'darwin', arch: 'arm64' })).toThrow()
+  })
+
   it('names unsigned Windows artifacts so they cannot pass for release builds', async () => {
     const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
     const config = createElectronBuilderConfig({
@@ -74,7 +89,7 @@ describe('installer preparation preserves application dependencies', () => {
       DSH_DESKTOP_TARGET_ARCH: 'x64',
       DSH_DESKTOP_UNSIGNED: '1',
     }, 'win32', 'x64')
-    expect(config.artifactName).toBe('deepseek-harness-${version}-${os}-${arch}-unsigned.${ext}')
+    expect(config.artifactName).toBe('eqidis-ai-${version}-${os}-${arch}-unsigned.${ext}')
   })
 
   it('packages every preload entry point the shell loads', async () => {

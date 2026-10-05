@@ -4,7 +4,7 @@ import type { AfterPackContext, BeforePackContext } from 'app-builder-lib'
 export interface DesktopElectronBuilderConfig {
   readonly appId: string
   readonly artifactName: string
-  readonly protocols: readonly [{ readonly name: 'DeepSeek Harness'; readonly schemes: readonly ['dsh'] }]
+  readonly protocols: readonly [{ readonly name: 'EQIDIS AI'; readonly schemes: readonly ['dsh'] }]
   readonly directories: {
     readonly output: string
   }
@@ -16,7 +16,7 @@ export interface DesktopElectronBuilderConfig {
     { readonly from: string, readonly to: 'dsh', readonly filter: readonly ['**/*'] },
     { readonly from: string, readonly to: 'dsh/node_modules', readonly filter: readonly ['**/*'] },
   ]
-  readonly extraMetadata: { readonly dshDesktopAppId: string }
+  readonly extraMetadata: { readonly dshDesktopAppId: string; readonly dshMandatoryUpdatePolicy?: object }
   readonly asarUnpack: readonly string[]
   readonly extraResources: readonly [
     { readonly from: string, readonly to: 'runtime' },
@@ -24,7 +24,7 @@ export interface DesktopElectronBuilderConfig {
     ...{ readonly from: string, readonly to: 'tray.ico' }[],
   ]
   readonly mac: {
-    readonly extendInfo: { readonly NSMicrophoneUsageDescription: string }
+    readonly extendInfo: { readonly NSMicrophoneUsageDescription: string; readonly CFBundleLocalizations: readonly string[] }
     readonly entitlements: string
     readonly entitlementsInherit: string
     readonly identity: string | undefined
@@ -50,7 +50,7 @@ export interface DesktopElectronBuilderConfig {
     readonly perMachine: false
     readonly allowElevation: false
     readonly allowToChangeInstallationDirectory: false
-    readonly installerLanguages: readonly ['en_US', 'zh_CN']
+    readonly installerLanguages: readonly ['es_ES', 'en_US', 'zh_CN']
   }
   readonly beforeBuild: () => Promise<boolean>
   readonly beforePack: (context: BeforePackContext) => Promise<void>
