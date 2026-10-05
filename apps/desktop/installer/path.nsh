@@ -88,13 +88,25 @@ Function ${PREFIX}InstallerValidatePath
     ${OrIf} $0 >= ${NSIS_MAX_STRLEN}
         Return
     ${EndIf}
-    ; Validate canonical ancestors so repeated separators cannot hide drive or protected roots.
-    StrLen $0 $4
+    ; Canonical Windows paths retain one trailing separator; remove it before checking ancestors.
+    StrCpy $InstallerPath $4
+    ${Do}
+        StrLen $0 $InstallerPath
+        ${If} $0 <= 3
+            ${ExitDo}
+        ${EndIf}
+        StrCpy $1 $InstallerPath 1 -1
+        ${If} $1 != "\"
+            ${ExitDo}
+        ${EndIf}
+        IntOp $0 $0 - 1
+        StrCpy $InstallerPath $InstallerPath $0
+    ${Loop}
+    StrLen $0 $InstallerPath
     ${If} $0 < 4
     ${OrIf} $0 > 180
         Return
     ${EndIf}
-    StrCpy $InstallerPath $4
     StrCpy $2 $InstallerPath
     ${Do}
         StrLen $0 $2
