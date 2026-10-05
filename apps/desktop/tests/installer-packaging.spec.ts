@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os'
 import { readFileSync } from 'node:fs'
 import { Arch, Platform } from 'electron-builder'
-import { Packager } from 'app-builder-lib'
+import { Packager, type AfterPackContext } from 'app-builder-lib'
 import { describe, expect, it, vi } from 'vitest'
 
 const { execute } = vi.hoisted(() => ({ execute: vi.fn(async () => undefined) }))
@@ -87,6 +87,21 @@ describe('installer preparation preserves application dependencies', () => {
     expect(config.publish).toEqual([{ provider: 'generic',
       url: 'https://github.com/CarlosVP120/eqidis-ai-releases/releases/latest/download/', channel: 'nightly' }])
     expect(() => createElectronBuilderConfig({ ...env, DSH_DESKTOP_INTERNAL_UPDATE_REPOSITORY: 'https://github.com/token' }, 'darwin', 'arm64')).toThrow('owner/repository')
+  })
+
+  it('signs the Mac bundle with a private self-signed identity without importing system trust', async () => {
+    execute.mockClear()
+    const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
+    const config = createElectronBuilderConfig({ DSH_DESKTOP_APP_ID: 'com.eqidis.ai', DSH_DESKTOP_UNSIGNED: '1',
+      DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY: 'EQIDIS AI Self-Signed',
+      DSH_DESKTOP_MACOS_LOCAL_SIGNING_KEYCHAIN: '/private/eqidis.keychain-db' }, 'darwin', 'arm64')
+    expect(config.mac.identity).toBe('-')
+    await config.afterSign({ electronPlatformName: 'darwin', appOutDir: '/private/build',
+      packager: { appInfo: { productFilename: 'EQIDIS AI' } } } as AfterPackContext)
+    expect(execute).toHaveBeenCalledWith('/usr/bin/codesign', ['--force', '--sign', 'EQIDIS AI Self-Signed',
+      '--keychain', '/private/eqidis.keychain-db', '--timestamp=none', '--identifier', 'com.eqidis.ai',
+      '--preserve-metadata=entitlements,flags', '/private/build/EQIDIS AI.app'])
+    expect(execute).toHaveBeenCalledWith('/usr/bin/codesign', ['--verify', '--deep', '--strict', '/private/build/EQIDIS AI.app'])
   })
 
   it('names unsigned Windows artifacts so they cannot pass for release builds', async () => {

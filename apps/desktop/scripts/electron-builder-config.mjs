@@ -157,7 +157,7 @@ export function createElectronBuilderConfig(
       icon: fileURLToPath(new URL('../resources/icon-macos.png', import.meta.url)),
       category: 'public.app-category.developer-tools',
       // macOS matches the application locale against this bundle, not Electron Framework resources.
-            identity: unsigned ? (env.DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY?.trim() || '-') : macOSSigning?.signingIdentity,
+            identity: unsigned ? (env.DSH_DESKTOP_MACOS_LOCAL_SIGNING_KEYCHAIN?.trim() ? '-' : env.DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY?.trim() || '-') : macOSSigning?.signingIdentity,
       forceCodeSigning: !unsigned,
       hardenedRuntime: !unsigned,
       extendInfo: { CFBundleLocalizations: ['en', 'zh_CN', 'es'], NSMicrophoneUsageDescription: 'EQIDIS AI usa el micrófono para transcribir dictados.' },
@@ -212,7 +212,13 @@ export function createElectronBuilderConfig(
       if (context.electronPlatformName !== 'darwin') return
       if (unsigned) {
         const appPath = join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`)
-        if (internalRepository !== undefined && !env.DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY?.trim()) {
+        const localKeychain = env.DSH_DESKTOP_MACOS_LOCAL_SIGNING_KEYCHAIN?.trim()
+        if (localKeychain !== undefined) {
+          const identity = env.DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY?.trim()
+          if (!identity) throw new Error('desktop package: local signing keychain requires a local signing identity')
+          await promisify(execFile)('/usr/bin/codesign', ['--force', '--sign', identity, '--keychain', localKeychain,
+            '--timestamp=none', '--identifier', appId, '--preserve-metadata=entitlements,flags', appPath])
+        } else if (internalRepository !== undefined && !env.DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY?.trim()) {
           await promisify(execFile)('/usr/bin/codesign', ['--force', '--sign', '-', '--identifier', appId,
             '--preserve-metadata=entitlements,flags', `-r=designated => identifier "${appId}"`, appPath])
         }
