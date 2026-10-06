@@ -59,7 +59,7 @@ describe.skipIf(MODE === 'record')('web e2e: App-only desktop onboarding', () =>
     if (address === null || typeof address === 'string') throw new Error('fixture server address unavailable')
     origin = `http://127.0.0.1:${address.port}`
     const overlay = join(root, 'account.patch.yml')
-    await writeFile(overlay, `- id: deepseek-account\n  config:\n    platformOrigin: ${origin}\n    allowLoopbackHttp: true\n`)
+    await writeFile(overlay, `- id: deepseek-account\n  config:\n    platformOrigin: ${origin}\n    allowLoopbackHttp: true\n- id: ui-settings-account\n  disabled: false\n`)
     scaffold = await launchWebScaffold({ deepSeekMissingCredential: true, extraOverlayPath: overlay })
     // Exercise onboarding explicitly; EQIDIS skips it in its deployment defaults.
     await scaffold.ctx.settings.update(NS, INITIAL)
