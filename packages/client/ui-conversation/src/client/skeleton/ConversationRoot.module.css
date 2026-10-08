@@ -543,3 +543,27 @@ button.crumb:hover {
 .embeddedBody[data-content-phase='settling'] .composerSeat {
   visibility: hidden;
 }
+
+/* Scenic start-page composition, retaining the resident composer DOM. */
+.root[data-phase='hero']:has(.homeBody) {
+  background: var(--dsw-alias-home-ground);
+}
+.root[data-phase='hero']:has(.homeBody) .header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+}
+.homeBody {
+  --dsh-composer-card-max-width: 560px;
+  color: var(--dsw-alias-home-text);
+}
+.root[data-phase='hero'] .homeBody .scrollBody {
+  justify-content: flex-start;
+  position: relative;
+}
+.homeBody .composerSeat { align-items: center; }
+.homeBody .composerHero { padding-bottom: 0; gap: 6px; }
+.homeBody .heroWorkspaceRow { margin-top: 10px; }
+@media (max-width: 620px) {
+  .homeBody { --dsh-composer-side-clearance: 12px; }
+}

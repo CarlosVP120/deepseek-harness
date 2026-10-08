@@ -187,11 +187,9 @@ function resolveReasoningLevel(
 function reasoningInfo(
   model: Model<Api>,
   defaultLevel: ModelThinkingLevel | undefined,
-  fixedLevel?: ModelThinkingLevel,
 ): Pick<LlmResolvedModelInfo, 'reasoning'> | Record<string, never> {
   if (!model.reasoning) return {}
-  if (fixedLevel !== undefined) resolveReasoningLevel(model, fixedLevel)
-  const levels = getSupportedThinkingLevels(model).filter(level => fixedLevel === undefined || level === fixedLevel)
+  const levels = getSupportedThinkingLevels(model)
   return {
     reasoning: {
       efforts: levels.map(level => ({
@@ -302,7 +300,7 @@ export class PiAiAdapter extends LlmAdapter {
   private modelInfo(snapshot: PiAiSnapshot, provider: string, model: string): LlmResolvedModelInfo {
     const profile = this.profileOf(snapshot, provider)
     const resolvedModel = this.modelOf(snapshot, provider, model)
-    const defaultLevel = describableReasoningLevel(resolvedModel, profile.fixedReasoning ?? profile.reasoning)
+    const defaultLevel = describableReasoningLevel(resolvedModel, profile.reasoning)
     // Only a cap the deployment configured is a request default; the
     // catalog's `maxTokens` sizes the model and stops there.
     const configuredMaxTokens = profile.configuredMaxTokens.get(model)
@@ -313,7 +311,7 @@ export class PiAiAdapter extends LlmAdapter {
       inputModalities: [...resolvedModel.input],
       context: { contextWindow: resolvedModel.contextWindow },
       ...configuredMaxTokens === undefined ? {} : { defaultMaxTokens: configuredMaxTokens },
-      ...reasoningInfo(resolvedModel, defaultLevel, profile.fixedReasoning),
+      ...reasoningInfo(resolvedModel, defaultLevel),
     }
   }
 
@@ -345,7 +343,7 @@ export class PiAiAdapter extends LlmAdapter {
     const model = this.modelOf(snapshot, options.provider, options.model)
     const reasoning = resolveReasoningLevel(
       model,
-      profile.fixedReasoning ?? options.reasoningEffort ?? profile.reasoning,
+      options.reasoningEffort ?? profile.reasoning,
     )
     const apiKey = await this.config.resolveApiKey(options.provider, profile)
 

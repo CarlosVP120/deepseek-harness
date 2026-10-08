@@ -153,27 +153,6 @@ describe('PiAiAdapter provider routing', () => {
     expect(server.requests[0]).not.toHaveProperty('dsh_plugin_packages')
   })
 
-  it('enforces the deployment effort over request selections and exposes only that effort', async () => {
-    const server = await mockServer([{ events: textEvents }, { events: textEvents }])
-    const ctx = await harness(server.url, { fixedReasoning: 'high', reasoning: 'max' })
-    for (const effort of ['off', 'max']) {
-      const result = await assemble(ctx, { model: 'deepseek-v4-pro', reasoningEffort: ReasoningEffortId(effort), messages: [] })
-      expect(result.finish).toMatchObject({ kind: 'error', failure: { code: 'UNSUPPORTED_REASONING_EFFORT' } })
-    }
-    expect(server.requests).toHaveLength(0)
-    for (const effort of [undefined, ReasoningEffortId('high')]) {
-      const result = await assemble(ctx, { model: 'deepseek-v4-pro', ...(effort === undefined ? {} : { reasoningEffort: effort }), messages: [] })
-      expect(result.finish).toEqual({ kind: 'stop' })
-    }
-    expect(server.requests).toHaveLength(2)
-    for (const request of server.requests) expect(request).toMatchObject({ reasoning_effort: 'high' })
-    const model = await ctx.llm.resolveModelInfo('deepseek', 'deepseek-v4-pro')
-    expect(model.reasoning).toEqual({
-      defaultEffort: ReasoningEffortId('high'),
-      efforts: [{ id: ReasoningEffortId('high'), name: 'High' }],
-    })
-  })
-
   it('uses a dynamic request effort and reports unsupported efforts before network I/O', async () => {
     const server = await mockServer([{ events: textEvents }, { events: textEvents }])
     const ctx = await harness(server.url, { reasoning: 'max' })
@@ -1078,4 +1057,29 @@ it.each([
     auth: memoryAuth(),
   })
   expect(await adapter.listModels('deepseek')).not.toHaveLength(0)
+})
+
+describe('EQIDIS native request defaults', () => {
+  it.each(['deepseek/deepseek-v4.1-flash', 'deepseek/deepseek-v4-pro'])('sends the configured 64K output budget for %s', async (model) => {
+    const server = await mockServer([{ events: textEvents }])
+    const ctx = new Context()
+    onTestFinished(() => ctx.fiber.dispose())
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(LlmPiAi, { providers: { openrouter: {
+      apiKeyEnv: 'PI_TEST_KEY', baseURL: server.url, models: [{
+        id: model, contextWindow: 1048576, maxTokens: 64000,
+        input: ['text', 'image'], reasoningEfforts: { low: 'low', medium: 'medium', high: 'high' },
+      }],
+    } } })
+    const info = await ctx.llm.resolveModelInfo('openrouter', model)
+    expect(info.defaultMaxTokens).toBe(64000)
+    expect(info.context).toEqual({ contextWindow: 1048576 })
+    const prepared = await ctx.llm.prepareCall({ provider: 'openrouter', model })
+    expect(prepared.config.maxTokens).toBe(64000)
+    expect(prepared.config).not.toHaveProperty('reasoningEffort')
+    for await (const chunk of prepared.stream({ ...prepared.config, messages: [] })) expect(chunk).toBeDefined()
+    expect(server.requests).toHaveLength(1)
+    const request = server.requests[0] as { max_completion_tokens: number }
+    expect(request.max_completion_tokens).toBe(64000)
+  })
 })

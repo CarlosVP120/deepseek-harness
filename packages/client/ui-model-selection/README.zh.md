@@ -111,3 +111,5 @@ composer 的 `ModelSelect` 与 `/model` 选项构建器共用[提供方排序](s
 无。
 
 </details>
+
+EQIDIS 在输入框中隐藏 OpenRouter Flash 和 Pro 的推理强度标签和菜单项。此界面简化不缩小适配器能力，也不更改已保存的选择；请求执行遵循 Harness 原生推理行为。

@@ -74,3 +74,5 @@ No direct effect; Workspace mutations do not alter model requests.
 None.
 
 </details>
+
+New project registrations seed the generic Spanish accounting template in `AGENTS.md` before publication when that file is absent. Project settings can edit or clear it. Existing files, including deliberately empty instructions, are retained; re-adopting a registered project does not reset user changes. The template is project context, not a replacement for native agent execution.

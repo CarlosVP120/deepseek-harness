@@ -416,3 +416,6 @@
 .activity { display: flex; align-items: center; flex: none; }
 .activity:empty { display: none; }
 .activityExpanded { flex: 1; min-width: 0; }
+
+/* Compact resting composer, matching the start-page dashboard's corners. */
+.hero .card { border-radius: var(--dsw-radius-md); }

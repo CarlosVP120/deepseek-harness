@@ -4,6 +4,7 @@ import { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { ProjectContextFiles } from './project-context.ts'
+import { initializeProjectInstructions } from './default-project-instructions.ts'
 import type { ProjectContext, ProjectContextRequest, ProjectInstructionsRequest, ProjectUploadRequest, ProjectRemoveRequest } from './types.ts'
 import { WorkspaceCommands } from './commands.ts'
 import { DirectoryPickerController } from './directory-picker.ts'
@@ -76,7 +77,7 @@ export class WorkspaceController extends TypertRemoteService {
     this.config = WorkspaceController.Config(config)
     this.projectFiles = new ProjectContextFiles(this.config.maxProjectDocumentBytes)
     if (this.config.documentsDirectory !== undefined) validateDocumentsDirectory(this.config.documentsDirectory)
-    this.commands = new WorkspaceCommands(ctx)
+    this.commands = new WorkspaceCommands(ctx, initializeProjectInstructions)
     this.feed = new WorkspaceFeed(ctx)
     // This package is the Loader entry for both Remote owners it hosts: the
     // directory-picking seam is abstract and never an entry itself. The child
@@ -133,6 +134,7 @@ export class WorkspaceController extends TypertRemoteService {
 
   /**
    * Create or idempotently resolve one Workspace over an existing directory.
+   * New registrations seed editable accounting instructions only when AGENTS.md is absent.
    * @param request - directory path to register.
    * @returns the Workspace and whether this call created it.
    */

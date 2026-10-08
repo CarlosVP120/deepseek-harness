@@ -84,7 +84,6 @@
       config:
         provider: openrouter
         model: deepseek/deepseek-v4.1-flash
-        reasoningEffort: high
 
     - id: jobs
       name: '@deepseek-ai/dsh-jobs-local'
@@ -125,20 +124,19 @@
         providers:
           openrouter:
             apiKeyEnv: OPENROUTER_API_KEY
-            fixedReasoning: high
             models:
               - id: deepseek/deepseek-v4.1-flash
                 name: 'Flash'
                 contextWindow: 1048576
-                maxTokens: 943718
+                maxTokens: 64000
                 input: [text, image]
-                reasoningEfforts: { high: high }
+                reasoningEfforts: { low: low, medium: medium, high: high }
               - id: deepseek/deepseek-v4-pro
                 name: 'Pro'
                 contextWindow: 1048576
-                maxTokens: 384000
+                maxTokens: 64000
                 input: [text]
-                reasoningEfforts: { high: high }
+                reasoningEfforts: { low: low, medium: medium, high: high }
 
     - id: session-persistence-jsonl
       name: '@deepseek-ai/dsh-session-persistence-jsonl'

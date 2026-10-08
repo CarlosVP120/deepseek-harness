@@ -1,0 +1,16 @@
+# Bilingual-pair consistency record for guide.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/upgrade-guide/v0.2.1-alpha.1/accounting-project-template/guide.md
+/:
+  en: 162874a7ff469f16
+  zh: 11ece5f2b0816c7e
+/new-projects-start-with-accounting-instructions:
+  en: 66eef7b64c30e39a
+  zh: 0d531a75e2332709
+/new-projects-start-with-accounting-instructions/change:
+  en: ef5be357e3cc2a77
+  zh: 18e0923449303c35
+/new-projects-start-with-accounting-instructions/migration:
+  en: 5c05cb223c1e9850
+  zh: b1f451dab6abfef3

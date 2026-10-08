@@ -917,3 +917,20 @@ it('restores the account model name after login without changing the saved route
   expect(screen.getByRole('button', { name: /选择模型，当前/ }).textContent).toBe('DeepSeek FlashHigh')
   expect(directory.getSnapshot().current).toEqual(selected)
 })
+
+describe('EQIDIS simplified composer', () => {
+  it.each([['deepseek/deepseek-v4.1-flash', 'Flash'], ['deepseek/deepseek-v4-pro', 'Pro']])('hides effort UI for %s without changing the selection', (model, name) => {
+    const current = { provider: 'openrouter', model, reasoningEffort: 'high' }
+    const directory = createSnapshotStore(state({
+      current, groups: [{ id: 'openrouter', name: 'OpenRouter', models: [{ id: model, name, reasoning }] }],
+    }))
+    const select = vi.fn()
+    render(<ModelSelect locked={false} available directory={directory} load={vi.fn()} select={select} t={t} />)
+    const trigger = screen.getAllByRole('button')[0]!
+    expect(trigger.textContent).not.toContain('High')
+    fireEvent.click(trigger)
+    expect(screen.queryByRole('menuitem', { name: /推理等级/ })).toBeNull()
+    expect(select).not.toHaveBeenCalled()
+    expect(directory.getSnapshot().current).toEqual(current)
+  })
+})

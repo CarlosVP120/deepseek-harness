@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -11,6 +11,7 @@ import WorkspaceRegistry from '@deepseek-ai/dsh-workspace'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
 import WorkspaceController from '../src/index.ts'
 import { DEFAULT_WORKSPACE_DIRECTORY } from '../src/default-workspace.ts'
+import { DEFAULT_PROJECT_INSTRUCTIONS } from '../src/default-project-instructions.ts'
 import { WorkspaceFeed } from '../src/feed.ts'
 import type { WorkspaceFollowFrame } from '../src/types.ts'
 import { MemoryStorageBackend } from '../../../storage/storage-domain/tests/helpers/memory-backend.ts'
@@ -94,6 +95,7 @@ describe('WorkspaceController commands', () => {
       controller.create({ path }),
       controller.create({ path }),
     ])
+    expect(readFileSync(join(path, 'AGENTS.md'), 'utf8')).toBe(DEFAULT_PROJECT_INSTRUCTIONS)
     const created = results.find(result => result.created)
     const resolved = results.find(result => !result.created)
     expect(created).toMatchObject({ workspace: { path, title: 'alpha' } })
@@ -476,5 +478,30 @@ describe('first-use Remote', () => {
     vi.spyOn(ctx.workspaceRegistry, 'initializeDefault').mockRejectedValueOnce(new Error('permission denied'))
     await expect(controller.initializeDefault(new AbortController().signal))
       .rejects.toThrow('permission denied')
+  })
+})
+
+
+describe('accounting project template', () => {
+  it('preserves existing instructions and keeps user edits when a project is adopted again', async () => {
+    const { controller, root } = await harness()
+    const path = stageDir(root, 'existing-instructions')
+    writeFileSync(join(path, 'AGENTS.md'), 'Company-specific rules')
+    const project = await controller.create({ path })
+    expect(project.created).toBe(true)
+    expect(readFileSync(join(path, 'AGENTS.md'), 'utf8')).toBe('Company-specific rules')
+    await controller.saveProjectInstructions({ workspaceId: project.workspace.workspaceId, instructions: '' })
+    expect((await controller.create({ path })).created).toBe(false)
+    expect(readFileSync(join(path, 'AGENTS.md'), 'utf8')).toBe('')
+  })
+
+  it('persists the editable generic template in the project context', async () => {
+    const { controller, root } = await harness()
+    const project = await controller.create({ path: stageDir(root, 'new-accounting-project') })
+    const context = await controller.getProjectContext({ workspaceId: project.workspace.workspaceId })
+    expect(context.instructions).toBe(DEFAULT_PROJECT_INSTRUCTIONS)
+    expect(context.instructions).not.toMatch(/MOENDI|2026|\.xlsx|\.eqidis-context/)
+    await controller.saveProjectInstructions({ workspaceId: project.workspace.workspaceId, instructions: 'My revised instructions' })
+    expect((await controller.getProjectContext({ workspaceId: project.workspace.workspaceId })).instructions).toBe('My revised instructions')
   })
 })

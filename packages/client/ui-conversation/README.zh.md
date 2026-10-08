@@ -13,6 +13,8 @@ kind: "package-reference"
 
 `ui-conversation` 拥有与 target 无关的 Conversation 组装和共享浏览器 shell。它消费 Session Controller 的 `SessionEventLikeEntry` feed，通过 `ctx.uiConversation` 暴露不依赖 React 的注册表与逐 Session binding，并通过 `ctx.uiSession` 提供 `useConversation`、`useInput` 和 `inputActions` 标准 props。它还拥有按会话的持久化图片 URL 缓存：`ctx.uiConversation.imageUrl(sessionId, attachment)` 为每个附件解析一个经会话授权的浏览器 URL，并随 Session binding 释放而撤销，因此所有 Conversation target 共享一次 `session.attachment` 读取。Chat 等具体 target 位于独立包，由各自包注册 Definition、快照 builder、View 和 renderer。
 
+EQIDIS 主界面的空白会话首页使用内置灯塔全景图，以彩色 ASCII 字符呈现，并展示正在运行的任务、最近会话和本地项目。它读取已有 Session/Workspace 快照，排除已归档、空白和子代理会话，并使用现有 Workspace 导航回调。图像渲染和面板读取不发起模型请求。全景图在加载或调整尺寸时缓存字符，以最高每秒 24 帧合成云层移动、水面波纹和灯塔扫光；隐藏或离开可见区域时停止播放，减少动态效果偏好启用时保持静态，并立即响应偏好变化。装饰性全景图位于首页的主滚动内容中，标语、输入框和面板排列在其下方的当前主题背景上，确保任何滚动位置的文字都不覆盖图像。静态图像和动画画布使用相同的等比例覆盖裁剪，并以灯塔所在侧为锚点。活动会话和嵌入会话保留标准阅读布局，输入框在状态切换时保持挂载。
+
 ## 目录
 
 - [Conversation 组装](#conversation-assembly)

@@ -34,8 +34,11 @@ import type {
 export class WorkspaceCommands {
   private operationTail = Promise.resolve()
 
-  /** @param ctx - Host context containing the Workspace registry. */
-  constructor(private readonly ctx: Context) {}
+  /**
+   * @param ctx - Host context containing the Workspace registry.
+   * @param initializeProject - instruction initialization before a new registration is published.
+   */
+  constructor(private readonly ctx: Context, private readonly initializeProject: (path: string) => Promise<void>) {}
 
   /**
    * Create or resolve one Workspace over an existing directory.
@@ -49,6 +52,7 @@ export class WorkspaceCommands {
         if (existing !== undefined) {
           return { workspace: workspaceView(existing), created: false }
         }
+        await this.initializeProject(request.path)
         const workspace = await this.ctx.workspaceRegistry.create(request.path)
         return { workspace: workspaceView(workspace), created: true }
       } catch (error) {

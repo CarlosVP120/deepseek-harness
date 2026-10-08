@@ -1,0 +1,11 @@
+{
+  "provenance": "Built-in image_gen edit of the existing locally generated lighthouse scene.",
+  "original": "exec-5200c6e9-9cf4-4189-8936-86431877eacb.png",
+  "palette": [
+    "#664899",
+    "#674899",
+    "#e86a6e"
+  ],
+  "description": "Luminous lavender/coral/peach sunset for light appearance. Original geometry from lighthouse-day.webp.",
+  "format": "WebP quality 90"
+}

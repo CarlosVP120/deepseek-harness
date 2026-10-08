@@ -27,6 +27,8 @@ kind: "package-bundle"
 
 你会自动获得 dsh 核心：随发行版交付的 `web`、`headless`、`sdk` 与 `acp` profile 已包含它，自定义 profile 则把它列为第一个组合包。之后一切无需任何额外配置即可工作。
 
+EQIDIS AI 默认使用 OpenRouter Flash。Flash 和 Pro 的上下文窗口均为 1,048,576 个 token，每次请求的输出上限均为 64,000 个 token，包含推理。新安装自动继承这些设置，已保存的配置覆盖仍然优先。
+
 ### 最小自定义 profile
 
 要在共享核心之上构建 profile，请创建一个 profile，其 `package.json` 把 `@deepseek-ai/dsh-base` 列在首位：

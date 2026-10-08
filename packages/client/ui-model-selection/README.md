@@ -111,3 +111,5 @@ These limits define the current model surface. They are current package constrai
 None.
 
 </details>
+
+EQIDIS hides the effort caption and menu row for OpenRouter Flash and Pro in the composer. This UI simplification does not narrow adapter capabilities or change the saved selection; request execution follows native Harness reasoning behavior.

@@ -32,6 +32,18 @@ describe('dsh-base bundle', () => {
     )
     expect(rows.length).toBeGreaterThan(50)
     expect(rows.some(row => row.id === 'agent-loop')).toBe(true)
+    const defaultModel = rows.find(row => row.id === 'agent-default-model')?.config
+    expect(defaultModel).toMatchObject({ provider: 'openrouter', model: 'deepseek/deepseek-v4.1-flash' })
+    expect(defaultModel).not.toHaveProperty('reasoningEffort')
+    const providerConfig = rows.find(row => row.id === 'llm-pi-ai')?.config?.['providers'] as { openrouter: Record<string, unknown> }
+    expect(providerConfig.openrouter).not.toHaveProperty('fixedReasoning')
+    expect(providerConfig.openrouter).not.toHaveProperty('requestMaxTokens')
+    expect(providerConfig.openrouter).not.toHaveProperty('timeoutMs')
+    expect(providerConfig.openrouter).not.toHaveProperty('streamIdleTimeoutMs')
+    expect(providerConfig.openrouter['models']).toEqual([
+      { id: 'deepseek/deepseek-v4.1-flash', name: 'Flash', contextWindow: 1048576, maxTokens: 64000, input: ['text', 'image'], reasoningEfforts: { low: 'low', medium: 'medium', high: 'high' } },
+      { id: 'deepseek/deepseek-v4-pro', name: 'Pro', contextWindow: 1048576, maxTokens: 64000, input: ['text'], reasoningEfforts: { low: 'low', medium: 'medium', high: 'high' } },
+    ])
     expect(rows.find(row => row.id === 'session-telemetry-otel')?.disabled).toBeUndefined()
     expect(rows.find(row => row.id === 'session-telemetry-otel')?.config?.['mode']).toEqual({
       __jsExpr: "process.env.DSH_TELEMETRY_MODE || 'FEEDBACK_ONLY'",

@@ -14,5 +14,5 @@ Installed EQIDIS Desktop uses `~/.eqidis-ai` instead of the shared Harness home.
 
 1. Install the updated EQIDIS package. Existing DeepSeek Harness data stays unchanged.
 2. Enter each team's OpenRouter key in Settings → Models. Keys are not included in the installer.
-3. Confirm that a new session displays Flash, offers Flash and Pro, and shows no reasoning-effort selector or DeepSeek account menu. Reasoning remains fixed at high and the preset remains standard.
+3. Confirm that a new session displays Flash, offers Flash and Pro, and shows no reasoning-effort selector or DeepSeek account menu. Reasoning follows native Harness selection and the preset remains standard.
 4. To relocate packaged EQIDIS data, set `EQIDIS_AI_HOME` to a dedicated directory before launching the application. Do not select another product's home.

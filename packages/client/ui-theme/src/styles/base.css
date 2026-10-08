@@ -30,3 +30,14 @@ body {
 [data-dsh-automatic-focus]:focus:focus-visible {
   outline: none;
 }
+
+/* Scenic home follows the selected application theme. */
+body {
+  --dsw-alias-home-ground: var(--dsw-alias-bg-base);
+  --dsw-alias-home-panel: var(--dsw-alias-bg-layer-1);
+  --dsw-alias-home-composer: var(--dsw-specific-input-major);
+  --dsw-alias-home-border: var(--dsw-alias-border-l2);
+  --dsw-alias-home-text: var(--dsw-alias-label-primary);
+  --dsw-alias-home-muted: var(--dsw-alias-label-secondary);
+  --dsw-alias-home-hover: var(--dsw-alias-interactive-bg-hover);
+}

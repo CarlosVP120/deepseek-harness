@@ -571,6 +571,9 @@ export async function launchWebScaffold(options: LaunchOptions = {}): Promise<We
     ...options.deploymentProviders === true ? [] : [
       { id: 'llm-pi-ai', config: { providers: {} } },
       { id: 'llm-deepseek-account', disabled: false },
+      // Canonical upstream replays predate EQIDIS's opt-in delegation routes.
+      // Keep that deployment policy in the deployment-specific test lane.
+      { id: 'subagent-model-selection-settings', config: { enabled: false, allowedModels: [] } },
     ],
     // Without HMR the profile applies configuration changes at its next start.
     ...options.profile?.hmr === false ? [{ id: 'hmr', disabled: true }] : [],

@@ -5,6 +5,8 @@ import { workspaceDisplayTitle } from '@deepseek-ai/dsh-api-workspace-controller
 import type { ConversationContentProps, ConversationViewsProps, InputZone } from '../contract/slots.ts'
 import { HeroShell, WorkspaceChip, workspaceLabel } from './EmptyHero.tsx'
 import css from './ConversationRoot.module.css'
+import { AsciiLandscape } from './AsciiLandscape.tsx'
+import { HomeDashboard } from './HomeDashboard.tsx'
 
 function ConversationSessionView({ renderSlot }: ConversationViewsProps) {
   return renderSlot('conversation.session', {})
@@ -23,7 +25,7 @@ export function ConversationContent(props: ConversationContentProps) {
   const {
     sessionId, phase, hero, useSession, useSessions, useSessionStatus,
     useWorkspaces, useInput, useComposerBlock, renderSlot, renderSlotChain,
-    selectWorkspace, t, useFactorySlot,
+    selectWorkspace, openRecentSession, t, useFactorySlot,
   } = props
   const session = useSession(snapshot => snapshot)
   const Views = useFactorySlot('views', ConversationSessionView)
@@ -34,6 +36,7 @@ export function ConversationContent(props: ConversationContentProps) {
   const inputState = useInput(s => s)
   const cwd = useSessions(s => sessionId === undefined ? undefined : s.byId[sessionId]?.cwd)
   const workspaces = useWorkspaces(s => s)
+  const catalog = useSessions(s => s)
   // A plugin this package cannot import (ui-model-selection) says this session cannot
   // send; its reason is already localized by whoever raised it.
   const composerBlock = useComposerBlock(block => block)
@@ -188,15 +191,20 @@ export function ConversationContent(props: ConversationContentProps) {
   return (
     <div
       ref={setBody}
-      className={clsx(css.body, props.variant === 'embedded' && css.embeddedBody)}
+      className={clsx(css.body, props.variant === 'embedded' && css.embeddedBody, hero && props.variant === 'main' && css.homeBody)}
       data-conversation-content=""
       data-conversation-session={sessionId}
       data-conversation-region="chat"
       data-content-phase={phase}
     >
       <div className={css.scrollBody} data-conversation-scroll="">
+        {hero && props.variant === 'main' && <AsciiLandscape />}
         {sessionId === undefined ? null : <Views />}
         {composerSeat}
+        {hero && props.variant === 'main' && <HomeDashboard
+          sessions={catalog.ids.flatMap(id => catalog.byId[id] === undefined ? [] : [catalog.byId[id]])}
+          workspaces={workspaces} t={t} selectWorkspace={selectWorkspace} openRecentSession={openRecentSession}
+        />}
       </div>
       <WidthControls container={body} phase={phase} />
     </div>
