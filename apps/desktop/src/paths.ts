@@ -3,6 +3,7 @@
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { resolveDesktopProduct } from './product.ts'
 
 /** Stable desktop installation paths under the selected application home. */
 export interface DesktopPaths {
@@ -11,17 +12,19 @@ export interface DesktopPaths {
 }
 
 /**
- * Select the packaged EQIDIS data root independently of DeepSeek Harness.
- * Development retains the launcher's disposable DSH_HOME. Packaged applications
- * ignore DSH_HOME; EQIDIS_AI_HOME is the explicit EQIDIS-only override.
+ * Select the packaged product's data root independently of DeepSeek Harness
+ * and of the fork's other products. Development retains the launcher's
+ * disposable DSH_HOME. Packaged applications ignore DSH_HOME; the product's
+ * own variable (EQIDIS_AI_HOME, CONTABILIAI_HOME) is the explicit override.
  * @param packaged - whether Electron is running an installed application.
  * @param environment - launch environment.
  * @returns absolute application data root without importing another product's data.
  */
 export function resolveDesktopHome(packaged: boolean, environment: NodeJS.ProcessEnv = process.env): string {
   if (!packaged) return resolveDshHome(undefined, environment)
-  const configured = environment.EQIDIS_AI_HOME?.trim()
-  return resolveDshHome(configured || join(homedir(), '.eqidis-ai'), {})
+  const product = resolveDesktopProduct(environment)
+  const configured = environment[product.homeVariable]?.trim()
+  return resolveDshHome(configured || join(homedir(), product.homeDirectory), {})
 }
 
 /**

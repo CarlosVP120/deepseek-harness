@@ -1,5 +1,7 @@
 /** Typed English, Chinese, and Spanish copy owned by the Electron shell. */
 
+import { productCopy, resolveDesktopProduct } from './product.ts'
+
 export const en = {
   windowMenu: 'Window',
   minimize: 'Minimize',
@@ -365,10 +367,24 @@ export interface DesktopLocale {
 
 /** Resolve Electron's locale to one shipped Desktop dictionary. */
 export function resolveDesktopLocale(locale: string): DesktopLocale {
-  if (locale.toLowerCase().split('-')[0] === 'es') return { id: 'es', messages: es }
+  if (locale.toLowerCase().split('-')[0] === 'es') return { id: 'es', messages: productMessages(es) }
   return locale.toLowerCase().startsWith('zh')
-    ? { id: 'zh-CN', messages: zh }
-    : { id: 'en', messages: en }
+    ? { id: 'zh-CN', messages: productMessages(zh) }
+    : { id: 'en', messages: productMessages(en) }
+}
+
+const productDictionaries = new WeakMap<DesktopMessages, DesktopMessages>()
+
+/** The dictionary with the shipped product's name in place of the default one. */
+function productMessages(messages: DesktopMessages): DesktopMessages {
+  const product = resolveDesktopProduct()
+  if (product.id === 'eqidis') return messages
+  let named = productDictionaries.get(messages)
+  if (named === undefined) {
+    named = Object.fromEntries(Object.entries(messages).map(([key, text]) => [key, productCopy(text, product)])) as DesktopMessages
+    productDictionaries.set(messages, named)
+  }
+  return named
 }
 
 /**

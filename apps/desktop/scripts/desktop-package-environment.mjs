@@ -11,6 +11,7 @@ import { resolveDesktopPolicyEnvironment } from './desktop-policy-environment.mj
 import { resolveMacOSPackageSettings } from './macos-package-settings.mjs'
 import { resolveWindowsSignatureCacheDirectory } from './windows-signature-cache-directory.mjs'
 import { resolveWindowsPackageSettings } from './windows-package-settings.mjs'
+import { resolveDesktopPackagingProduct } from './desktop-product.mjs'
 
 const APP_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SHARED_SETTING = /^(?:DSH_DESKTOP_(?:APP_ID|INTERNAL_UPDATE_REPOSITORY|AUTO_UPDATE_ENV|NPM_REGISTRY|MANDATORY_UPDATE_(?:CONFIG|(?:TEST|PROD)_ORIGIN))|DOWNLOAD_TEST_RELEASE_ID|DOWNLOAD_(?:TEST|PROD)_(?:ORIGIN|COS_BUCKET|COS_SECRET_ID|COS_SECRET_KEY))$/u
@@ -27,7 +28,9 @@ const FILE_SETTINGS = ['DSH_DESKTOP_WINDOWS_CER_FILE', 'DSH_DESKTOP_WINDOWS_SIGN
  * @returns {NodeJS.ProcessEnv} Isolated environment with file-owned release settings.
  */
 export function loadDesktopPackageEnvironment(platform, environment = process.env, appRoot = APP_ROOT) {
-  const path = join(appRoot, platform === 'win32' ? '.env.windows' : '.env.macos')
+  // Each product keeps its own identity and signing settings: EQIDIS AI in .env.macos, ContabiliAI in .env.contabiliai.macos.
+  const { id } = resolveDesktopPackagingProduct(environment)
+  const path = join(appRoot, `.env${id === 'eqidis' ? '' : `.${id}`}.${platform === 'win32' ? 'windows' : 'macos'}`)
   let contents
   try {
     contents = readFileSync(path, 'utf8')

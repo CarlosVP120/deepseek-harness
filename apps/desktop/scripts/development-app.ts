@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { copyFileSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { resolveDesktopPackagingProduct } from './desktop-product.mjs'
 
 /** Workspace and runtime settings captured for Launch Services cold starts. */
 export interface DevelopmentAppOptions {
@@ -37,8 +38,8 @@ export function prepareDevelopmentApp(options: DevelopmentAppOptions): string {
     const plist = join(bundle, 'Contents', 'Info.plist')
     const values = {
       CFBundleIdentifier: `com.deepseek.harness.dev.${createHash('sha256').update(options.appRoot).digest('hex').slice(0, 12)}`,
-      CFBundleName: 'EQIDIS AI',
-      CFBundleDisplayName: 'EQIDIS AI',
+      CFBundleName: resolveDesktopPackagingProduct().productName,
+      CFBundleDisplayName: resolveDesktopPackagingProduct().productName,
       CFBundleExecutable: 'HarnessDev',
       CFBundleURLTypes: [{ CFBundleURLName: 'DeepSeek Harness', CFBundleURLSchemes: ['dsh'], CFBundleTypeRole: 'Viewer' }],
     }

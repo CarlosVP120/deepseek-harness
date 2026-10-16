@@ -2,10 +2,12 @@
   "name": "@deepseek-ai/dsh-contabiliai-tools",
   "description": "ContabiliAI accounting tools: CONTPAQi month jobs, file intake, autonomous journal generation and audited importables through the ContabiliAI engine bridge",
   "version": "0.2.1-alpha.1",
-  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CarlosVP120/deepseek-harness.git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
     "directory": "packages/contabiliai/tools"
   },
   "type": "module",

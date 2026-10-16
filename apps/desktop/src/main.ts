@@ -23,6 +23,8 @@ import {
   type MenuItemConstructorOptions,
 } from 'electron'
 import { resolveDesktopHome, resolveDesktopPaths } from './paths.ts'
+import { DESKTOP_PRODUCT_ENV, resolveDesktopProduct } from './product.ts'
+import { contabiliaiEngineEnvironment, packagedDesktopProduct } from './product-manifest.ts'
 import { DesktopProjectManager } from './project-manager.ts'
 import { DesktopHostFatalError, DesktopHostProcess, DesktopHostUncleanExitError } from './host-process.ts'
 import { DesktopPlatformView, PLATFORM_IPC, platformBounds } from './platform-view.ts'
@@ -59,6 +61,12 @@ import { DesktopUpdateOverlays } from './update-overlay.ts'
 import { DesktopQuitConfirmation } from './quit-confirmation.ts'
 import { DesktopTray } from './tray.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
+
+// A packaged build names its product in its manifest; development and scripts set the variable.
+if (app.isPackaged) {
+  const packagedProduct = packagedDesktopProduct(app.getAppPath())
+  if (packagedProduct !== undefined) process.env[DESKTOP_PRODUCT_ENV] = packagedProduct
+}
 
 let focusPrimaryWindow = (): void => {}
 let stopForRecovery = async (): Promise<void> => {}
@@ -315,6 +323,7 @@ function createWindow(preload: string, show = false, primary = false): BrowserWi
 async function main(): Promise<void> {
   // Pin the home before profile access and the protected login-shell environment read.
   process.env.DSH_HOME = resolveDesktopHome(app.isPackaged)
+  if (resolveDesktopProduct().id === 'contabiliai') Object.assign(process.env, contabiliaiEngineEnvironment(process.env.DSH_HOME))
   void pruneCrashReports(app.getPath('logs'))
   const journalDirectory = process.env.DSH_DESKTOP_UPDATE_JOURNAL_DIR
   const updateJournal = journalDirectory === undefined ? undefined : new DesktopUpdateJournal(journalDirectory, app.getVersion())
@@ -927,7 +936,7 @@ async function main(): Promise<void> {
   const applicationIconPath = development ? join(app.getAppPath(), 'resources', 'icon-windows.png')
     : join(process.resourcesPath, 'icon.png')
   app.setAboutPanelOptions({
-    applicationName: 'EQIDIS AI',
+    applicationName: resolveDesktopProduct().name,
     applicationVersion: app.getVersion(),
     // The release has no separate build number; omit Electron's bundle version.
     version: '',

@@ -4,22 +4,22 @@ import type { AfterPackContext, BeforePackContext } from 'app-builder-lib'
 export interface DesktopElectronBuilderConfig {
   readonly appId: string
   readonly artifactName: string
-  readonly protocols: readonly [{ readonly name: 'EQIDIS AI'; readonly schemes: readonly ['dsh'] }]
+  readonly protocols: readonly [{ readonly name: string; readonly schemes: readonly ['dsh'] }]
   readonly directories: {
     readonly output: string
   }
   readonly files: readonly [
-    string,
-    string,
-    string,
+    ...string[],
+    { readonly from: string, readonly to: 'renderer/assets', readonly filter: readonly [string] },
     string,
     { readonly from: string, readonly to: 'dsh', readonly filter: readonly ['**/*'] },
     { readonly from: string, readonly to: 'dsh/node_modules', readonly filter: readonly ['**/*'] },
   ]
   readonly extraMetadata: {
-    readonly name: '@eqidis/desktop-internal'
-    readonly productName: 'EQIDIS AI'
+    readonly name: string
+    readonly productName: string
     readonly dshDesktopAppId: string
+    readonly dshDesktopProduct: 'eqidis' | 'contabiliai'
     readonly dshMandatoryUpdatePolicy?: object
   }
   readonly asarUnpack: readonly string[]

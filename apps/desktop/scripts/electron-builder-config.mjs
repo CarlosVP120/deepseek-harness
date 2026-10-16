@@ -2,7 +2,7 @@ import { officePackageDirectories } from '../../../scripts/libreoffice-packages.
 import { X509Certificate } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
-import { join, relative, sep } from 'node:path'
+import { basename, dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
@@ -28,6 +28,7 @@ import { installWindowsDirectoryInstaller } from './windows-directory-installer.
 import { preserveWindowsRuntimeSignature, signWindowsCode } from './windows-runtime-signature.mjs'
 import { prepareWindowsAsarUnpack, verifyWindowsAsarUnpack } from './windows-asar-unpack.mjs'
 import { recordPackagingEvent } from './packaging-run.mjs'
+import { resolveDesktopPackagingProduct } from './desktop-product.mjs'
 import {
   resolveMacOSAppUpdateFeed,
   verifyMacOSAppUpdateConfig,
@@ -51,6 +52,7 @@ export function createElectronBuilderConfig(
   preparedRuntimeVersion = undefined,
 ) {
   const appId = resolveDesktopAppId(env)
+  const product = resolveDesktopPackagingProduct(env)
   const policy = env.DSH_DESKTOP_UNSIGNED === '1' ? undefined : resolveDesktopPolicyEnvironment(env)
   const targetPlatform = env.DSH_DESKTOP_TARGET_PLATFORM
   const resolvedPlatform = targetPlatform ?? hostPlatform
@@ -104,18 +106,19 @@ export function createElectronBuilderConfig(
   const packaged = resolveDesktopBuildCommit(env)
   return {
     appId,
-    protocols: [{ name: 'EQIDIS AI', schemes: ['dsh'] }],
+    protocols: [{ name: product.productName, schemes: ['dsh'] }],
     extraMetadata: {
-      name: '@eqidis/desktop-internal',
-      productName: 'EQIDIS AI',
+      name: product.packageName,
+      productName: product.productName,
       dshDesktopAppId: appId,
+      dshDesktopProduct: product.id,
       dshMandatoryUpdatePolicy: policy,
       ...buildVersion === productVersion ? {} : { version: buildVersion },
       ...packaged === undefined ? {} : { dshBuildCommit: packaged.commit, dshBuildDirty: packaged.dirty },
     },
-    productName: 'EQIDIS AI',
+    productName: product.productName,
     // Unsigned builds carry their own suffix so a shared file can never pass for a release artifact.
-    artifactName: `eqidis-ai-\${version}-\${os}-\${arch}${unsigned ? '-unsigned' : ''}.\${ext}`,
+    artifactName: `${product.artifactPrefix}-\${version}-\${os}-\${arch}${unsigned ? '-unsigned' : ''}.\${ext}`,
     directories: { output: unsigned ? buildPaths.unsignedArtifacts : buildPaths.artifacts },
     asar: true,
     electronDist: buildPaths.electron,
@@ -124,7 +127,7 @@ export function createElectronBuilderConfig(
       if (resolvedPlatform !== 'win32') return true
       await promisify(execFile)('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
         fileURLToPath(new URL('./prepare-windows-installer.ps1', import.meta.url)),
-        '-OutputDirectory', join(buildPaths.root, 'installer-ui')], {
+        '-OutputDirectory', join(buildPaths.root, 'installer-ui'), '-AssetsDirectory', product.installerAssets], {
         env: scrubWindowsSigningEnvironment(env), windowsHide: true,
       })
       if (windowsSigner !== undefined) {
@@ -142,6 +145,8 @@ export function createElectronBuilderConfig(
       'lib/preload-update-dialog.cjs',
       'lib/preload-welcome.cjs',
       'renderer/**/*',
+      '!renderer/assets/welcome-brand.svg',
+      { from: dirname(product.welcomeBrand), to: 'renderer/assets', filter: [basename(product.welcomeBrand)] },
       'package.json',
       { from: buildPaths.dsh, to: 'dsh', filter: ['**/*'] },
       // electron-builder excludes a source directory's root node_modules.
@@ -150,18 +155,18 @@ export function createElectronBuilderConfig(
     asarUnpack: unpack,
     extraResources: [
       { from: buildPaths.runtime, to: 'runtime' },
-      { from: fileURLToPath(new URL('../resources/icon-windows.png', import.meta.url)), to: 'icon.png' },
+      { from: join(product.resources, 'icon-windows.png'), to: 'icon.png' },
       // Windows tray bitmaps; macOS keeps the Dock and ships no menu bar icon.
-      ...(packagesWindows ? [{ from: fileURLToPath(new URL('../resources/tray-windows.ico', import.meta.url)), to: 'tray.ico' }] : []),
+      ...(packagesWindows ? [{ from: join(product.resources, 'tray-windows.ico'), to: 'tray.ico' }] : []),
     ],
     mac: {
-      icon: fileURLToPath(new URL('../resources/icon-macos.png', import.meta.url)),
-      category: 'public.app-category.developer-tools',
+      icon: join(product.resources, 'icon-macos.png'),
+      category: product.category,
       // macOS matches the application locale against this bundle, not Electron Framework resources.
             identity: unsigned ? (env.DSH_DESKTOP_MACOS_LOCAL_SIGNING_KEYCHAIN?.trim() ? '-' : env.DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY?.trim() || '-') : macOSSigning?.signingIdentity,
       forceCodeSigning: !unsigned,
       hardenedRuntime: !unsigned,
-      extendInfo: { CFBundleLocalizations: ['en', 'zh_CN', 'es'], NSMicrophoneUsageDescription: 'EQIDIS AI usa el micrófono para transcribir dictados.' },
+      extendInfo: { CFBundleLocalizations: ['en', 'zh_CN', 'es'], NSMicrophoneUsageDescription: product.microphoneUsage },
       entitlements: fileURLToPath(new URL('./macos-entitlements.plist', import.meta.url)),
       entitlementsInherit: fileURLToPath(new URL('./macos-entitlements.plist', import.meta.url)),
       // ASAR-unpacked native runtime files are pre-signed; PAK resources are sealed by their enclosing bundle.
@@ -242,7 +247,7 @@ export function createElectronBuilderConfig(
       )
     },
     win: {
-      icon: fileURLToPath(new URL('../resources/icon-windows.png', import.meta.url)),
+      icon: join(product.resources, 'icon-windows.png'),
       forceCodeSigning: !unsigned,
       signtoolOptions: {
         sign: windowsSigner,
