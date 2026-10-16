@@ -32,16 +32,17 @@
     }
   },
   "dependencies": {
-    "@deepseek-ai/dsh-client-ui-brand-contabiliai": "workspace:*",
-    "@deepseek-ai/dsh-contabiliai-tools": "workspace:*",
     "@deepseek-ai/dsh-agent-preset": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-brand-contabiliai": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-contabiliai": "workspace:*",
+    "@deepseek-ai/dsh-command-compact": "workspace:*",
+    "@deepseek-ai/dsh-compaction-basic": "workspace:*",
+    "@deepseek-ai/dsh-compaction-tool-result-pruner": "workspace:*",
+    "@deepseek-ai/dsh-contabiliai-tools": "workspace:*",
     "@deepseek-ai/dsh-persona": "workspace:*",
     "@deepseek-ai/dsh-time-context": "workspace:*",
-    "@deepseek-ai/dsh-compaction-basic": "workspace:*",
-    "@deepseek-ai/dsh-command-compact": "workspace:*",
-    "@deepseek-ai/dsh-compaction-tool-result-pruner": "workspace:*",
     "@deepseek-ai/dsh-tool-ask-user": "workspace:*",
-    "@deepseek-ai/dsh-tool-todo": "workspace:*",
-    "@deepseek-ai/dsh-tool-present": "workspace:*"
+    "@deepseek-ai/dsh-tool-present": "workspace:*",
+    "@deepseek-ai/dsh-tool-todo": "workspace:*"
   }
 }

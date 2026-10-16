@@ -25,7 +25,7 @@ export function ConversationContent(props: ConversationContentProps) {
   const {
     sessionId, phase, hero, useSession, useSessions, useSessionStatus,
     useWorkspaces, useInput, useComposerBlock, renderSlot, renderSlotChain,
-    selectWorkspace, openRecentSession, t, useFactorySlot,
+    selectWorkspace, openRecentSession, t, useFactorySlot, inputActions,
   } = props
   const session = useSession(snapshot => snapshot)
   const Views = useFactorySlot('views', ConversationSessionView)
@@ -201,6 +201,14 @@ export function ConversationContent(props: ConversationContentProps) {
         {hero && props.variant === 'main' && <AsciiLandscape />}
         {sessionId === undefined ? null : <Views />}
         {composerSeat}
+        {hero && props.variant === 'main' && renderSlot('conversation.home.panels', {
+          compose: (text, send = false) => {
+            if (inert || inputActions === undefined) return false
+            inputActions.setDraft(text)
+            if (send) inputActions.submit()
+            return true
+          },
+        })}
         {hero && props.variant === 'main' && <HomeDashboard
           sessions={catalog.ids.flatMap(id => catalog.byId[id] === undefined ? [] : [catalog.byId[id]])}
           workspaces={workspaces} t={t} selectWorkspace={selectWorkspace} openRecentSession={openRecentSession}

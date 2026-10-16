@@ -189,6 +189,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     'conversation.hero.workspace': { kind: 'single'; scope: 'root'; owner: EmptyWorkspaceOwnerProps }
     /** Brand mark shown before the blank-session headline. */
     'conversation.hero.brand.mark': { kind: 'single'; scope: 'root'; owner: HeroBrandMarkOwnerProps }
+    /** Product panels shown on the start page above the local Session catalog. */
+    'conversation.home.panels': { kind: 'list'; scope: 'root'; owner: HomePanelOwnerProps }
     /** Agent-preset control staged for a New Session. */
     'conversation.hero.agentPreset': { kind: 'single'; scope: 'session-maybe'; owner: HeroAgentPresetOwnerProps }
     /** Full-width entries above the composer card. */
@@ -234,6 +236,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
         'conversation.composer.bar': { kind: 'single'; scope: 'session-maybe' }
         'conversation.input.dock': { kind: 'list'; scope: 'session' }
         'conversation.hero.brand.mark': { kind: 'single'; scope: 'root' }
+        'conversation.home.panels': { kind: 'list'; scope: 'root' }
         'conversation.hero.workspace': { kind: 'single'; scope: 'root' }
         'conversation.hero.agentPreset': { kind: 'single'; scope: 'session-maybe' }
       }
@@ -449,6 +452,17 @@ export interface HeroBrandMarkOwnerProps {
   size: number
   /** Host class preserving the surrounding mark geometry. */
   className?: string | undefined
+}
+
+/** Callbacks a start-page panel uses to hand work to the blank Session. */
+export interface HomePanelOwnerProps {
+  /**
+   * Write a request into the start-page composer.
+   * @param text - plain request text.
+   * @param send - submit it at once instead of leaving it for the user to edit.
+   * @returns false while no blank Session can take input yet.
+   */
+  compose: (text: string, send?: boolean) => boolean
 }
 
 /** Full props of the resident optional-Session Conversation shell. */

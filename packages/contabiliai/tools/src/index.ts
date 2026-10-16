@@ -11,9 +11,10 @@ import { spawn } from 'node:child_process'
 import type { Context } from '@deepseek-ai/cordis'
 import Schema from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
+import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
+import type { ContabiliaiMonth } from './types.ts'
 
-export const name = 'contabiliai'
-export const inject = ['tools']
+export type * from './types.ts'
 
 export interface Config {
   /** Python interpreter of the engine environment. */
@@ -30,7 +31,7 @@ export const Config: Schema<Config> = Schema.object({
   timeoutMs: Schema.number().default(120000),
 })
 
-type BridgeResult = { ok: boolean, error?: string } & Record<string, unknown>
+type BridgeResult = { ok: boolean; error?: string } & Record<string, unknown>
 
 function callBridge(config: Config, command: string, payload: object, signal: AbortSignal): Promise<BridgeResult> {
   return new Promise((resolve, reject) => {
@@ -61,7 +62,51 @@ const text = {
   render: (_args: unknown, value: string) => [{ type: 'text' as const, text: value }],
 } as const
 
-export function apply(ctx: Context, config: Config) {
+type JsonLike = string | number | boolean | null | JsonLike[] | { [key: string]: JsonLike }
+type Json = { [key: string]: JsonLike }
+
+function parsed(value: string): Json {
+  try {
+    return JSON.parse(value) as Json
+  } catch {
+    return {}
+  }
+}
+
+/** The month card's data: what the engine reported, without the long per-file and per-question texts. */
+function monthCard(value: string) {
+  const {
+    rfc, empresa, periodo, estado, descripcion, etapa, intento, archivos, preguntas, resultado, avance, error, mensaje, listo_para_procesar,
+  } = parsed(value)
+  return JSON.parse(JSON.stringify({
+    rfc, empresa, periodo, estado, descripcion, etapa, intento, resultado, avance, error, mensaje, listo_para_procesar,
+    archivos: Array.isArray(archivos) ? archivos.length : undefined,
+    preguntas: Array.isArray(preguntas) ? preguntas.length : undefined,
+  })) as Json
+}
+
+const monthOutput = { ...text, presentationMeta: (_args: unknown, value: string) => monthCard(value) } as const
+
+interface Movement { fecha: string; banco: string; concepto: string; importe: string; poliza: unknown }
+
+/** The model reads totals per bank and only the movements still without a journal; the card gets every movement. */
+const coverageOutput = {
+  ...text,
+  render: (_args: unknown, value: string) => {
+    const { bancos, movimientos } = parsed(value) as unknown as { bancos?: JsonLike[]; movimientos?: Movement[] }
+    const missing = (movimientos ?? []).filter(row => !row.poliza)
+    return [{ type: 'text' as const, text: JSON.stringify({
+      bancos,
+      movimientos_total: movimientos?.length ?? 0,
+      sin_poliza: missing.length,
+      movimientos_sin_poliza: missing.slice(0, 60).map(({ fecha, banco, concepto, importe }) => ({ fecha, banco, concepto, importe })),
+      nota: 'El usuario ya ve en la tarjeta cada movimiento con su póliza; no los repitas, resume la cobertura.',
+    }, null, 1) }]
+  },
+  presentationMeta: (_args: unknown, value: string) => parsed(value),
+} as const
+
+function registerTools(ctx: Context, config: Config): void {
   const run = async (command: string, payload: object, signal: AbortSignal) => {
     const result = await callBridge(config, command, payload, signal)
     if (!result.ok) throw new Error(result.error ?? 'Error del motor ContabiliAI')
@@ -97,9 +142,9 @@ export function apply(ctx: Context, config: Config) {
 
   ctx.tools.register(defineTool({
     name: 'contabiliai_estado',
-    description: 'Consulta el estado del mes contable: archivos, si está listo para procesar, si el agente contable está trabajando, sus preguntas pendientes y, al terminar, pólizas, cobertura bancaria e IVA. Úsala para seguir el avance mientras el motor trabaja (cada consulta es barata).',
+    description: 'Consulta el estado del mes contable: archivos, si está listo para procesar, si el agente contable está trabajando, los pasos de su avance, sus preguntas pendientes y, al terminar, pólizas, cobertura bancaria e IVA. El usuario ve el resultado como una tarjeta del mes. Úsala para seguir el avance mientras el motor trabaja (cada consulta es barata).',
     parameters: month,
-    output: text,
+    output: monthOutput,
     execute: (args, exec) => run('estado', args, exec.signal),
   }))
 
@@ -120,8 +165,24 @@ export function apply(ctx: Context, config: Config) {
     name: 'contabiliai_procesar',
     description: 'Inicia la contabilización autónoma del mes: el agente contable consulta el historial de CONTPAQi, aplica las políticas de la empresa, concilia bancos, genera pólizas y las audita. Corre en segundo plano y tarda varios minutos; sigue el avance con contabiliai_estado. Si falta información, devuelve qué falta sin iniciar.',
     parameters: month,
-    output: text,
+    output: monthOutput,
     execute: (args, exec) => run('procesar', args, exec.signal),
+  }))
+
+  ctx.tools.register(defineTool({
+    name: 'contabiliai_cobertura',
+    description: 'Muestra la cobertura bancaria del último intento con pólizas: totales de cargos y abonos por banco y cada movimiento del estado de cuenta con la póliza y las cuentas con que se registró. El usuario ve una tarjeta con todos los movimientos; tú recibes los totales y los movimientos que quedaron sin póliza. Úsala al terminar un mes o cuando el usuario pregunte cómo quedó un movimiento.',
+    parameters: month,
+    output: coverageOutput,
+    execute: (args, exec) => run('cobertura', args, exec.signal),
+  }))
+
+  ctx.tools.register(defineTool({
+    name: 'contabiliai_meses',
+    description: 'Lista los meses contables abiertos de todas las empresas con su estado, pólizas y cobertura bancaria, del más reciente al más antiguo.',
+    parameters: {},
+    output: text,
+    execute: (_args, exec) => run('meses', {}, exec.signal),
   }))
 
   ctx.tools.register(defineTool({
@@ -132,3 +193,35 @@ export function apply(ctx: Context, config: Config) {
     execute: (args, exec) => run('importable', args, exec.signal),
   }))
 }
+
+/**
+ * The ContabiliAI Host service: registers the accounting tools and serves the
+ * Client panels (start-page months) through the `contabiliai` Remote namespace.
+ */
+export class Contabiliai extends TypertRemoteService {
+  static inject = ['tools']
+  static Config = Config
+
+  /**
+   * @param ctx - Host context owning the tool registry.
+   * @param config - Engine interpreter, bridge and call budget.
+   */
+  constructor(ctx: Context, private readonly config: Config) {
+    super(ctx, 'contabiliai')
+    registerTools(ctx, config)
+  }
+
+  /**
+   * Every company month the engine keeps, newest activity first.
+   * @param signal - Remote caller cancellation.
+   * @returns the months with their state, journals and bank coverage.
+   */
+  @Remote('months')
+  async months(signal?: AbortSignal): Promise<ContabiliaiMonth[]> {
+    const result = await callBridge(this.config, 'meses', {}, signal ?? new AbortController().signal)
+    if (!result.ok) throw new RemoteError('gateway/internal', result.error ?? 'Error del motor ContabiliAI', {})
+    return result.meses as ContabiliaiMonth[]
+  }
+}
+
+export default Contabiliai
