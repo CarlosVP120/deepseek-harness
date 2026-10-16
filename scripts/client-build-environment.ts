@@ -22,6 +22,17 @@ const OFFICIAL_CLIENT_BUILD_ENVIRONMENT = {
   DSH_CLIENT_TITLE: 'EQIDIS AI',
 } as const
 
+/** Public client environment of ContabiliAI, the accounting product built from this fork. */
+const CONTABILIAI_CLIENT_BUILD_ENVIRONMENT = {
+  DSH_CLIENT_BUILD_PROFILE: 'contabiliai',
+  DSH_CLIENT_TITLE: 'ContabiliAI',
+} as const
+
+/** Named product profiles beside `official`, selected through {@link CLIENT_BUILD_PROFILE_SELECTOR}. */
+const PRODUCT_CLIENT_BUILD_ENVIRONMENTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  contabiliai: CONTABILIAI_CLIENT_BUILD_ENVIRONMENT,
+}
+
 /** Public variable carrying the source commit embedded in client artifacts. */
 const CLIENT_COMMIT_HASH_VARIABLE = 'DSH_CLIENT_COMMIT_HASH'
 
@@ -204,7 +215,15 @@ export function resolveClientBuildEnvironment(
       ...OFFICIAL_CLIENT_BUILD_ENVIRONMENT,
     }
   }
-  throw new Error(`unknown client build profile ${JSON.stringify(profile)}; expected "official"`)
+  const product = PRODUCT_CLIENT_BUILD_ENVIRONMENTS[profile]
+  if (product !== undefined) {
+    // Product profiles keep the repository-owned commit and version a default build records.
+    const inherited = clientBuildEnvironment(environment)
+    return Object.fromEntries(Object.entries({ ...inherited, ...product })
+      .sort(([left], [right]) => left.localeCompare(right)))
+  }
+  const known = ['official', ...Object.keys(PRODUCT_CLIENT_BUILD_ENVIRONMENTS)].map((name) => JSON.stringify(name)).join(', ')
+  throw new Error(`unknown client build profile ${JSON.stringify(profile)}; expected one of ${known}`)
 }
 
 /**
