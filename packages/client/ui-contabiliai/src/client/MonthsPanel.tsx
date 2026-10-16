@@ -22,7 +22,7 @@ type Load = { phase: 'loading' } | { phase: 'error' } | { phase: 'ready'; months
 
 /**
  * Start-page panel listing the accounting months by company with their state
- * and bank coverage; choosing one asks ContabiliAI to open it in a new chat.
+ * and bank coverage; choosing one asks FiscalCFDI AI to open it in a new chat.
  */
 export function MonthsPanel({ compose, loadMonths, t }: Props) {
   const [load, setLoad] = useState<Load>({ phase: 'loading' })

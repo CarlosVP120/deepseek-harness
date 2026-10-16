@@ -1,5 +1,5 @@
 /**
- * Turn-scoped ContabiliAI results, so the month and bank-coverage cards render
+ * Turn-scoped FiscalCFDI AI results, so the month and bank-coverage cards render
  * beneath the Turn's closing reply instead of inside the collapsed Tool group.
  * Built from the Session log alone (results and their presentation metadata),
  * so replay reproduces the cards.
@@ -21,7 +21,7 @@ export interface ContabiliaiTurnData {
 
 declare module '@deepseek-ai/dsh-client-ui-conversation/client' {
   interface ConversationTurnDataMap {
-    /** Latest ContabiliAI month and coverage results settled in this Turn. */
+    /** Latest FiscalCFDI AI month and coverage results settled in this Turn. */
     'contabiliai-cards': ContabiliaiTurnData
   }
 }

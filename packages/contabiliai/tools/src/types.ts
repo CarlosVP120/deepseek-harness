@@ -1,6 +1,6 @@
-/** Browser-safe ContabiliAI vocabulary shared by the Host service and the Client panels. @module */
+/** Browser-safe FiscalCFDI AI vocabulary shared by the Host service and the Client panels. @module */
 
-/** Lifecycle of one company month in the ContabiliAI engine. */
+/** Lifecycle of one company month in the FiscalCFDI AI engine. */
 export type ContabiliaiMonthState = 'draft' | 'ready' | 'running' | 'waiting' | 'completed' | 'blocked' | 'failed' | 'cancelled'
 
 /** One company month as the start-page panel lists it. */

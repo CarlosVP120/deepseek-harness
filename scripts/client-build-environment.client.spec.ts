@@ -130,7 +130,7 @@ describe('client build environment', () => {
       DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
       DSH_CLIENT_EXTRA: 'local-extra',
       DSH_CLIENT_GIT_DIRTY: 'true',
-      DSH_CLIENT_TITLE: 'ContabiliAI',
+      DSH_CLIENT_TITLE: 'FiscalCFDI AI',
       DSH_CLIENT_VERSION: '1.2.3',
     })
     expect(clientBuildProcessEnvironment(parent, {

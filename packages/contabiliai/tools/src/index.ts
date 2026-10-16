@@ -1,7 +1,7 @@
 /**
- * ContabiliAI plugin for DeepSeek Harness.
+ * FiscalCFDI AI plugin for DeepSeek Harness.
  *
- * Exposes the ContabiliAI accounting engine (CONTPAQi SQL history, CFDI/bank
+ * Exposes the FiscalCFDI AI accounting engine (CONTPAQi SQL history, CFDI/bank
  * intake, autonomous journal generation, audit and CONTPAQi importable) as
  * model-facing tools. Every tool delegates to `bridge.py`, which reuses the
  * same desk layer as the Chainlit pilot, so both front ends share months,
@@ -45,7 +45,7 @@ function callBridge(config: Config, command: string, payload: object, signal: Ab
       try {
         resolve(JSON.parse(stdout) as BridgeResult)
       } catch {
-        reject(new Error(`El motor ContabiliAI terminó sin respuesta válida (código ${code}). ${stderr.slice(-400)}`))
+        reject(new Error(`El motor FiscalCFDI AI terminó sin respuesta válida (código ${code}). ${stderr.slice(-400)}`))
       }
     })
     child.stdin.end(JSON.stringify(payload))
@@ -109,13 +109,13 @@ const coverageOutput = {
 function registerTools(ctx: Context, config: Config): void {
   const run = async (command: string, payload: object, signal: AbortSignal) => {
     const result = await callBridge(config, command, payload, signal)
-    if (!result.ok) throw new Error(result.error ?? 'Error del motor ContabiliAI')
+    if (!result.ok) throw new Error(result.error ?? 'Error del motor FiscalCFDI AI')
     return JSON.stringify(result, null, 1)
   }
 
   ctx.tools.register(defineTool({
     name: 'contabiliai_empresas',
-    description: 'Lista las empresas de CONTPAQi que ContabiliAI puede contabilizar (RFC, nombre y base SQL). Úsala cuando el usuario no indique el RFC o para confirmar la empresa.',
+    description: 'Lista las empresas de CONTPAQi que FiscalCFDI AI puede contabilizar (RFC, nombre y base SQL). Úsala cuando el usuario no indique el RFC o para confirmar la empresa.',
     parameters: {},
     output: text,
     execute: (_args, exec) => run('empresas', {}, exec.signal),
@@ -195,7 +195,7 @@ function registerTools(ctx: Context, config: Config): void {
 }
 
 /**
- * The ContabiliAI Host service: registers the accounting tools and serves the
+ * The FiscalCFDI AI Host service: registers the accounting tools and serves the
  * Client panels (start-page months) through the `contabiliai` Remote namespace.
  */
 export class Contabiliai extends TypertRemoteService {
@@ -219,7 +219,7 @@ export class Contabiliai extends TypertRemoteService {
   @Remote('months')
   async months(signal?: AbortSignal): Promise<ContabiliaiMonth[]> {
     const result = await callBridge(this.config, 'meses', {}, signal ?? new AbortController().signal)
-    if (!result.ok) throw new RemoteError('gateway/internal', result.error ?? 'Error del motor ContabiliAI', {})
+    if (!result.ok) throw new RemoteError('gateway/internal', result.error ?? 'Error del motor FiscalCFDI AI', {})
     return result.meses as ContabiliaiMonth[]
   }
 }

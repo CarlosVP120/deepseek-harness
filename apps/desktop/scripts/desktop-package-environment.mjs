@@ -28,7 +28,7 @@ const FILE_SETTINGS = ['DSH_DESKTOP_WINDOWS_CER_FILE', 'DSH_DESKTOP_WINDOWS_SIGN
  * @returns {NodeJS.ProcessEnv} Isolated environment with file-owned release settings.
  */
 export function loadDesktopPackageEnvironment(platform, environment = process.env, appRoot = APP_ROOT) {
-  // Each product keeps its own identity and signing settings: EQIDIS AI in .env.macos, ContabiliAI in .env.contabiliai.macos.
+  // Each product keeps its own identity and signing settings: EQIDIS AI in .env.macos, FiscalCFDI AI in .env.contabiliai.macos.
   const { id } = resolveDesktopPackagingProduct(environment)
   const path = join(appRoot, `.env${id === 'eqidis' ? '' : `.${id}`}.${platform === 'win32' ? 'windows' : 'macos'}`)
   let contents

@@ -183,7 +183,7 @@ export const PROFILE_TEMPLATES: Record<string, ProfileTemplate> = {
   web: {
     bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'],
   },
-  // ContabiliAI, the accounting product built from this fork: the Web surface plus its product bundle.
+  // FiscalCFDI AI, the accounting product built from this fork: the Web surface plus its product bundle.
   contabiliai: {
     bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@deepseek-ai/dsh-contabiliai-app'],
   },

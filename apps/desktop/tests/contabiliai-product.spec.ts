@@ -1,4 +1,4 @@
-/** ContabiliAI ships from the same shell with its own name, data, profile, artwork and package identity. */
+/** FiscalCFDI AI ships from the same shell with its own name, data, profile, artwork and package identity. */
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -15,21 +15,21 @@ it('keeps EQIDIS AI as the default product', () => {
   expect(() => resolveDesktopProduct({ DSH_DESKTOP_PRODUCT: 'other' })).toThrow(/DSH_DESKTOP_PRODUCT/u)
 })
 
-it('gives installed ContabiliAI its own data root and override, apart from EQIDIS and Harness', () => {
+it('gives installed FiscalCFDI AI its own data root and override, apart from EQIDIS and Harness', () => {
   const environment = { DSH_DESKTOP_PRODUCT: 'contabiliai', DSH_HOME: '/unrelated', EQIDIS_AI_HOME: '/eqidis' }
   expect(resolveDesktopHome(true, environment)).toBe(join(homedir(), '.contabiliai'))
   expect(resolveDesktopHome(true, { ...environment, CONTABILIAI_HOME: '/data/contabiliai' })).toBe('/data/contabiliai')
   expect(resolveDesktopProduct(environment).profile).toBe('contabiliai')
 })
 
-it('names ContabiliAI in shell copy, including contracted Spanish', async () => {
+it('names FiscalCFDI AI in shell copy, including contracted Spanish', async () => {
   const contabiliai = resolveDesktopProduct({ DSH_DESKTOP_PRODUCT: 'contabiliai' })
-  expect(productCopy('¿Salir dEQIDIS AI?', contabiliai)).toBe('¿Salir de ContabiliAI?')
-  expect(productCopy('Quit EQIDIS AI', contabiliai)).toBe('Quit ContabiliAI')
+  expect(productCopy('¿Salir dEQIDIS AI?', contabiliai)).toBe('¿Salir de FiscalCFDI AI?')
+  expect(productCopy('Quit EQIDIS AI', contabiliai)).toBe('Quit FiscalCFDI AI')
   vi.stubEnv('DSH_DESKTOP_PRODUCT', 'contabiliai')
   const { resolveDesktopLocale } = await import('../src/locale.ts')
   const messages = resolveDesktopLocale('es').messages
-  expect(messages.quitTitle).toBe('¿Salir de ContabiliAI?')
+  expect(messages.quitTitle).toBe('¿Salir de FiscalCFDI AI?')
   expect(Object.values(messages).join('\n')).not.toContain('EQIDIS')
 })
 
@@ -52,16 +52,16 @@ it('reads the recorded product and the engine location from the data root', () =
   }
 })
 
-it('packages ContabiliAI under its own name, manifest, artifacts and artwork', async () => {
+it('packages FiscalCFDI AI under its own name, manifest, artifacts and artwork', async () => {
   const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
   const config = createElectronBuilderConfig({
     DSH_DESKTOP_PRODUCT: 'contabiliai', DSH_DESKTOP_APP_ID: 'mx.contabiliai.app', DSH_DESKTOP_UNSIGNED: '1',
   }, 'darwin', 'arm64')
   expect(config.appId).toBe('mx.contabiliai.app')
-  expect(config.extraMetadata).toMatchObject({ name: '@contabiliai/desktop', productName: 'ContabiliAI', dshDesktopProduct: 'contabiliai' })
-  expect(config.artifactName.startsWith('contabiliai-')).toBe(true)
-  expect(config.protocols[0].name).toBe('ContabiliAI')
-  expect(config.mac.extendInfo.NSMicrophoneUsageDescription).toContain('ContabiliAI')
+  expect(config.extraMetadata).toMatchObject({ name: '@fiscalcfdi/ai-desktop', productName: 'FiscalCFDI AI', dshDesktopProduct: 'contabiliai' })
+  expect(config.artifactName.startsWith('fiscalcfdi-ai-')).toBe(true)
+  expect(config.protocols[0].name).toBe('FiscalCFDI AI')
+  expect(config.mac.extendInfo.NSMicrophoneUsageDescription).toContain('FiscalCFDI AI')
   const brand = config.files.flatMap(entry => typeof entry === 'object' && entry.to === 'renderer/assets' ? [entry.from] : [])
   expect(brand).toHaveLength(1)
   expect(brand[0]).toMatch(/resources\/contabiliai$/u)

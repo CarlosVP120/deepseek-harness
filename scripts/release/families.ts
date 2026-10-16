@@ -12,8 +12,11 @@
 import { globSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
+  CLIENT_BUILD_PROFILE_SELECTOR,
   officialClientBuildEnvironment,
   readClientBuildRecord,
+  repositoryClientBuildEnvironment,
+  resolveClientBuildEnvironment,
 } from '../client-build-environment.ts'
 import { validateTarballPayload } from '../publication-payload.ts'
 
@@ -327,9 +330,15 @@ class DshFamily extends ReleaseFamily {
   ] as const
   readonly tagPrefix = 'dsh-v'
 
-  /** Require current artifacts from a complete official client build. */
+  /**
+   * Require current artifacts from a complete official client build, or from the
+   * product profile DSH_BUILD_CLIENT_PROFILE names (a product desktop package).
+   */
   override verifyBuildArtifacts(root: string): void {
-    readClientBuildRecord(root, officialClientBuildEnvironment(root))
+    const profile = process.env[CLIENT_BUILD_PROFILE_SELECTOR]
+    readClientBuildRecord(root, profile === undefined || profile === 'official'
+      ? officialClientBuildEnvironment(root)
+      : resolveClientBuildEnvironment(repositoryClientBuildEnvironment(root, process.env), profile) as Readonly<Record<`DSH_CLIENT_${string}`, string>>)
   }
 
   /**

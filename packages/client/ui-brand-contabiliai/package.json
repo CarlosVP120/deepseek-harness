@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-brand-contabiliai",
-  "description": "ContabiliAI brand occupants for the Web client sidebar and conversation slots",
+  "description": "FiscalCFDI AI brand occupants for the Web client sidebar and conversation slots",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
     "access": "public"

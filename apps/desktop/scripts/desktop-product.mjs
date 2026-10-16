@@ -23,13 +23,13 @@ export const DESKTOP_PACKAGING_PRODUCTS = Object.freeze({
   }),
   contabiliai: Object.freeze({
     id: 'contabiliai',
-    productName: 'ContabiliAI',
-    packageName: '@contabiliai/desktop',
-    artifactPrefix: 'contabiliai',
+    productName: 'FiscalCFDI AI',
+    packageName: '@fiscalcfdi/ai-desktop',
+    artifactPrefix: 'fiscalcfdi-ai',
     resources: resource('resources/contabiliai'),
     welcomeBrand: resource('resources/contabiliai/welcome-brand.svg'),
     installerAssets: resource('resources/contabiliai/installer'),
-    microphoneUsage: 'ContabiliAI usa el micrófono para transcribir dictados.',
+    microphoneUsage: 'FiscalCFDI AI usa el micrófono para transcribir dictados.',
     category: 'public.app-category.finance',
   }),
 })

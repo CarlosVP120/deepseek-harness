@@ -25,7 +25,7 @@ interface EngineFile {
 }
 
 /**
- * Environment the ContabiliAI tools need to reach the accounting engine. The
+ * Environment the FiscalCFDI AI tools need to reach the accounting engine. The
  * engine is a separate Python installation; its interpreter and bridge are
  * named in `<home>/engine.json` so the installed application never assumes
  * where it lives. Variables already set in the launch environment win.

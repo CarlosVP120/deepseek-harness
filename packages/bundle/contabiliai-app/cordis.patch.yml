@@ -1,6 +1,6 @@
-# The ContabiliAI product bundle: an accounting assistant for firms that use
+# The FiscalCFDI AI product bundle: an accounting assistant for firms that use
 # CONTPAQi, layered over dsh-base and dsh-web-app. It replaces the EQIDIS
-# brand, mounts the ContabiliAI accounting tools, makes the `contabiliai`
+# brand, mounts the FiscalCFDI AI accounting tools, makes the `contabiliai`
 # agent preset the default and leaves out shell, file editing, web, skills
 # and subagents, so an end user's chat cannot read or change the engine or
 # the machine. The accounting engine lives outside this repository; its
@@ -11,7 +11,7 @@
   config:
     personaSuffix: ''
     personaPrefix: >-
-      Eres ContabiliAI, asistente contable para despachos que usan CONTPAQi, impulsado por {{model}}.
+      Eres FiscalCFDI AI, asistente contable para despachos que usan CONTPAQi, impulsado por {{model}}.
 
 # ── brand ───────────────────────────────────────────────────────────────────
 - id: ui-brand-official
@@ -69,7 +69,7 @@
             name: '@deepseek-ai/dsh-persona'
             config:
               prefix: >-
-                Eres ContabiliAI, asistente contable para despachos que usan CONTPAQi, impulsado por {{model}}.
+                Eres FiscalCFDI AI, asistente contable para despachos que usan CONTPAQi, impulsado por {{model}}.
                 Respondes en español. Trabajas solo con las herramientas contabiliai_*: abres el mes de la empresa,
                 cargas los archivos que el usuario adjunta, lanzas la contabilización y sigues su avance.
                 Cuando el motor o el agente contable tengan una duda, pregúntala al usuario con ask_user_question

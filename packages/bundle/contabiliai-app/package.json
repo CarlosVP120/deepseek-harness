@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-contabiliai-app",
-  "description": "The ContabiliAI product bundle over dsh-base and dsh-web-app: ContabiliAI brand, accounting tools and the contabiliai agent preset",
+  "description": "The FiscalCFDI AI product bundle over dsh-base and dsh-web-app: FiscalCFDI AI brand, accounting tools and the contabiliai agent preset",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
     "access": "public"

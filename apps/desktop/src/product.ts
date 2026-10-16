@@ -25,7 +25,7 @@ export interface DesktopProduct {
 export const DESKTOP_PRODUCTS: Readonly<Record<DesktopProductId, DesktopProduct>> = {
   eqidis: { id: 'eqidis', name: 'EQIDIS AI', homeDirectory: '.eqidis-ai', homeVariable: 'EQIDIS_AI_HOME', profile: 'web' },
   contabiliai: {
-    id: 'contabiliai', name: 'ContabiliAI', homeDirectory: '.contabiliai', homeVariable: 'CONTABILIAI_HOME', profile: 'contabiliai',
+    id: 'contabiliai', name: 'FiscalCFDI AI', homeDirectory: '.contabiliai', homeVariable: 'CONTABILIAI_HOME', profile: 'contabiliai',
   },
 }
 

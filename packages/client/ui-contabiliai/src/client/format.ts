@@ -1,4 +1,4 @@
-/** Formatting and defensive reads shared by the ContabiliAI views. */
+/** Formatting and defensive reads shared by the FiscalCFDI AI views. */
 
 /** Bridge step as the engine reports it. */
 export interface Step {

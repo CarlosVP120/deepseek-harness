@@ -5,7 +5,7 @@ export interface DesktopPackagingProduct {
   readonly productName: string
   /** Packaged manifest name; it also names the updater cache. */
   readonly packageName: string
-  /** Artifact file-name prefix, e.g. `contabiliai-0.2.1-mac-arm64.dmg`. */
+  /** Artifact file-name prefix, e.g. `fiscalcfdi-ai-0.2.1-mac-arm64.dmg`. */
   readonly artifactPrefix: string
   /** Directory holding icon.png, icon-macos.png, icon-windows.png and tray-windows.ico. */
   readonly resources: string

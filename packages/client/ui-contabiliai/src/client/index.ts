@@ -1,5 +1,5 @@
 /**
- * ContabiliAI browser views: the month card for `contabiliai_estado` and
+ * FiscalCFDI AI browser views: the month card for `contabiliai_estado` and
  * `contabiliai_procesar`, the bank-coverage card for `contabiliai_cobertura`
  * and the start-page accounting months panel, which reads the Host's
  * `contabiliai` Remote namespace. This plugin mounts that namespace itself, so
@@ -22,7 +22,7 @@ import { en, es, NS, zh, type ContabiliaiKey } from './locales.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
-    /** ContabiliAI chat cards and start-page panel copy. */
+    /** FiscalCFDI AI chat cards and start-page panel copy. */
     'contabiliai': ContabiliaiKey
   }
 }

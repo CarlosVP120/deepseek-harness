@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-contabiliai-tools",
-  "description": "ContabiliAI accounting tools: CONTPAQi month jobs, file intake, autonomous journal generation and audited importables through the ContabiliAI engine bridge",
+  "description": "FiscalCFDI AI accounting tools: CONTPAQi month jobs, file intake, autonomous journal generation and audited importables through the FiscalCFDI AI engine bridge",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
     "access": "public"

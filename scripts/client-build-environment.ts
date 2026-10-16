@@ -22,10 +22,10 @@ const OFFICIAL_CLIENT_BUILD_ENVIRONMENT = {
   DSH_CLIENT_TITLE: 'EQIDIS AI',
 } as const
 
-/** Public client environment of ContabiliAI, the accounting product built from this fork. */
+/** Public client environment of FiscalCFDI AI, the accounting product built from this fork. */
 const CONTABILIAI_CLIENT_BUILD_ENVIRONMENT = {
   DSH_CLIENT_BUILD_PROFILE: 'contabiliai',
-  DSH_CLIENT_TITLE: 'ContabiliAI',
+  DSH_CLIENT_TITLE: 'FiscalCFDI AI',
 } as const
 
 /** Named product profiles beside `official`, selected through {@link CLIENT_BUILD_PROFILE_SELECTOR}. */
@@ -222,7 +222,7 @@ export function resolveClientBuildEnvironment(
     return Object.fromEntries(Object.entries({ ...inherited, ...product })
       .sort(([left], [right]) => left.localeCompare(right)))
   }
-  const known = ['official', ...Object.keys(PRODUCT_CLIENT_BUILD_ENVIRONMENTS)].map((name) => JSON.stringify(name)).join(', ')
+  const known = ['official', ...Object.keys(PRODUCT_CLIENT_BUILD_ENVIRONMENTS)].map(name => JSON.stringify(name)).join(', ')
   throw new Error(`unknown client build profile ${JSON.stringify(profile)}; expected one of ${known}`)
 }
 

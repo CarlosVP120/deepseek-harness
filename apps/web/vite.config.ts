@@ -25,7 +25,11 @@ function clientDocumentTitle(): Plugin {
   return {
     name: 'dsh-client-document-title',
     transformIndexHtml(html) {
-      return html.replace('<title>DSH Local Build</title>', `<title>${title}</title>`)
+      const titled = html.replace('<title>DSH Local Build</title>', `<title>${title}</title>`)
+      // FiscalCFDI AI (client profile `contabiliai`) shows the FiscalCFDI application icon in both themes.
+      if (process.env.DSH_CLIENT_BUILD_PROFILE !== 'contabiliai') return titled
+      return titled.replace(/<link rel="icon"[^>]*>\s*<link rel="icon"[^>]*>/u,
+        '<link rel="icon" type="image/svg+xml" href="/fiscalcfdi-ai-favicon.svg" />')
     },
   }
 }
