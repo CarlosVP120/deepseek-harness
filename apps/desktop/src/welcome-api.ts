@@ -66,7 +66,7 @@ export interface WelcomeAuthentication {
 }
 
 /**
- * EQIDIS AI enters the workspace independently of provider credentials.
+ * FiscalCFDI AI enters the workspace independently of provider credentials.
  * @param authentication - account and API-key metadata retained for callers.
  * @returns false; provider credentials are configured inside the workspace.
  */

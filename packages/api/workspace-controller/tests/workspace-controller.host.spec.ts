@@ -500,7 +500,7 @@ describe('accounting project template', () => {
     const project = await controller.create({ path: stageDir(root, 'new-accounting-project') })
     const context = await controller.getProjectContext({ workspaceId: project.workspace.workspaceId })
     expect(context.instructions).toBe(DEFAULT_PROJECT_INSTRUCTIONS)
-    expect(context.instructions).not.toMatch(/MOENDI|2026|\.xlsx|\.eqidis-context/)
+    expect(context.instructions).not.toMatch(/MOENDI|2026|\.xlsx|\.fiscalcfdi-context/)
     await controller.saveProjectInstructions({ workspaceId: project.workspace.workspaceId, instructions: 'My revised instructions' })
     expect((await controller.getProjectContext({ workspaceId: project.workspace.workspaceId })).instructions).toBe('My revised instructions')
   })

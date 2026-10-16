@@ -19,18 +19,18 @@ export const CLIENT_BUILD_PROFILE_SELECTOR = 'DSH_BUILD_CLIENT_PROFILE'
 /** Public client environment required by official DSH artifacts. */
 const OFFICIAL_CLIENT_BUILD_ENVIRONMENT = {
   DSH_CLIENT_BUILD_PROFILE: 'official',
-  DSH_CLIENT_TITLE: 'EQIDIS AI',
+  DSH_CLIENT_TITLE: 'FiscalCFDI AI',
 } as const
 
-/** Public client environment of FiscalCFDI AI, the accounting product built from this fork. */
-const CONTABILIAI_CLIENT_BUILD_ENVIRONMENT = {
-  DSH_CLIENT_BUILD_PROFILE: 'contabiliai',
+/** Public client environment of a local FiscalCFDI AI build (commit and version inherited). */
+const FISCALCFDI_CLIENT_BUILD_ENVIRONMENT = {
+  DSH_CLIENT_BUILD_PROFILE: 'fiscalcfdi',
   DSH_CLIENT_TITLE: 'FiscalCFDI AI',
 } as const
 
 /** Named product profiles beside `official`, selected through {@link CLIENT_BUILD_PROFILE_SELECTOR}. */
 const PRODUCT_CLIENT_BUILD_ENVIRONMENTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
-  contabiliai: CONTABILIAI_CLIENT_BUILD_ENVIRONMENT,
+  fiscalcfdi: FISCALCFDI_CLIENT_BUILD_ENVIRONMENT,
 }
 
 /** Public variable carrying the source commit embedded in client artifacts. */

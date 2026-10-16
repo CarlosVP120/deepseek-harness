@@ -132,7 +132,7 @@ function HeroFish({ hovering }: { hovering: boolean }) {
 export function HeroShell({ t, renderSlot, children }: HeroShellProps) {
   const [hovering, setHovering] = useState(false)
   const headline = t('hero.headline')
-  const accent = 'Extraordinario'
+  const accent = t('hero.headlineAccent')
   const accentIndex = headline.indexOf(accent)
   return (
     <div className={css.root}>

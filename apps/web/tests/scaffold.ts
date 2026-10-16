@@ -567,11 +567,11 @@ export async function launchWebScaffold(options: LaunchOptions = {}): Promise<We
   // The scaffold's own overrides, above every bundle layer like `--patch` overlays.
   const overlayPatches: PatchOptions[] = [
     // Provider-management scenarios explicitly start from an empty test catalog.
-    // The EQIDIS deployment’s OpenRouter defaults are checked separately.
+    // The FiscalCFDI AI deployment’s OpenRouter defaults are checked separately.
     ...options.deploymentProviders === true ? [] : [
       { id: 'llm-pi-ai', config: { providers: {} } },
       { id: 'llm-deepseek-account', disabled: false },
-      // Canonical upstream replays predate EQIDIS's opt-in delegation routes.
+      // Canonical upstream replays predate FiscalCFDI AI's opt-in delegation routes.
       // Keep that deployment policy in the deployment-specific test lane.
       { id: 'subagent-model-selection-settings', config: { enabled: false, allowedModels: [] } },
     ],

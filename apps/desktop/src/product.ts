@@ -1,14 +1,14 @@
 /**
- * Runtime identity of the product this Desktop build ships. One Electron
- * shell serves several products of the fork; the build records its product in
- * the packaged manifest (`dshDesktopProduct`), and development and build
- * scripts select it with DSH_DESKTOP_PRODUCT. EQIDIS AI is the default.
+ * Runtime identity of FiscalCFDI AI, the product this Desktop shell ships: its
+ * name, its data root and the profile its Host runs. The build records the
+ * product in the packaged manifest (`dshDesktopProduct`); development and build
+ * scripts may name it with DSH_DESKTOP_PRODUCT.
  */
 
 /** Products this shell can ship. */
-export type DesktopProductId = 'eqidis' | 'contabiliai'
+export type DesktopProductId = 'fiscalcfdi'
 
-/** Runtime facts that differ between products. */
+/** Runtime facts of one product. */
 export interface DesktopProduct {
   readonly id: DesktopProductId
   /** Display name: menus, dialogs, About panel, welcome window. */
@@ -23,9 +23,8 @@ export interface DesktopProduct {
 
 /** Every product's runtime identity. */
 export const DESKTOP_PRODUCTS: Readonly<Record<DesktopProductId, DesktopProduct>> = {
-  eqidis: { id: 'eqidis', name: 'EQIDIS AI', homeDirectory: '.eqidis-ai', homeVariable: 'EQIDIS_AI_HOME', profile: 'web' },
-  contabiliai: {
-    id: 'contabiliai', name: 'FiscalCFDI AI', homeDirectory: '.contabiliai', homeVariable: 'CONTABILIAI_HOME', profile: 'contabiliai',
+  fiscalcfdi: {
+    id: 'fiscalcfdi', name: 'FiscalCFDI AI', homeDirectory: '.fiscalcfdi-ai', homeVariable: 'FISCALCFDI_AI_HOME', profile: 'fiscalcfdi',
   },
 }
 
@@ -48,24 +47,12 @@ export function isProductId(value: unknown): value is DesktopProductId {
 /**
  * Select the product from the environment.
  * @param environment - launch or build environment.
- * @returns the selected product; EQIDIS AI when none is named.
+ * @returns the selected product; FiscalCFDI AI when none is named.
  * @throws Error when DSH_DESKTOP_PRODUCT names an unknown product.
  */
 export function resolveDesktopProduct(environment: ProductEnvironment | undefined = processEnvironment()): DesktopProduct {
   const selected = environment?.[DESKTOP_PRODUCT_ENV]?.trim()
-  if (selected === undefined || selected === '') return DESKTOP_PRODUCTS.eqidis
+  if (selected === undefined || selected === '') return DESKTOP_PRODUCTS.fiscalcfdi
   if (!isProductId(selected)) throw new Error(`desktop: ${DESKTOP_PRODUCT_ENV} must be one of ${Object.keys(DESKTOP_PRODUCTS).join(', ')}`)
   return DESKTOP_PRODUCTS[selected]
-}
-
-/**
- * Replace the default product name in shell copy.
- * @param text - copy written for EQIDIS AI.
- * @param product - product being shown.
- * @returns the copy naming the selected product.
- */
-export function productCopy(text: string, product: DesktopProduct = resolveDesktopProduct()): string {
-  if (product.id === 'eqidis') return text
-  // Spanish copy contracts "de EQIDIS AI" to "dEQIDIS AI" (as in "d'EQIDIS"); a consonant-initial name needs the full word.
-  return text.replaceAll('dEQIDIS AI', `de ${product.name}`).replaceAll('EQIDIS AI', product.name)
 }

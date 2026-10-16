@@ -1,0 +1,100 @@
+# The FiscalCFDI AI product bundle: an accounting assistant for firms that use
+# CONTPAQi, layered over dsh-base and dsh-web-app. It
+# mounts the FiscalCFDI AI accounting tools, makes the `fiscalcfdi`
+# agent preset the default and leaves out shell, file editing, web, skills
+# and subagents, so an end user's chat cannot read or change the engine or
+# the machine. The accounting engine lives outside this repository; its
+# interpreter and bridge are named by FISCALCFDI_ENGINE_PYTHON and
+# FISCALCFDI_ENGINE_BRIDGE.
+
+- id: system-prompt
+  config:
+    personaSuffix: ''
+    personaPrefix: >-
+      Eres FiscalCFDI AI, asistente contable para despachos que usan CONTPAQi, impulsado por {{model}}.
+
+# ── generic tools an accountant's chat does not get ─────────────────────────
+- id: tool-bash
+  disabled: true
+- id: tool-pwsh
+  disabled: true
+- id: tool-jobs
+  disabled: true
+- id: tool-fs
+  disabled: true
+- id: tool-fs-search
+  disabled: true
+- id: tool-subagent
+  disabled: true
+- id: tool-subagent-fork
+  disabled: true
+- id: tool-subagent-control
+  disabled: true
+- id: tool-subagent-list-agents
+  disabled: true
+- id: tool-workflow
+  disabled: true
+- id: tool-skill
+  disabled: true
+
+- id: agent-preset-registry
+  config:
+    default: fiscalcfdi
+    selectedDefault: fiscalcfdi
+
+- insert:
+    - id: ui-fiscalcfdi
+      name: '@deepseek-ai/dsh-client-ui-fiscalcfdi'
+
+    - id: fiscalcfdi-tools
+      name: '@deepseek-ai/dsh-fiscalcfdi-tools'
+      config:
+        python: !!js process.env.FISCALCFDI_ENGINE_PYTHON
+        bridge: !!js process.env.FISCALCFDI_ENGINE_BRIDGE
+
+    - id: preset-fiscalcfdi
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: fiscalcfdi
+        order: 0
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: >-
+                Eres FiscalCFDI AI, asistente contable para despachos que usan CONTPAQi, impulsado por {{model}}.
+                Respondes en español. Trabajas solo con las herramientas fiscalcfdi_*: abres el mes de la empresa,
+                cargas los archivos que el usuario adjunta, lanzas la contabilización y sigues su avance.
+                Cuando el motor o el agente contable tengan una duda, pregúntala al usuario con ask_user_question
+                y envía su respuesta con fiscalcfdi_responder; nunca inventes respuestas contables.
+                Para seguir el avance usa fiscalcfdi_estado: el usuario lo ve como tarjeta del mes, así que no repitas sus pasos ni cifras.
+                Al terminar, llama a fiscalcfdi_cobertura para mostrar la cobertura bancaria con sus movimientos,
+                resume en pocas líneas pólizas, cobertura e IVA y entrega el importable con present.
+                Escribe los importes como 600.00 MXN, nunca con el signo de pesos: la interfaz lo interpreta como fórmula.
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+            config:
+              allowParallelInProgress: false
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'

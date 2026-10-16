@@ -1,5 +1,5 @@
 # Explicit provider for DeepSeek wire-protocol tests against loopback doubles.
-# EQIDIS production defaults continue to use OpenRouter.
+# FiscalCFDI AI production defaults continue to use OpenRouter.
 - id: llm-pi-ai
   disabled: true
 - id: llm-deepseek

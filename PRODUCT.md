@@ -8,16 +8,16 @@ web
 
 ## Users
 
-Employees using EQIDIS AI internally in the company.
+Accounting firms that keep their clients' books in CONTPAQi: accountants and assistants who close each company's month.
 
 ## Product Purpose
 
-Provide a desktop AI assistant with local projects, persistent instructions and project documents.
+Close a company's accounting month: read its CFDI listings, bank statements and payment workpaper, reconcile every bank movement against the company's CONTPAQi history, generate audited journals and deliver the CONTPAQi importable, asking the accountant only what the history cannot decide.
 
 ## Operating Context
 
-Electron desktop shell with the existing React plugin interface. Each employee stores project folders, instructions and context locally on their own computer.
+Electron desktop shell (and its Web build) with the React plugin interface: an open chat plus guided accounting views — company/month selector, the month panel, progress and result cards and the start-page months panel. The accounting engine is a separate Python installation with read-only SQL access to CONTPAQi.
 
 ## Capabilities and Constraints
 
-OpenRouter supplies DeepSeek V4.1 Flash and V4 Pro. Project management should be available from the UI. Preserve the current interface and filesystem-backed workspace/session model. Spanish translation is being evaluated as an independent upstream contribution.
+OpenRouter supplies DeepSeek V4.1 Flash and V4 Pro. Spanish is the working language. Zero pending bank movements and correct accounts, never only balanced journals; no company-specific rules hard-coded in the engine.

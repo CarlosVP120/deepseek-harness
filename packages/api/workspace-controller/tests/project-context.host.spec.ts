@@ -6,7 +6,7 @@ import { ProjectContextFiles } from '../src/project-context.ts'
 
 let root: string
 let files: ProjectContextFiles
-beforeEach(async () => { root = await mkdtemp(join(tmpdir(), 'eqidis-project-')); files = new ProjectContextFiles() })
+beforeEach(async () => { root = await mkdtemp(join(tmpdir(), 'fiscalcfdi-project-')); files = new ProjectContextFiles() })
 afterEach(async () => { await rm(root, { recursive: true, force: true }) })
 it('saves existing instructions and makes uploaded documents discoverable without erasing local guidance', async () => {
   await writeFile(join(root, 'AGENTS.md'), 'Existing rules')
@@ -27,14 +27,14 @@ it('refuses paths outside the managed folder, duplicate uploads, and instruction
   await expect(files.upload(root, '../outside.txt', 'YQ==')).rejects.toThrow('valid name')
   await files.upload(root, 'policy.txt', 'YQ==')
   await expect(files.upload(root, 'policy.txt', 'Yg==')).rejects.toThrow()
-  expect(await readFile(join(root, '.eqidis-context', 'policy.txt'), 'utf8')).toBe('a')
+  expect(await readFile(join(root, '.fiscalcfdi-context', 'policy.txt'), 'utf8')).toBe('a')
   await writeFile(join(root, 'original.txt'), 'original')
   await symlink(join(root, 'original.txt'), join(root, 'AGENTS.md'))
   await expect(files.save(root, 'replacement')).rejects.toThrow('regular file')
   expect(await readFile(join(root, 'original.txt'), 'utf8')).toBe('original')
 })
 it('refuses linked context directories and oversized instructions', async () => {
-  await symlink(root, join(root, '.eqidis-context'))
+  await symlink(root, join(root, '.fiscalcfdi-context'))
   await expect(files.read(root)).rejects.toThrow('symbolic link')
   await expect(files.save(root, 'a'.repeat(48 * 1024 + 1))).rejects.toThrow('48 KiB')
 })

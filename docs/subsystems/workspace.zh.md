@@ -8,7 +8,7 @@
 
 ## 本地项目上下文
 
-[工作区控制器](../../packages/api/workspace-controller/README.zh.md) 提供本地项目指令和上下文文档操作。[工作区界面](../../packages/client/ui-workspace/README.zh.md) 在每个工作区行菜单中提供 **项目设置**。指令使用 `AGENTS.md`；文档保存在 `.eqidis-context`，托管引用列表写入 `AGENTS.local.md`。此功能基于文件系统，不更改工作区记录或会话格式。指令加载器在创建或恢复会话基线时引入指导，助手通过已有文件工具读取相关文档。
+[工作区控制器](../../packages/api/workspace-controller/README.zh.md) 提供本地项目指令和上下文文档操作。[工作区界面](../../packages/client/ui-workspace/README.zh.md) 在每个工作区行菜单中提供 **项目设置**。指令使用 `AGENTS.md`；文档保存在 `.fiscalcfdi-context`，托管引用列表写入 `AGENTS.local.md`。此功能基于文件系统，不更改工作区记录或会话格式。指令加载器在创建或恢复会话基线时引入指导，助手通过已有文件工具读取相关文档。
 
 `ProjectContext` 返回 `instructions` 和 `ProjectContextFile` 列表（`name`、`bytes`），以及配置的 `maxDocumentBytes` 上传限制。`ProjectContextRequest` 用已注册的 `workspaceId` 标识项目；`ProjectInstructionsRequest` 添加完整的 `instructions`，`ProjectUploadRequest` 添加 `name` 与 `base64`，`ProjectRemoveRequest` 添加已上传文件的 `name`。定义见 [工作区控制器类型](../../packages/api/workspace-controller/src/types.ts)。
 

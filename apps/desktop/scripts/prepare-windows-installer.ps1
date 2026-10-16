@@ -3,7 +3,7 @@
 param([string]$OutputDirectory, [string]$AssetsDirectory, [switch]$TestProgress, [switch]$CompileProgressOnly)
 $ErrorActionPreference = 'Stop'
 $installerRoot = Join-Path $PSScriptRoot '../installer'
-# Each product ships its own brand and sidebar rasters; EQIDIS AI's live beside the installer sources.
+# The brand and sidebar rasters live beside the installer sources unless a caller names another directory.
 if (-not $AssetsDirectory) { $AssetsDirectory = Join-Path $installerRoot 'assets' }
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $PSScriptRoot '../.desktop-build/targets/win-x64/installer-ui' }
 $output = [IO.Path]::GetFullPath($OutputDirectory)

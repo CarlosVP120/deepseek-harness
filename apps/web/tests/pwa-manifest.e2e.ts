@@ -14,8 +14,8 @@ it('ships install metadata with the built web application', async () => {
   // so only an absent `id`, which defaults to the resolved `start_url`, gives
   // each mount its own identity. `public-mount.e2e.ts` reads the resolved form.
   expect(manifest).toEqual({
-    name: 'EQIDIS AI',
-    short_name: 'EQIDIS AI',
+    name: 'FiscalCFDI AI',
+    short_name: 'FiscalCFDI AI',
     start_url: './',
     scope: './',
     display: 'fullscreen',

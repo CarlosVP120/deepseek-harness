@@ -40,7 +40,7 @@ describe('official browser-brand plugin', () => {
     expect(inject).toEqual(['slots'])
   })
 
-  it('brands local builds as EQIDIS AI', async () => {
+  it('brands local builds as FiscalCFDI AI', async () => {
     vi.stubEnv('DSH_CLIENT_BUILD_PROFILE', 'local')
     const subject = await bench()
     await subject.ctx.plugin({ inject: [...inject], apply }).await()
@@ -71,7 +71,7 @@ describe('official browser-brand plugin', () => {
     for (const hole of HOLES) expect(after.slots.entries(hole)).toHaveLength(1)
   })
 
-  it('brands the conversation hero as EQIDIS AI', async () => {
+  it('brands the conversation hero as FiscalCFDI AI', async () => {
     vi.stubEnv('DSH_CLIENT_BUILD_PROFILE', 'official')
     const subject = await bench()
     await subject.ctx.plugin({ inject: [...inject], apply }).await()
@@ -80,7 +80,7 @@ describe('official browser-brand plugin', () => {
 
   it('renders the official name independently from both requested mark sizes', () => {
     const name = render(<OfficialBrandName />)
-    expect(name.container.querySelector('svg')?.getAttribute('viewBox')).toBe('0 7.41187 124.517 20.18813')
+    expect(name.container.querySelector('svg')?.getAttribute('viewBox')).toBe('0 6 112 14.5')
     name.unmount()
 
     const mark = render(<OfficialBrandMark size={34} />)

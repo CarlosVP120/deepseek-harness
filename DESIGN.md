@@ -1,6 +1,6 @@
 ---
-name: EQIDIS AI interface
-description: Existing EQIDIS interface with a scenic blank-conversation home
+name: FiscalCFDI AI interface
+description: Existing FiscalCFDI AI interface with a scenic blank-conversation home
 colors:
   home-ground: "var(--dsw-alias-bg-base)"
   home-panel: "var(--dsw-alias-bg-layer-1)"
@@ -58,17 +58,17 @@ components:
     padding: "0 4px"
 ---
 
-# EQIDIS AI interface
+# FiscalCFDI AI interface
 
 ## Overview
 
-Extend the incumbent interface: shared Modal, Button, Menu and icon components; system typography; existing light/dark tokens; restrained spacing and visible keyboard focus. The authorized home redesign adds the user's pinned navy lighthouse reference as a scenic blank-conversation surface, with compact controls and theme-adaptive panels adapted to real EQIDIS work.
+Extend the incumbent interface: shared Modal, Button, Menu and icon components; system typography; existing light/dark tokens; restrained spacing and visible keyboard focus. The authorized home redesign adds the user's pinned navy lighthouse reference as a scenic blank-conversation surface, with compact controls and theme-adaptive panels adapted to real FiscalCFDI AI work.
 
-EQIDIS AI uses the company’s coral/purple symbol from eqidis-app and the vector EQIDIS wordmark. The wordmark follows the active text color. Sidebar, conversation hero, browser favicon, welcome artwork and desktop application icon share this identity. Preserve the Spanish slogan and Flash/Pro selection.
+FiscalCFDI AI uses the orange FiscalCFDI symbol and the FiscalCFDI AI wordmark. The wordmark follows the active text color. Sidebar, conversation hero, browser favicon, welcome artwork and desktop application icon share this identity. Preserve the Spanish headline and Flash/Pro selection.
 
 **Key Characteristics:**
 
-- Established EQIDIS symbol and adaptive vector wordmark.
+- Established FiscalCFDI AI symbol and adaptive vector wordmark.
 - System typography and shared interface primitives.
 - Navy ASCII scenery above a theme-adaptive blank-conversation home.
 - Compact panels showing real local work and projects.
@@ -82,7 +82,7 @@ Home-ground supplies the blank-conversation background. Home-panel groups work a
 
 ### Existing identity and state colors
 
-The coral/purple EQIDIS symbol remains an asset-defined identity; it is not replaced by a new home accent. Running dots use the existing semantic success color, errors use the existing theme-dependent error color, and keyboard focus follows the existing business-color focus token. Settings and project dialogs continue to use the incumbent light/dark semantic sheets rather than the home palette.
+The orange FiscalCFDI AI symbol remains an asset-defined identity; it is not replaced by a new home accent. Running dots use the existing semantic success color, errors use the existing theme-dependent error color, and keyboard focus follows the existing business-color focus token. Settings and project dialogs continue to use the incumbent light/dark semantic sheets rather than the home palette.
 
 **The Home Scope Rule.** Scenic home colors follow the application theme on main blank conversations; active conversations and embedded Views keep their existing reading surfaces.
 
@@ -140,7 +140,7 @@ Continue using the shared Modal, Button, Menu and icon components. Project setti
 
 ### Do:
 
-- Do preserve the established EQIDIS symbol, vector wordmark, Spanish slogan, and Flash/Pro selection.
+- Do preserve the established FiscalCFDI AI symbol, vector wordmark, Spanish headline, and Flash/Pro selection.
 - Do scope the scenic palette and composition to main blank conversations.
 - Do use actual local work and project data with explicit empty, loading, and error states.
 - Do retain shared primitives, visible keyboard focus, and the existing light/dark settings and reading guidance.
@@ -154,7 +154,7 @@ Continue using the shared Modal, Button, Menu and icon components. Project setti
 
 Motion refinement: cached sky drifts by up to 16 CSS pixels, the lighthouse sweeps through a roughly ten-second cycle, and water bands ripple independently. Controls remain stationary.
 
-The current panorama pair uses EQIDIS violet (#664899/#674899) and coral (#e86a6e) as natural lighting. Light mode uses a luminous lavender and coral sunset; dark mode uses indigo/violet twilight with coral reflections. Preserve full-color cached underpainting and the existing animation.
+The current panorama pair keeps its violet (#664899/#674899) and coral (#e86a6e) natural lighting; the headline accent uses the FiscalCFDI orange (#ED7B46). Light mode uses a luminous lavender and coral sunset; dark mode uses indigo/violet twilight with coral reflections. Preserve full-color cached underpainting and the existing animation.
 
 The home panorama, slogan, composer and dashboard share one scroll flow. The panorama occupies its own row above the slogan so scrolling preserves their separation in both themes.
 

@@ -1,6 +1,6 @@
 /** Packaging identity of one product shipped by the Desktop shell. */
 export interface DesktopPackagingProduct {
-  readonly id: 'eqidis' | 'contabiliai'
+  readonly id: 'fiscalcfdi'
   /** Application, bundle and installer name. */
   readonly productName: string
   /** Packaged manifest name; it also names the updater cache. */
@@ -9,10 +9,6 @@ export interface DesktopPackagingProduct {
   readonly artifactPrefix: string
   /** Directory holding icon.png, icon-macos.png, icon-windows.png and tray-windows.ico. */
   readonly resources: string
-  /** Welcome-window wordmark, served as renderer/assets/welcome-brand.svg. */
-  readonly welcomeBrand: string
-  /** Directory holding the NSIS brand and sidebar rasters. */
-  readonly installerAssets: string
   /** macOS microphone permission text. */
   readonly microphoneUsage: string
   /** macOS application category. */
@@ -20,7 +16,7 @@ export interface DesktopPackagingProduct {
 }
 
 /** Every product's packaging identity. */
-export const DESKTOP_PACKAGING_PRODUCTS: Readonly<Record<'eqidis' | 'contabiliai', DesktopPackagingProduct>>
+export const DESKTOP_PACKAGING_PRODUCTS: Readonly<Record<'fiscalcfdi', DesktopPackagingProduct>>
 
 /** Environment variable selecting the packaged product. */
 export const DESKTOP_PRODUCT_ENV: 'DSH_DESKTOP_PRODUCT'
@@ -28,6 +24,6 @@ export const DESKTOP_PRODUCT_ENV: 'DSH_DESKTOP_PRODUCT'
 /**
  * Select the product being packaged.
  * @param env - Packaging environment.
- * @returns the product; EQIDIS AI when none is named.
+ * @returns the product; FiscalCFDI AI when none is named.
  */
 export function resolveDesktopPackagingProduct(env?: NodeJS.ProcessEnv): DesktopPackagingProduct

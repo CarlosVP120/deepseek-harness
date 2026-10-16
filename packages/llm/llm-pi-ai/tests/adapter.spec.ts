@@ -1059,7 +1059,7 @@ it.each([
   expect(await adapter.listModels('deepseek')).not.toHaveLength(0)
 })
 
-describe('EQIDIS native request defaults', () => {
+describe('FiscalCFDI AI native request defaults', () => {
   it.each(['deepseek/deepseek-v4.1-flash', 'deepseek/deepseek-v4-pro'])('sends the configured 64K output budget for %s', async (model) => {
     const server = await mockServer([{ events: textEvents }])
     const ctx = new Context()

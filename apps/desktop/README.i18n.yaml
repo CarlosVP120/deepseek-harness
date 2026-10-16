@@ -12,8 +12,8 @@
   en: c323e02e3f0305fe
   zh: 3c730db632136443
 /deepseek-harness-desktop/key-technical-decisions:
-  en: c09576d11a42b943
-  zh: 420602e4ca9a5eb2
+  en: 07d243db8b4aa4b4
+  zh: 3d9a75dca7950616
 /deepseek-harness-desktop/key-technical-decisions/bundled-workspace-dependencies:
   en: 0f9b6c1d6761d108
   zh: 77127063f244c361
@@ -38,9 +38,9 @@
 /deepseek-harness-desktop/develop/welcome-window-appearance:
   en: ae319a496639b38d
   zh: ef044103240ac9da
-/deepseek-harness-desktop/eqidis-internal-distribution:
-  en: 975fa715983d8981
-  zh: 930fedb2dac942c7
+/deepseek-harness-desktop/fiscalcfdi-ai-internal-distribution:
+  en: abea8e8c0e8ee07d
+  zh: ba56e9524d69027e
 /deepseek-harness-desktop/package:
   en: 4cd8a8da6977928d
   zh: 9f624855a2edac37

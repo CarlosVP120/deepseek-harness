@@ -1,4 +1,4 @@
-/** EQIDIS AI occupants for sidebar and conversation brand slots. */
+/** FiscalCFDI AI occupants for sidebar and conversation brand slots. */
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
@@ -8,7 +8,7 @@ import { OfficialBrandMark, OfficialBrandName } from './Brand.tsx'
 /** Required service: the UI slot registry. */
 export const inject = ['slots']
 
-/** Register EQIDIS artwork when its host surfaces declare their slots.
+/** Register FiscalCFDI AI artwork when its host surfaces declare their slots.
  * @param ctx - Client root context.
  */
 export function apply(ctx: ClientContext): void {

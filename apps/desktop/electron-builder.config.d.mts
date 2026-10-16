@@ -10,8 +10,6 @@ export interface DesktopElectronBuilderConfig {
   }
   readonly files: readonly [
     ...string[],
-    { readonly from: string, readonly to: 'renderer/assets', readonly filter: readonly [string] },
-    string,
     { readonly from: string, readonly to: 'dsh', readonly filter: readonly ['**/*'] },
     { readonly from: string, readonly to: 'dsh/node_modules', readonly filter: readonly ['**/*'] },
   ]
@@ -19,7 +17,7 @@ export interface DesktopElectronBuilderConfig {
     readonly name: string
     readonly productName: string
     readonly dshDesktopAppId: string
-    readonly dshDesktopProduct: 'eqidis' | 'contabiliai'
+    readonly dshDesktopProduct: 'fiscalcfdi'
     readonly dshMandatoryUpdatePolicy?: object
   }
   readonly asarUnpack: readonly string[]

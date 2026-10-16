@@ -7,7 +7,7 @@
   },
   {
     "role": "hide",
-    "label": "Hide EQIDIS AI"
+    "label": "Hide FiscalCFDI AI"
   },
   {
     "role": "hideOthers",
@@ -19,6 +19,6 @@
   },
   {
     "role": "quit",
-    "label": "Quit EQIDIS AI"
+    "label": "Quit FiscalCFDI AI"
   }
 ]

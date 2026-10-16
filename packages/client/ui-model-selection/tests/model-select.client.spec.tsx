@@ -918,7 +918,7 @@ it('restores the account model name after login without changing the saved route
   expect(directory.getSnapshot().current).toEqual(selected)
 })
 
-describe('EQIDIS simplified composer', () => {
+describe('FiscalCFDI AI simplified composer', () => {
   it.each([['deepseek/deepseek-v4.1-flash', 'Flash'], ['deepseek/deepseek-v4-pro', 'Pro']])('hides effort UI for %s without changing the selection', (model, name) => {
     const current = { provider: 'openrouter', model, reasoningEffort: 'high' }
     const directory = createSnapshotStore(state({

@@ -448,13 +448,8 @@ export async function packageTarget(
         { cwd: APP_ROOT, env: electronBuilderEnv, timeoutMs: 60_000 })
     })
   }
-  // EQIDIS AI ships the official client build; other products build their own client profile (title, favicon),
-  // and the dsh pack verifies the artifacts against that same profile.
-  const product = resolveDesktopPackagingProduct(environment)
-  const clientProfileEnv = product.id === 'eqidis' ? buildEnv : { ...buildEnv, DSH_BUILD_CLIENT_PROFILE: product.id }
-  await execute(product.id === 'eqidis' ? ['run', 'build:official'] : ['exec', 'tsx', 'scripts/build.ts', '--profile', product.id],
-    clientProfileEnv, REPOSITORY_ROOT)
-  await execute(['run', 'release:pack', '--family', 'dsh', '--out', buildPaths.packedDsh, ...packArguments], clientProfileEnv, REPOSITORY_ROOT)
+  await execute(['run', 'build:official'], buildEnv, REPOSITORY_ROOT)
+  await execute(['run', 'release:pack', '--family', 'dsh', '--out', buildPaths.packedDsh, ...packArguments], buildEnv, REPOSITORY_ROOT)
   await execute([
     '--dir',
     'apps/desktop-host',

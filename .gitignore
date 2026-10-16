@@ -49,5 +49,5 @@ worktrees/
 .typert-*/
 native/system/test/bin/
 
-# Private EQIDIS code-signing identity, retained across internal releases.
+# Private code-signing identity, retained across internal releases.
 apps/desktop/.desktop-signing/

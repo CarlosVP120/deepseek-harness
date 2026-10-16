@@ -15,7 +15,7 @@ export interface DesktopPaths {
  * Select the packaged product's data root independently of DeepSeek Harness
  * and of the fork's other products. Development retains the launcher's
  * disposable DSH_HOME. Packaged applications ignore DSH_HOME; the product's
- * own variable (EQIDIS_AI_HOME, CONTABILIAI_HOME) is the explicit override.
+ * own variable (FISCALCFDI_AI_HOME) is the explicit override.
  * @param packaged - whether Electron is running an installed application.
  * @param environment - launch environment.
  * @returns absolute application data root without importing another product's data.

@@ -27,7 +27,7 @@ Every base-backed `dsh --profile` surface runs on `dsh-base`, so those surfaces 
 
 You get the dsh core automatically: the shipped `web`, `headless`, `sdk`, and `acp` profiles already include it, and a custom profile names it as its first bundle. After that, everything works with no further configuration.
 
-EQIDIS AI defaults to OpenRouter Flash. Flash and Pro each have a 1,048,576-token context window and a 64,000-token output limit per request, including reasoning. Fresh installations inherit these settings; saved profile overrides remain authoritative.
+FiscalCFDI AI defaults to OpenRouter Flash. Flash and Pro each have a 1,048,576-token context window and a 64,000-token output limit per request, including reasoning. Fresh installations inherit these settings; saved profile overrides remain authoritative.
 
 ### A minimal custom profile
 

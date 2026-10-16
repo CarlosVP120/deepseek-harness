@@ -1,11 +1,12 @@
 /**
- * Render FiscalCFDI AI's Desktop artwork (product id `contabiliai`) from the
- * official FiscalCFDI brand: the FiscalCFDI desktop application icon and the
- * FiscalCFDI wordmark, extended with "AI" in the brand orange. Output goes to
- * resources/contabiliai, which the packager selects when
- * DSH_DESKTOP_PRODUCT=contabiliai.
+ * Render FiscalCFDI AI's Desktop artwork from the official FiscalCFDI brand:
+ * the FiscalCFDI desktop application icon and the FiscalCFDI wordmark, extended
+ * with "AI" in the brand orange. Writes the application icons and tray to
+ * resources/, the welcome wordmark to renderer/assets/ and the installer brand
+ * to installer/assets/.
  *
- * Run: node scripts/generate-fiscalcfdi-ai-assets.mjs <dir with icon-1024.png, icon.icns, icon.ico>
+ * Run: node scripts/generate-fiscalcfdi-ai-assets.mjs <dir with icon-1024.png and icon.icns>,
+ * then `pnpm run render:tray-icon` for the Windows tray bitmaps.
  * (the FiscalCFDI desktop app's resources/icons directory).
  */
 import { copyFile, mkdir, writeFile } from 'node:fs/promises'
@@ -41,16 +42,17 @@ const wordmarkBody = ink => `<g transform="matrix(0.7809013833110219,0,0,0.78090
 const WORDMARK_W = 436
 const WORDMARK_H = 64.6
 
-const out = name => fileURLToPath(new URL(`../resources/contabiliai/${name}`, import.meta.url))
-await mkdir(out('installer'), { recursive: true })
+const out = name => fileURLToPath(new URL(`../resources/${name}`, import.meta.url))
+const welcome = fileURLToPath(new URL('../renderer/assets/welcome-brand.svg', import.meta.url))
+const installer = name => fileURLToPath(new URL(`../installer/assets/${name}`, import.meta.url))
+await mkdir(installer(''), { recursive: true })
 
 // Application icons: the FiscalCFDI desktop app's own icon.
 for (const name of ['icon.png', 'icon-macos.png', 'icon-windows.png']) await copyFile(join(source, 'icon-1024.png'), out(name))
 await copyFile(join(source, 'icon.icns'), out('icon.icns'))
-await copyFile(join(source, 'icon.ico'), out('tray-windows.ico'))
 
-// Welcome wordmark: follows the system theme like the EQIDIS one.
-await writeFile(out('welcome-brand.svg'), `<svg width="224" height="${(224 * WORDMARK_H / WORDMARK_W).toFixed(2)}" viewBox="0 0 ${WORDMARK_W} ${WORDMARK_H}" fill="none" xmlns="http://www.w3.org/2000/svg">
+// Welcome wordmark: follows the system theme.
+await writeFile(welcome, `<svg width="224" height="${(224 * WORDMARK_H / WORDMARK_W).toFixed(2)}" viewBox="0 0 ${WORDMARK_W} ${WORDMARK_H}" fill="none" xmlns="http://www.w3.org/2000/svg">
 <style>:root { --brand-ink: ${INK}; } @media (prefers-color-scheme: dark) { :root { --brand-ink: #FFFFFF; } }</style>
 ${wordmarkBody('var(--brand-ink)')}
 </svg>
@@ -58,9 +60,9 @@ ${wordmarkBody('var(--brand-ink)')}
 // Installer brand rasters (light and dark) and the uninstaller sidebar.
 for (const [name, ink] of [['brand', INK], ['brand-dark', '#FFFFFF']]) {
   const vector = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="196" viewBox="0 0 600 196"><svg x="80" y="72" width="440" height="${(440 * WORDMARK_H / WORDMARK_W).toFixed(2)}" viewBox="0 0 ${WORDMARK_W} ${WORDMARK_H}">${wordmarkBody(ink)}</svg></svg>`
-  await writeFile(out(`installer/${name}.svg`), `${vector}\n`)
-  await sharp(Buffer.from(vector)).png().toFile(out(`installer/${name}.png`))
-  await sharp(Buffer.from(vector), { density: 144 }).png().toFile(out(`installer/${name}-2x.png`))
+  await writeFile(installer(`${name}.svg`), `${vector}\n`)
+  await sharp(Buffer.from(vector)).png().toFile(installer(`${name}.png`))
+  await sharp(Buffer.from(vector), { density: 144 }).png().toFile(installer(`${name}-2x.png`))
 }
 const sidebar = `<svg xmlns="http://www.w3.org/2000/svg" width="164" height="314" viewBox="0 0 164 314"><rect width="164" height="314" fill="#FFFFFF"/><g transform="translate(42 117) scale(0.8)" fill="${ORANGE}">${PETALS.map(d => `<path d="${d}"/>`).join('')}</g></svg>`
-await sharp(Buffer.from(sidebar)).flatten({ background: '#FFFFFF' }).png().toFile(out('installer/uninstaller-sidebar.png'))
+await sharp(Buffer.from(sidebar)).flatten({ background: '#FFFFFF' }).png().toFile(installer('uninstaller-sidebar.png'))

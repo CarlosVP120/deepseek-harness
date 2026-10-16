@@ -28,7 +28,7 @@ const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, '../packag
   name: string
   dsh: { client: { inject: string[]; immediately?: boolean } }
 }
-// EQIDIS disables account UI; these library tests explicitly activate its declared row.
+// FiscalCFDI AI disables account UI; these library tests explicitly activate its declared row.
 const it = createClientTest({ roster: ClientRoster.of([...webApp.rows, {
   name: manifest.name, inject: manifest.dsh.client.inject, immediately: manifest.dsh.client.immediately ?? false,
 }]) })

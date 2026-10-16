@@ -1,5 +1,5 @@
 ---
-description: "EQIDIS AI brand occupants for sidebar and conversation surfaces; for maintainers replacing company artwork."
+description: "FiscalCFDI AI brand occupants for sidebar and conversation surfaces; for maintainers replacing company artwork."
 kind: "package-reference"
 ---
 
@@ -7,11 +7,11 @@ kind: "package-reference"
 
 English | [中文](README.zh.md)
 
-This EQIDIS AI fork registers the company’s existing coral/purple symbol and theme-colored vector wordmark in the sidebar and conversation hero for every build profile. Desktop application icons and browser favicons use the same symbol. The upstream package name remains unchanged for composition compatibility.
+This FiscalCFDI AI fork registers the FiscalCFDI symbol and the FiscalCFDI AI wordmark in the sidebar and conversation hero for every build profile. Desktop application icons and browser favicons use the same symbol. The upstream package name remains unchanged for composition compatibility.
 
 ## Summary
 
-This package renders the EQIDIS symbol and wordmark in the sidebar and the symbol in the conversation hero. It registers in every build profile, has no runtime state and does not affect model requests.
+This package renders the FiscalCFDI AI symbol and wordmark in the sidebar and the symbol in the conversation hero. It registers in every build profile, has no runtime state and does not affect model requests.
 
 ## Table of Contents
 
@@ -27,11 +27,11 @@ This package renders the EQIDIS symbol and wordmark in the sidebar and the symbo
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount this plugin in the browser roster of the EQIDIS deployment.
+Mount this plugin in the browser roster of the FiscalCFDI AI deployment.
 
 ### Choosing the profile
 
-Brand registration is independent of `DSH_CLIENT_BUILD_PROFILE`; both local and official builds show EQIDIS artwork.
+Brand registration is independent of `DSH_CLIENT_BUILD_PROFILE`; both local and official builds show FiscalCFDI AI artwork.
 
 ### Replacing the brand
 

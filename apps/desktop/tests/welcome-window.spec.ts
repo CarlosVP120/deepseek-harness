@@ -180,7 +180,7 @@ describe('desktop welcome window', () => {
     expect(electron.handlers.size).toBe(0)
   })
 
-  it('enters EQIDIS AI without account or provider credentials', () => {
+  it('enters FiscalCFDI AI without account or provider credentials', () => {
     expect(needsWelcome({ loggedIn: true, hasApiKey: false })).toBe(false)
     expect(needsWelcome({ loggedIn: false, hasApiKey: false })).toBe(false)
     expect(needsWelcome({ loggedIn: false, hasApiKey: true })).toBe(false)

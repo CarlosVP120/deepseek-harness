@@ -33,7 +33,7 @@ interface EngineFile {
  * @param environment - launch environment.
  * @returns variables to add to the Host environment; empty when unconfigured.
  */
-export function contabiliaiEngineEnvironment(home: string, environment: NodeJS.ProcessEnv = process.env): Record<string, string> {
+export function fiscalcfdiEngineEnvironment(home: string, environment: NodeJS.ProcessEnv = process.env): Record<string, string> {
   let file: EngineFile
   try {
     file = JSON.parse(readFileSync(join(home, 'engine.json'), 'utf8')) as EngineFile
@@ -41,7 +41,7 @@ export function contabiliaiEngineEnvironment(home: string, environment: NodeJS.P
     return {}
   }
   const result: Record<string, string> = {}
-  if (environment.CONTABILIAI_ENGINE_PYTHON === undefined && typeof file.python === 'string') result.CONTABILIAI_ENGINE_PYTHON = file.python
-  if (environment.CONTABILIAI_ENGINE_BRIDGE === undefined && typeof file.bridge === 'string') result.CONTABILIAI_ENGINE_BRIDGE = file.bridge
+  if (environment.FISCALCFDI_ENGINE_PYTHON === undefined && typeof file.python === 'string') result.FISCALCFDI_ENGINE_PYTHON = file.python
+  if (environment.FISCALCFDI_ENGINE_BRIDGE === undefined && typeof file.bridge === 'string') result.FISCALCFDI_ENGINE_BRIDGE = file.bridge
   return result
 }

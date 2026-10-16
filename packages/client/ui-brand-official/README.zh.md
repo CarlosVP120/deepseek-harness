@@ -1,5 +1,5 @@
 ---
-description: "面向侧栏和对话界面的 EQIDIS AI 品牌填充；供替换公司图形的维护者阅读。"
+description: "面向侧栏和对话界面的 FiscalCFDI AI 品牌填充；供替换公司图形的维护者阅读。"
 kind: "package-reference"
 ---
 
@@ -7,11 +7,11 @@ kind: "package-reference"
 
 [English](README.md) | 中文
 
-此 EQIDIS AI 分支在所有构建配置中，将公司的珊瑚色/紫色标志和随主题变化的矢量字标注册到侧栏及对话首页。桌面应用图标和浏览器图标采用相同标志。为保持组合兼容性，上游包名保持不变。
+此 FiscalCFDI AI 分支在所有构建配置中，将FiscalCFDI 标志和 FiscalCFDI AI 字标注册到侧栏及对话首页。桌面应用图标和浏览器图标采用相同标志。为保持组合兼容性，上游包名保持不变。
 
 ## 概述
 
-本包在侧栏显示 EQIDIS 标志与字标，在对话首屏显示标志。所有构建配置都会注册品牌；本包不保留运行时状态，也不影响模型请求。
+本包在侧栏显示 FiscalCFDI AI 标志与字标，在对话首屏显示标志。所有构建配置都会注册品牌；本包不保留运行时状态，也不影响模型请求。
 
 ## 目录
 
@@ -27,11 +27,11 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-在 EQIDIS 部署中，将本插件挂载到浏览器插件名单。
+在 FiscalCFDI AI 部署中，将本插件挂载到浏览器插件名单。
 
 ### 选择 profile
 
-品牌注册独立于 `DSH_CLIENT_BUILD_PROFILE`；本地和官方构建都显示 EQIDIS 图形。
+品牌注册独立于 `DSH_CLIENT_BUILD_PROFILE`；本地和官方构建都显示 FiscalCFDI AI 图形。
 
 ### 替换品牌
 

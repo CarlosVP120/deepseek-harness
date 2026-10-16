@@ -24,7 +24,7 @@ import {
 } from 'electron'
 import { resolveDesktopHome, resolveDesktopPaths } from './paths.ts'
 import { DESKTOP_PRODUCT_ENV, resolveDesktopProduct } from './product.ts'
-import { contabiliaiEngineEnvironment, packagedDesktopProduct } from './product-manifest.ts'
+import { fiscalcfdiEngineEnvironment, packagedDesktopProduct } from './product-manifest.ts'
 import { DesktopProjectManager } from './project-manager.ts'
 import { DesktopHostFatalError, DesktopHostProcess, DesktopHostUncleanExitError } from './host-process.ts'
 import { DesktopPlatformView, PLATFORM_IPC, platformBounds } from './platform-view.ts'
@@ -323,7 +323,8 @@ function createWindow(preload: string, show = false, primary = false): BrowserWi
 async function main(): Promise<void> {
   // Pin the home before profile access and the protected login-shell environment read.
   process.env.DSH_HOME = resolveDesktopHome(app.isPackaged)
-  if (resolveDesktopProduct().id === 'contabiliai') Object.assign(process.env, contabiliaiEngineEnvironment(process.env.DSH_HOME))
+  // The accounting engine is a separate installation; its data root names where it lives.
+  Object.assign(process.env, fiscalcfdiEngineEnvironment(process.env.DSH_HOME))
   void pruneCrashReports(app.getPath('logs'))
   const journalDirectory = process.env.DSH_DESKTOP_UPDATE_JOURNAL_DIR
   const updateJournal = journalDirectory === undefined ? undefined : new DesktopUpdateJournal(journalDirectory, app.getVersion())

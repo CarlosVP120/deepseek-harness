@@ -82,7 +82,7 @@ describe('client build environment', () => {
     const expected = {
       DSH_CLIENT_BUILD_PROFILE: 'official',
       DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
-      DSH_CLIENT_TITLE: 'EQIDIS AI',
+      DSH_CLIENT_TITLE: 'FiscalCFDI AI',
       DSH_CLIENT_VERSION: '1.2.3',
     } as const
 
@@ -112,7 +112,7 @@ describe('client build environment', () => {
     expect(resolveClientBuildEnvironment(parent)).toEqual({
       DSH_CLIENT_BUILD_PROFILE: 'official',
       DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
-      DSH_CLIENT_TITLE: 'EQIDIS AI',
+      DSH_CLIENT_TITLE: 'FiscalCFDI AI',
       DSH_CLIENT_VERSION: '1.2.3',
     })
     expect(() => {
@@ -124,9 +124,9 @@ describe('client build environment', () => {
         DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
       })
     }).toThrow(/DSH_CLIENT_VERSION/)
-    expect(() => { resolveClientBuildEnvironment({}, 'unknown') }).toThrow(/unknown client build profile.*"contabiliai"/)
-    expect(resolveClientBuildEnvironment({ ...parent, DSH_BUILD_CLIENT_PROFILE: 'contabiliai' })).toEqual({
-      DSH_CLIENT_BUILD_PROFILE: 'contabiliai',
+    expect(() => { resolveClientBuildEnvironment({}, 'unknown') }).toThrow(/unknown client build profile.*"fiscalcfdi"/)
+    expect(resolveClientBuildEnvironment({ ...parent, DSH_BUILD_CLIENT_PROFILE: 'fiscalcfdi' })).toEqual({
+      DSH_CLIENT_BUILD_PROFILE: 'fiscalcfdi',
       DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
       DSH_CLIENT_EXTRA: 'local-extra',
       DSH_CLIENT_GIT_DIRTY: 'true',
@@ -136,13 +136,13 @@ describe('client build environment', () => {
     expect(clientBuildProcessEnvironment(parent, {
       DSH_CLIENT_BUILD_PROFILE: 'official',
       DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
-      DSH_CLIENT_TITLE: 'EQIDIS AI',
+      DSH_CLIENT_TITLE: 'FiscalCFDI AI',
       DSH_CLIENT_VERSION: '1.2.3',
     })).toEqual({
       PATH: '/bin',
       DSH_CLIENT_BUILD_PROFILE: 'official',
       DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
-      DSH_CLIENT_TITLE: 'EQIDIS AI',
+      DSH_CLIENT_TITLE: 'FiscalCFDI AI',
       DSH_CLIENT_VERSION: '1.2.3',
     })
     expect(repositoryCommitHash('/unused', { DSH_CLIENT_COMMIT_HASH: COMMIT_HASH })).toBe(COMMIT_HASH.slice(0, 7))
@@ -167,7 +167,7 @@ describe('client build environment', () => {
     expect(officialClientBuildEnvironment(fixtureRoot)).toEqual({
       DSH_CLIENT_BUILD_PROFILE: 'official',
       DSH_CLIENT_COMMIT_HASH: commit,
-      DSH_CLIENT_TITLE: 'EQIDIS AI',
+      DSH_CLIENT_TITLE: 'FiscalCFDI AI',
       DSH_CLIENT_VERSION: '1.2.3-rc.4',
     })
 
@@ -270,7 +270,7 @@ describe('client build environment', () => {
     const officialEnvironment = {
       DSH_CLIENT_BUILD_PROFILE: 'official',
       DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
-      DSH_CLIENT_TITLE: 'EQIDIS AI',
+      DSH_CLIENT_TITLE: 'FiscalCFDI AI',
       DSH_CLIENT_VERSION: '1.2.3',
     }
     const official = buildFixture(officialEnvironment)

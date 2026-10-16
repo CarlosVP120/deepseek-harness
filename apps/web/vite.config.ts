@@ -11,8 +11,8 @@ const src = (rel: string): string => fileURLToPath(new URL(rel, import.meta.url)
 const STANDALONE_ERROR = 'apps/web is not a standalone application: bare Vite cannot inject window.__DSH_BOOT__. '
   + 'From a repository checkout, run `pnpm dsh web`; an installed package uses `dsh web`. '
   + 'For client-plugin HMR, run `pnpm run dev:web`, which starts `dsh web` and the rebuild watchers together.'
-// The EQIDIS AI build is the default product; others set DSH_CLIENT_TITLE through their client build profile.
-const DEFAULT_CLIENT_TITLE = 'EQIDIS AI'
+// FiscalCFDI AI is the product; a client build profile may still set DSH_CLIENT_TITLE.
+const DEFAULT_CLIENT_TITLE = 'FiscalCFDI AI'
 
 /** Escape build-time text before placing it in the HTML title element. */
 function escapeHtmlText(value: string): string {
@@ -25,11 +25,7 @@ function clientDocumentTitle(): Plugin {
   return {
     name: 'dsh-client-document-title',
     transformIndexHtml(html) {
-      const titled = html.replace('<title>DSH Local Build</title>', `<title>${title}</title>`)
-      // FiscalCFDI AI (client profile `contabiliai`) shows the FiscalCFDI application icon in both themes.
-      if (process.env.DSH_CLIENT_BUILD_PROFILE !== 'contabiliai') return titled
-      return titled.replace(/<link rel="icon"[^>]*>\s*<link rel="icon"[^>]*>/u,
-        '<link rel="icon" type="image/svg+xml" href="/fiscalcfdi-ai-favicon.svg" />')
+      return html.replace('<title>DSH Local Build</title>', `<title>${title}</title>`)
     },
   }
 }

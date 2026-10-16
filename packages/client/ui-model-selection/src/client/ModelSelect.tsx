@@ -119,9 +119,9 @@ export function ModelSelect(
   const currentChoice = choices[selectedIndex]
   const reasoning = currentChoice?.model.reasoning
   const effectiveEffort = state.current?.reasoningEffort ?? reasoning?.defaultEffort
-  const simplifiedEqidisModel = state.current?.provider === 'openrouter'
+  const simplifiedOpenRouterModel = state.current?.provider === 'openrouter'
     && ['deepseek/deepseek-v4.1-flash', 'deepseek/deepseek-v4-pro'].includes(state.current.model)
-  const effortLabel = simplifiedEqidisModel
+  const effortLabel = simplifiedOpenRouterModel
     || (reasoning?.efforts.length === 1 && reasoning.defaultEffort !== undefined)
     ? undefined : reasoning === undefined
       ? state.retainedEffort
@@ -496,7 +496,7 @@ export function ModelSelect(
                 <span className={css.cellValue}>{modelLabel}</span>
                 <IconChevronRightOutlineRegular className={css.cellChevron} />
               </button>
-              {!simplifiedEqidisModel && reasoning !== undefined
+              {!simplifiedOpenRouterModel && reasoning !== undefined
                 && (reasoning.efforts.length > 1 || reasoning.defaultEffort === undefined) && (
                 <button ref={itemRef()} type="button" role="menuitem" className={css.cell} onClick={() => { drill('effort') }}>
                   <span className={css.cellLabel}>{t('menu.effort')}</span>

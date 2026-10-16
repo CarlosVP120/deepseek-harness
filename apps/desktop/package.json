@@ -83,5 +83,5 @@
     "@deepseek-ai/dsh-atomic-write": "workspace:*",
     "@deepseek-ai/dsh-client-product-analytics": "workspace:*"
   },
-  "productName": "EQIDIS AI"
+  "productName": "FiscalCFDI AI"
 }

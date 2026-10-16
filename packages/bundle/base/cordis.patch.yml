@@ -117,7 +117,7 @@
     - id: credentials
       name: '@deepseek-ai/dsh-credentials-local'
 
-    # EQIDIS AI routes inference through the managed OpenRouter credential.
+    # FiscalCFDI AI routes inference through the managed OpenRouter credential.
     - id: llm-pi-ai
       name: '@deepseek-ai/dsh-llm-pi-ai'
       config:

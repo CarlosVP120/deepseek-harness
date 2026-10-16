@@ -1,6 +1,5 @@
 /** Typed English, Chinese, and Spanish copy owned by the Electron shell. */
 
-import { productCopy, resolveDesktopProduct } from './product.ts'
 
 export const en = {
   windowMenu: 'Window',
@@ -42,17 +41,17 @@ export const en = {
   application: 'Application',
   fileMenu: 'File',
   closePage: 'Close Page or Window',
-  aboutMenu: 'About EQIDIS AI',
-  aboutProduct: 'EQIDIS AI',
+  aboutMenu: 'About FiscalCFDI AI',
+  aboutProduct: 'FiscalCFDI AI',
   aboutVersion: 'Version V{version}',
-  hideApplication: 'Hide EQIDIS AI',
+  hideApplication: 'Hide FiscalCFDI AI',
   hideOtherApplications: 'Hide Others',
   showAllApplications: 'Show All',
-  quitApplication: 'Quit EQIDIS AI',
-  openApplication: 'Open EQIDIS AI',
+  quitApplication: 'Quit FiscalCFDI AI',
+  openApplication: 'Open FiscalCFDI AI',
   quit: 'Quit',
   cancel: 'Cancel',
-  quitTitle: 'Quit EQIDIS AI?',
+  quitTitle: 'Quit FiscalCFDI AI?',
   quitActiveTasks: 'Running tasks will be interrupted.',
   quitScheduledTasks: 'Scheduled tasks will not run while the app is closed.',
   quitActiveAndScheduledTasks: 'Running tasks will be interrupted, and scheduled tasks will not run while the app is closed.',
@@ -67,7 +66,7 @@ export const en = {
   copy: 'Copy',
   paste: 'Paste',
   selectAll: 'Select All',
-  startupFailed: 'EQIDIS AI is unavailable',
+  startupFailed: 'FiscalCFDI AI is unavailable',
   fatalSummary: 'The application could not start or stopped unexpectedly.',
   startupAddressInUse: 'Another DSH instance (such as dsh web or the desktop app) is running. They cannot start at the same time. Quit the other running DSH instance, then restart.',
   diagnosticTruncated: '… Error details shortened.',
@@ -77,10 +76,10 @@ export const en = {
   restartApplication: 'Restart',
   recoveryOperationFailed: 'The recovery operation failed',
   disableThirdPartyPlugins: 'Disable third-party plugins, back up profile patch, and restart',
-  welcomeTitle: 'EQIDIS AI',
-  welcomeBrand: 'EQIDIS AI',
+  welcomeTitle: 'FiscalCFDI AI',
+  welcomeBrand: 'FiscalCFDI AI',
   welcomeTaglineBefore: 'Welcome to ',
-  welcomeTaglineBrand: 'EQIDIS AI',
+  welcomeTaglineBrand: 'FiscalCFDI AI',
   welcomeTaglineAfter: '',
   welcomeDescription: 'Build potential. Explore intelligence.',
   welcomeAuthStarting: 'Opening sign in…',
@@ -141,7 +140,7 @@ export const en = {
   updateTasksUnavailable: 'Task status is unavailable. Try updating again when the workspace is ready.',
   updateStopFailed: 'Could not safely stop the tasks. The update has not been installed. Please try again later.',
   updateTechnicalDetails: 'View technical details',
-  updateTitle: 'EQIDIS AI Update',
+  updateTitle: 'FiscalCFDI AI Update',
   updateAvailable: 'New version available: {version}',
   updateDetail: 'Once the download is complete, you can install the update and restart the app.',
   installAndRestart: 'Install and Restart',
@@ -222,17 +221,17 @@ export const zh = {
   application: '应用',
   fileMenu: '文件',
   closePage: '关闭页面或窗口',
-  aboutMenu: '关于 EQIDIS AI',
-  aboutProduct: 'EQIDIS AI',
+  aboutMenu: '关于 FiscalCFDI AI',
+  aboutProduct: 'FiscalCFDI AI',
   aboutVersion: '版本 V{version}',
-  hideApplication: '隐藏 EQIDIS AI',
+  hideApplication: '隐藏 FiscalCFDI AI',
   hideOtherApplications: '隐藏其他',
   showAllApplications: '显示全部',
-  quitApplication: '退出 EQIDIS AI',
-  openApplication: '打开 EQIDIS AI',
+  quitApplication: '退出 FiscalCFDI AI',
+  openApplication: '打开 FiscalCFDI AI',
   quit: '退出',
   cancel: '取消',
-  quitTitle: '退出 EQIDIS AI？',
+  quitTitle: '退出 FiscalCFDI AI？',
   quitActiveTasks: '当前正在运行的任务将会中断',
   quitScheduledTasks: '应用关闭期间，定时任务不会运行',
   quitActiveAndScheduledTasks: '当前正在运行的任务将会中断，且应用关闭期间，定时任务不会运行',
@@ -247,7 +246,7 @@ export const zh = {
   copy: '复制',
   paste: '粘贴',
   selectAll: '全选',
-  startupFailed: 'EQIDIS AI 无法使用',
+  startupFailed: 'FiscalCFDI AI 无法使用',
   fatalSummary: '应用无法启动或已意外停止。',
   startupAddressInUse: '有其他正在运行的 DSH（如其他 dsh web、桌面端），无法同时启动，请退出其他正在运行的 DSH 后重启。',
   diagnosticTruncated: '… 错误详情已截短。',
@@ -257,10 +256,10 @@ export const zh = {
   restartApplication: '重启',
   recoveryOperationFailed: '恢复操作失败',
   disableThirdPartyPlugins: '禁用第三方插件、备份 profile patch 并重启',
-  welcomeTitle: 'EQIDIS AI',
-  welcomeBrand: 'EQIDIS AI',
+  welcomeTitle: 'FiscalCFDI AI',
+  welcomeBrand: 'FiscalCFDI AI',
   welcomeTaglineBefore: '欢迎使用 ',
-  welcomeTaglineBrand: 'EQIDIS AI',
+  welcomeTaglineBrand: 'FiscalCFDI AI',
   welcomeTaglineAfter: '',
   welcomeDescription: '组装无限可能，共探智能上限',
   welcomeAuthStarting: '正在打开登录…',
@@ -321,7 +320,7 @@ export const zh = {
   updateTasksUnavailable: '无法确认任务状态，请在工作区就绪后重试更新。',
   updateStopFailed: '未能安全停止任务，更新尚未安装，请稍后重试。',
   updateTechnicalDetails: '查看技术详情',
-  updateTitle: 'EQIDIS AI 更新',
+  updateTitle: 'FiscalCFDI AI 更新',
   updateAvailable: '发现新版本 {version}',
   updateDetail: '下载完成后，可安装并重启应用。',
   installAndRestart: '安装并重启',
@@ -367,24 +366,10 @@ export interface DesktopLocale {
 
 /** Resolve Electron's locale to one shipped Desktop dictionary. */
 export function resolveDesktopLocale(locale: string): DesktopLocale {
-  if (locale.toLowerCase().split('-')[0] === 'es') return { id: 'es', messages: productMessages(es) }
+  if (locale.toLowerCase().split('-')[0] === 'es') return { id: 'es', messages: es }
   return locale.toLowerCase().startsWith('zh')
-    ? { id: 'zh-CN', messages: productMessages(zh) }
-    : { id: 'en', messages: productMessages(en) }
-}
-
-const productDictionaries = new WeakMap<DesktopMessages, DesktopMessages>()
-
-/** The dictionary with the shipped product's name in place of the default one. */
-function productMessages(messages: DesktopMessages): DesktopMessages {
-  const product = resolveDesktopProduct()
-  if (product.id === 'eqidis') return messages
-  let named = productDictionaries.get(messages)
-  if (named === undefined) {
-    named = Object.fromEntries(Object.entries(messages).map(([key, text]) => [key, productCopy(text, product)])) as DesktopMessages
-    productDictionaries.set(messages, named)
-  }
-  return named
+    ? { id: 'zh-CN', messages: zh }
+    : { id: 'en', messages: en }
 }
 
 /**
@@ -470,17 +455,17 @@ export const es = {
   'application': 'Solicitud',
   'fileMenu': 'Archivo',
   'closePage': 'Cerrar página o ventana',
-  'aboutMenu': 'Acerca de EQIDIS AI',
-  'aboutProduct': 'EQIDIS AI',
+  'aboutMenu': 'Acerca de FiscalCFDI AI',
+  'aboutProduct': 'FiscalCFDI AI',
   'aboutVersion': 'Versión V{version}',
-  'hideApplication': 'Ocultar EQIDIS AI',
+  'hideApplication': 'Ocultar FiscalCFDI AI',
   'hideOtherApplications': 'Ocultar otros',
   'showAllApplications': 'Mostrar todo',
-  'quitApplication': 'Salir de EQIDIS AI',
-  'openApplication': 'Abrir EQIDIS AI',
+  'quitApplication': 'Salir de FiscalCFDI AI',
+  'openApplication': 'Abrir FiscalCFDI AI',
   'quit': 'dejar de fumar',
   'cancel': 'Cancelar',
-  'quitTitle': '¿Salir dEQIDIS AI?',
+  'quitTitle': '¿Salir de FiscalCFDI AI?',
   'quitActiveTasks': 'Las tareas en ejecución se interrumpirán.',
   'quitScheduledTasks': 'Las tareas programadas no se ejecutarán mientras la aplicación esté cerrada.',
   'quitActiveAndScheduledTasks': 'Las tareas en ejecución se interrumpirán y las tareas programadas no se ejecutarán mientras la aplicación esté cerrada.',
@@ -495,7 +480,7 @@ export const es = {
   'copy': 'Copiar',
   'paste': 'Pegar',
   'selectAll': 'Seleccionar todo',
-  'startupFailed': 'EQIDIS AI no está disponible',
+  'startupFailed': 'FiscalCFDI AI no está disponible',
   'fatalSummary': 'La aplicación no pudo iniciarse o se detuvo inesperadamente.',
   'startupAddressInUse': 'Se está ejecutando otra instancia de DSH (como dsh web o la aplicación de escritorio). No pueden empezar al mismo tiempo. Salga de la otra instancia DSH en ejecución y luego reinicie.',
   'diagnosticTruncated': '… Detalles del error acortados.',
@@ -505,10 +490,10 @@ export const es = {
   'restartApplication': 'Reanudar',
   'recoveryOperationFailed': 'La operación de recuperación falló',
   'disableThirdPartyPlugins': 'Deshabilite los complementos de terceros, haga una copia de seguridad del parche del perfil y reinicie',
-  'welcomeTitle': 'EQIDIS AI',
-  'welcomeBrand': 'EQIDIS AI',
+  'welcomeTitle': 'FiscalCFDI AI',
+  'welcomeBrand': 'FiscalCFDI AI',
   'welcomeTaglineBefore': 'Bienvenido a ',
-  'welcomeTaglineBrand': 'EQIDIS AI',
+  'welcomeTaglineBrand': 'FiscalCFDI AI',
   'welcomeTaglineAfter': '',
   'welcomeDescription': 'Desarrollar potencial. Explora la inteligencia.',
   'welcomeAuthStarting': 'Abriendo inicio de sesión…',
@@ -569,7 +554,7 @@ export const es = {
   'updateTasksUnavailable': 'El estado de la tarea no está disponible. Intente actualizar nuevamente cuando el espacio de trabajo esté listo.',
   'updateStopFailed': 'No se pudieron detener las tareas de forma segura. La actualización no se ha instalado. Inténtalo de nuevo más tarde.',
   'updateTechnicalDetails': 'Ver detalles técnicos',
-  'updateTitle': 'Actualización dEQIDIS AI',
+  'updateTitle': 'Actualización de FiscalCFDI AI',
   'updateAvailable': 'Nueva versión disponible: {version}',
   'updateDetail': 'Una vez que se completa la descarga, puede instalar la actualización y reiniciar la aplicación.',
   'installAndRestart': 'Instalar y reiniciar',

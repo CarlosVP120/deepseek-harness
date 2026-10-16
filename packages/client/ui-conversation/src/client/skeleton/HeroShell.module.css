@@ -233,14 +233,14 @@
   color: var(--dsw-alias-state-error-primary);
 }
 
-/* EQIDIS brand gradient, shared with the company's website assets. */
+/* FiscalCFDI AI headline gradient. */
 .headlineAccent {
-  color: #e86a6e;
+  color: #ed7b46;
 }
 
 @supports (background-clip: text) or (-webkit-background-clip: text) {
   .headlineAccent {
-    background-image: linear-gradient(151deg, #664899, #674899, #e86a6e);
+    background-image: linear-gradient(151deg, #ff8313, #ed7b46, #df6a00);
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;

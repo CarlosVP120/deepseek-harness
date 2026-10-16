@@ -4,10 +4,10 @@ import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import type { ProjectContext, ProjectContextFile } from './types.ts'
 
-const DIRECTORY = '.eqidis-context'
+const DIRECTORY = '.fiscalcfdi-context'
 const MAX_INSTRUCTION_BYTES = 48 * 1024
-const BEGIN = '<!-- EQIDIS project context -->'
-const END = '<!-- /EQIDIS project context -->'
+const BEGIN = '<!-- FiscalCFDI AI project context -->'
+const END = '<!-- /FiscalCFDI AI project context -->'
 
 /** Reject links before reading or replacing project-owned files. */
 async function regular(path: string): Promise<boolean> {

@@ -170,7 +170,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-it.each([false, true])('opens EQIDIS AI without credentials (Windows update=%s)', async (updated) => {
+it.each([false, true])('opens FiscalCFDI AI without credentials (Windows update=%s)', async (updated) => {
   vi.resetModules()
   vi.clearAllMocks()
   state.preference = 'zh'

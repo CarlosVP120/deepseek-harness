@@ -94,11 +94,11 @@ describe('installer preparation preserves application dependencies', () => {
   it('builds internal Mac packages without paid credentials or upstream services', async () => {
     const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
     const { validateDesktopPackageEnvironment } = await import('../scripts/desktop-package-environment.mjs')
-    const env = { DSH_DESKTOP_APP_ID: 'com.eqidis.ai', DSH_DESKTOP_UNSIGNED: '1' }
+    const env = { DSH_DESKTOP_APP_ID: 'mx.fiscalcfdi.ai', DSH_DESKTOP_UNSIGNED: '1' }
     expect(() => { validateDesktopPackageEnvironment(env, { platform: 'darwin', arch: 'arm64' }, { unsigned: true }) }).not.toThrow()
     const config = createElectronBuilderConfig(env, 'darwin', 'arm64')
-    expect(config.extraMetadata.name).toBe('@eqidis/desktop-internal')
-    expect(config.extraMetadata.productName).toBe('EQIDIS AI')
+    expect(config.extraMetadata.name).toBe('@fiscalcfdi/ai-desktop')
+    expect(config.extraMetadata.productName).toBe('FiscalCFDI AI')
     expect(config.mac.identity).toBe('-')
     expect(config.mac.notarize).toBe(false)
     expect(config.mac.forceCodeSigning).toBe(false)
@@ -108,29 +108,29 @@ describe('installer preparation preserves application dependencies', () => {
     expect(() => { validateDesktopPackageEnvironment(env, { platform: 'darwin', arch: 'arm64' }) }).toThrow()
   })
 
-  it('uses the EQIDIS release feed when internal updates are explicitly configured', async () => {
+  it('uses the FiscalCFDI AI release feed when internal updates are explicitly configured', async () => {
     const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
-    const env = { DSH_DESKTOP_APP_ID: 'com.eqidis.ai', DSH_DESKTOP_UNSIGNED: '1',
-      DSH_DESKTOP_INTERNAL_UPDATE_REPOSITORY: 'CarlosVP120/eqidis-ai-releases' }
+    const env = { DSH_DESKTOP_APP_ID: 'mx.fiscalcfdi.ai', DSH_DESKTOP_UNSIGNED: '1',
+      DSH_DESKTOP_INTERNAL_UPDATE_REPOSITORY: 'CarlosVP120/fiscalcfdi-ai-releases' }
     const config = createElectronBuilderConfig(env, 'darwin', 'arm64')
     expect(config.publish).toEqual([{ provider: 'generic',
-      url: 'https://github.com/CarlosVP120/eqidis-ai-releases/releases/latest/download/', channel: 'nightly' }])
+      url: 'https://github.com/CarlosVP120/fiscalcfdi-ai-releases/releases/latest/download/', channel: 'nightly' }])
     expect(() => createElectronBuilderConfig({ ...env, DSH_DESKTOP_INTERNAL_UPDATE_REPOSITORY: 'https://github.com/token' }, 'darwin', 'arm64')).toThrow('owner/repository')
   })
 
   it('signs the Mac bundle with a private self-signed identity without importing system trust', async () => {
     execute.mockClear()
     const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
-    const config = createElectronBuilderConfig({ DSH_DESKTOP_APP_ID: 'com.eqidis.ai', DSH_DESKTOP_UNSIGNED: '1',
-      DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY: 'EQIDIS AI Self-Signed',
-      DSH_DESKTOP_MACOS_LOCAL_SIGNING_KEYCHAIN: '/private/eqidis.keychain-db' }, 'darwin', 'arm64')
+    const config = createElectronBuilderConfig({ DSH_DESKTOP_APP_ID: 'mx.fiscalcfdi.ai', DSH_DESKTOP_UNSIGNED: '1',
+      DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY: 'FiscalCFDI AI Self-Signed',
+      DSH_DESKTOP_MACOS_LOCAL_SIGNING_KEYCHAIN: '/private/fiscalcfdi.keychain-db' }, 'darwin', 'arm64')
     expect(config.mac.identity).toBe('-')
     await config.afterSign({ electronPlatformName: 'darwin', appOutDir: '/private/build',
-      packager: { appInfo: { productFilename: 'EQIDIS AI' } } } as AfterPackContext)
-    expect(execute).toHaveBeenCalledWith('/usr/bin/codesign', ['--force', '--sign', 'EQIDIS AI Self-Signed',
-      '--keychain', '/private/eqidis.keychain-db', '--timestamp=none', '--identifier', 'com.eqidis.ai',
-      '--preserve-metadata=entitlements,flags', '/private/build/EQIDIS AI.app'])
-    expect(execute).toHaveBeenCalledWith('/usr/bin/codesign', ['--verify', '--deep', '--strict', '/private/build/EQIDIS AI.app'])
+      packager: { appInfo: { productFilename: 'FiscalCFDI AI' } } } as AfterPackContext)
+    expect(execute).toHaveBeenCalledWith('/usr/bin/codesign', ['--force', '--sign', 'FiscalCFDI AI Self-Signed',
+      '--keychain', '/private/fiscalcfdi.keychain-db', '--timestamp=none', '--identifier', 'mx.fiscalcfdi.ai',
+      '--preserve-metadata=entitlements,flags', '/private/build/FiscalCFDI AI.app'])
+    expect(execute).toHaveBeenCalledWith('/usr/bin/codesign', ['--verify', '--deep', '--strict', '/private/build/FiscalCFDI AI.app'])
   })
 
   it('names unsigned Windows artifacts so they cannot pass for release builds', async () => {
@@ -143,7 +143,7 @@ describe('installer preparation preserves application dependencies', () => {
       DSH_DESKTOP_TARGET_ARCH: 'x64',
       DSH_DESKTOP_UNSIGNED: '1',
     }, 'win32', 'x64')
-    expect(config.artifactName).toBe('eqidis-ai-${version}-${os}-${arch}-unsigned.${ext}')
+    expect(config.artifactName).toBe('fiscalcfdi-ai-${version}-${os}-${arch}-unsigned.${ext}')
   })
 
   it('packages every preload entry point the shell loads', async () => {

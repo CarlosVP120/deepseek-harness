@@ -46,7 +46,7 @@ Windows 在整个运行期间常驻托盘图标。悬停提示为产品名，单
 
 ## 关键技术决策
 
-EQIDIS 图稿位于 `resources/icon.png` 和 `resources/icon.svg`；平台适配保留公司符号与配色，分别位于 `resources/icon-windows.*` 和 `resources/icon-macos.*`。将各平台 SVG 导出为透明的 1024×1024 PNG。在仓库根目录运行 `node apps/desktop/scripts/generate-installer-brand.mjs`，重新生成带留白的浅色和深色安装程序字标。electron-builder 为 Windows 应用、安装程序和卸载程序生成多尺寸 ICO（[Windows 图标要求](https://learn.microsoft.com/en-us/windows/apps/design/iconography/app-icon-construction)）。安装页面在两种主题下使用匹配的图案；卸载程序的欢迎和完成页共用 `installer/assets/uninstaller-sidebar.png`，准备阶段将其转换为 164×314 BMP。
+FiscalCFDI AI 图稿位于 `resources/icon.png` 和 `resources/icon.svg`；平台适配保留公司符号与配色，分别位于 `resources/icon-windows.*` 和 `resources/icon-macos.*`。将各平台 SVG 导出为透明的 1024×1024 PNG。在仓库根目录运行 `node apps/desktop/scripts/generate-installer-brand.mjs`，重新生成带留白的浅色和深色安装程序字标。electron-builder 为 Windows 应用、安装程序和卸载程序生成多尺寸 ICO（[Windows 图标要求](https://learn.microsoft.com/en-us/windows/apps/design/iconography/app-icon-construction)）。安装页面在两种主题下使用匹配的图案；卸载程序的欢迎和完成页共用 `installer/assets/uninstaller-sidebar.png`，准备阶段将其转换为 164×314 BMP。
 
 快捷键覆盖保存在 `app.getPath('userData')/keybindings.json`，与 `DSH_HOME` 分离。主进程校验并串行保存修改后才发布已接受键位。读取失败保留上次接受的键位并阻止编辑，包括全部恢复；不可读和未来版本的文件保持不变。开发时可通过 `DSH_DESKTOP_USER_DATA_DIR` 隔离这些偏好，启动器会输出解析后的路径。格式和冲突语义见[快捷键服务](../../packages/client/shortcuts/README.zh.md)。
 
@@ -182,13 +182,13 @@ Desktop 在 Host 启动后、打开工作区前检查模型 API Key 引用是否
 
 欢迎窗口使用设计稿的 Platform light/dark 颜色跟随系统外观，展示 600 × 700 的入口布局和 API Key 表单，包含原生窗口控件、可拖动标题区域、本地品牌 SVG、系统无衬线字体回退，以及非按钮文字使用的本地 Montserrat Light 字体。窗口使用 macOS menu vibrancy 或 Windows acrylic，叠加 onboarding 的窗口背景色：浅色模式为 40% 白色，深色模式为 50% rgb(24 25 28)。本地 React 欢迎入口将 React、公共 `StateDot` 加载指示器及其 CSS 一起打包；它通过隔离 preload 工作，不加载主 Web 应用。入口、登录状态和 API Key 页面共用固定的底部操作行；“返回登录”链接位于操作行下方。按钮共用平台的过渡时序，开启“减少动态效果”会禁用过渡。操作系统控制模糊强度和外部圆角。macOS 的“降低透明度”会抑制半透明效果，“增强对比度”会强制开启该设置。“保存并继续”写入开发环境的凭证存储；“稍后配置”打开真实工作区，不保存密钥或完成标记。生成的开发项目同时链接已声明的 workspace 依赖闭包和 pnpm 提升的包，因此未提升的配置插件仍能解析。[窗口记录](../../.agents/notes/implemented/architecture/2026-09-08-desktop-welcome-window-material.zh.md)负责材质与引导决策。
 
-## EQIDIS internal distribution
+## FiscalCFDI AI internal distribution
 
-已安装的 EQIDIS 将 Harness 数据存储在 `~/.eqidis-ai`，与 DeepSeek Harness 独立。`EQIDIS_AI_HOME` 是仅用于安装版本的覆盖选项；继承的 `DSH_HOME` 会被忽略。开发版本保留其临时 `DSH_HOME`。不会导入原有账户、设置或会话数据。EQIDIS 套件禁用 DeepSeek 账户界面，默认使用 OpenRouter Flash 和标准预设。Flash 和 Pro 使用 1,048,576 个 token 的上下文窗口和 64,000 个 token 的输出上限，推理遵循 Harness 原生选择。
+已安装的 FiscalCFDI AI 将 Harness 数据存储在 `~/.fiscalcfdi-ai`，与 DeepSeek Harness 独立。`FISCALCFDI_AI_HOME` 是仅用于安装版本的覆盖选项；继承的 `DSH_HOME` 会被忽略。开发版本保留其临时 `DSH_HOME`。不会导入原有账户、设置或会话数据。FiscalCFDI AI 套件禁用 DeepSeek 账户界面，默认使用 OpenRouter Flash 和标准预设。Flash 和 Pro 使用 1,048,576 个 token 的上下文窗口和 64,000 个 token 的输出上限，推理遵循 Harness 原生选择。
 
-EQIDIS 安装包使用 `com.eqidis.ai`、EQIDIS AI 客户端标题和 `eqidis-ai` 文件名。通过 `pnpm --dir apps/desktop run` 运行 `package:mac:arm64:unsigned`、`package:mac:x64:unsigned` 或 `package:win:x64:unsigned`。目标 dotenv 文件只需配置 `DSH_DESKTOP_APP_ID=com.eqidis.ai`；无付费证书构建不配置强制更新策略或自动更新源。macOS 使用临时签名，不进行 Apple 公证；可用 `DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY` 选择已安装的自签名证书，并在不同版本中保留同一证书。`DSH_DESKTOP_MACOS_LOCAL_SIGNING_KEYCHAIN` 可指定可读的私有钥匙串，签名时显式使用该钥匙串，不修改系统信任设置。Windows 构建要求 Windows x64 主机。安装包通过运行时检查后写入 `.desktop-build/targets/<target>/unsigned-artifacts/`。
+FiscalCFDI AI 安装包使用 `mx.fiscalcfdi.ai`、FiscalCFDI AI 客户端标题和 `fiscalcfdi-ai` 文件名。通过 `pnpm --dir apps/desktop run` 运行 `package:mac:arm64:unsigned`、`package:mac:x64:unsigned` 或 `package:win:x64:unsigned`。目标 dotenv 文件只需配置 `DSH_DESKTOP_APP_ID=mx.fiscalcfdi.ai`；无付费证书构建不配置强制更新策略或自动更新源。macOS 使用临时签名，不进行 Apple 公证；可用 `DSH_DESKTOP_MACOS_LOCAL_SIGNING_IDENTITY` 选择已安装的自签名证书，并在不同版本中保留同一证书。`DSH_DESKTOP_MACOS_LOCAL_SIGNING_KEYCHAIN` 可指定可读的私有钥匙串，签名时显式使用该钥匙串，不修改系统信任设置。Windows 构建要求 Windows x64 主机。安装包通过运行时检查后写入 `.desktop-build/targets/<target>/unsigned-artifacts/`。
 
-通过私有仓库 `CarlosVP120/eqidis-ai-releases` 分发安装包，接收者需要仓库访问权限。每台设备在 Models 设置中单独输入 OpenRouter API 密钥。安装包不包含开发配置或凭据。当前更新需要从同一私有仓库下载替换安装包，应用不嵌入共享 GitHub 令牌。macOS 首次启动时可能需要在隐私与安全性中批准可信的内部应用；Windows 可能提示发布者未知。本地签名不等于 Apple 公证。
+通过私有仓库 `CarlosVP120/fiscalcfdi-ai-releases` 分发安装包，接收者需要仓库访问权限。每台设备在 Models 设置中单独输入 OpenRouter API 密钥。安装包不包含开发配置或凭据。当前更新需要从同一私有仓库下载替换安装包，应用不嵌入共享 GitHub 令牌。macOS 首次启动时可能需要在隐私与安全性中批准可信的内部应用；Windows 可能提示发布者未知。本地签名不等于 Apple 公证。
 
 若安装包仓库公开，可在目标 dotenv 文件中设置 `DSH_DESKTOP_INTERNAL_UPDATE_REPOSITORY=owner/repository`。内部安装包会写入该仓库最新发布的 HTTPS 通用更新源，并生成 Nightly 更新元数据。运行时检查通过后，应一起发布安装包、blockmap 和更新元数据。包含两种 Mac 架构的发布必须合并其 `nightly-mac.yml` 文件列表，不能用一种架构的更新源覆盖另一种。临时签名模式使用稳定的应用标识符要求，沿用 FiscalCFDI 的降级签名方案；选定自签名身份时保留证书要求。此选项不会验证私有 GitHub 下载，也不会嵌入 GitHub 令牌。
 

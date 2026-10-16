@@ -112,4 +112,4 @@ None.
 
 </details>
 
-EQIDIS hides the effort caption and menu row for OpenRouter Flash and Pro in the composer. This UI simplification does not narrow adapter capabilities or change the saved selection; request execution follows native Harness reasoning behavior.
+FiscalCFDI AI hides the effort caption and menu row for OpenRouter Flash and Pro in the composer. This UI simplification does not narrow adapter capabilities or change the saved selection; request execution follows native Harness reasoning behavior.
