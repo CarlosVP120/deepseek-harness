@@ -43,6 +43,12 @@
     },
     {
       "path": "../../util/values"
+    },
+    {
+      "path": "../ui-sidebar-right"
+    },
+    {
+      "path": "../ui-primitives"
     }
   ]
 }

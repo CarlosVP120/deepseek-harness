@@ -38,8 +38,8 @@ export function MonthsPanel({ compose, loadMonths, t }: Props) {
   }, [refresh])
   const working = load.phase === 'ready' && load.months.some(m => m.estado === 'running')
   useEffect(() => {
-    if (!working) return
-    const timer = window.setInterval(refresh, REFRESH_MS)
+    // Months open from any chat (its selector or the agent): fast while one is being posted, slow otherwise.
+    const timer = window.setInterval(refresh, working ? REFRESH_MS : REFRESH_MS * 2)
     return () => { window.clearInterval(timer) }
   }, [working, refresh])
 

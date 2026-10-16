@@ -34,7 +34,9 @@ export class BootPage {
     this.root = div(css.boot)
     this.root.dataset.dshBoot = ''
     this.card = div(css.card)
-    this.wordmark = div(css.wordmark, 'HARNESS')
+    // A product build names itself in the document title (DSH_CLIENT_TITLE); the bare shell keeps its own name.
+    const product = document.title.trim()
+    this.wordmark = div(css.wordmark, product === '' || product === 'DSH Local Build' ? 'HARNESS' : product.toUpperCase())
     this.spinner = div(css.spinner)
     this.spinner.dataset.dshBootSpinner = ''
     this.hint = div(css.hint, 'Loading plugins…')

@@ -27,8 +27,11 @@ const AI = 'M94.6 20 L98.95 7.76 L102.25 7.76 L106.6 20 L103.45 20 L102.65 17.55
  */
 export function ContabiliaiBrandMark({ size, className }: SidebarBrandMarkOwnerProps & { className?: string | undefined }) {
   return (
-    <svg width={size} height={size} className={className} viewBox="6.6 6.7 64.8 64.6" fill="none" aria-hidden="true">
-      <g transform="translate(-6.637661758143686, -6.743353214289449) scale(0.7809013833110219)" fill={SYMBOL_COLOR}>
+    // The petals span 8.5–91.5 in their own space. Hosts size this box for marks that carry their own
+    // margin (the sidebar draws a 28px mark inside a 24px row that clips), so the flower keeps ~11% of
+    // breathing room on every side and stays whole wherever it is placed.
+    <svg width={size} height={size} className={className} viewBox="-3 -3 106 106" fill="none" aria-hidden="true">
+      <g fill={SYMBOL_COLOR}>
         {PETALS.map(d => <path key={d.slice(0, 24)} d={d} />)}
       </g>
     </svg>

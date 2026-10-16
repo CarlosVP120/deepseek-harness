@@ -130,7 +130,7 @@
   background: transparent; color: var(--dsw-alias-home-text, var(--dsw-alias-label-primary)); font: inherit; font-size: 12px; cursor: pointer;
 }
 .newMonth:hover { background: var(--dsw-alias-home-hover, var(--dsw-alias-interactive-bg-hover-solid)); }
-.monthGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.monthGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 8px; }
 .monthTile {
   display: flex; flex-direction: column; gap: 6px; min-width: 0;
   padding: 12px; border: 0.5px solid var(--dsw-alias-home-border, var(--dsw-alias-border-l1)); border-radius: var(--dsw-radius-sm);
@@ -147,13 +147,11 @@
 .tileFacts .num { margin-inline-start: auto; }
 
 @media (max-width: 720px) {
-  .monthGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .metrics { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 620px) {
   .monthsPanel { width: calc(100% - 32px); }
-  .monthGrid { grid-template-columns: minmax(0, 1fr); }
   .table th:nth-child(4), .table td:nth-child(4) { display: none; }
 }
 @media (forced-colors: active) {

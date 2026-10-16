@@ -8,11 +8,26 @@
  * files, answers and audited importables. No accounting logic lives here.
  */
 import { spawn } from 'node:child_process'
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { homedir } from 'node:os'
+import { basename, join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import Schema from '@deepseek-ai/schemastery'
-import { defineTool } from '@deepseek-ai/dsh-tools'
+import type { Agent, PreStepDecision } from '@deepseek-ai/dsh-agent'
+import { createUserMessage, type ContextFormed } from '@deepseek-ai/dsh-llm'
+import { defineTool, type ToolExecution } from '@deepseek-ai/dsh-tools'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
-import type { ContabiliaiMonth } from './types.ts'
+import { SessionBindings } from './bindings.ts'
+import type {
+  ContabiliaiAnswerRequest, ContabiliaiBindRequest, ContabiliaiBinding, ContabiliaiCompany, ContabiliaiImportable, ContabiliaiMonth,
+  ContabiliaiMonthDetail, ContabiliaiMonthRequest, ContabiliaiSessionRequest, ContabiliaiUploadRequest,
+} from './types.ts'
+
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    'contabiliai-context': { kind: 'contabiliai-context' } & ContextFormed
+  }
+}
 
 export type * from './types.ts'
 
@@ -53,9 +68,15 @@ function callBridge(config: Config, command: string, payload: object, signal: Ab
 }
 
 const month = {
-  rfc: { type: 'string', required: true, description: 'RFC de la empresa, tal como lo devuelve contabiliai_empresas.' },
-  periodo: { type: 'string', required: true, description: 'Mes contable en formato AAAA-MM, por ejemplo 2026-07.' },
+  rfc: { type: 'string', description: 'RFC de la empresa, tal como lo devuelve contabiliai_empresas. Si se omite, se usa la empresa seleccionada en la interfaz.' },
+  periodo: { type: 'string', description: 'Mes contable en formato AAAA-MM, por ejemplo 2026-07. Si se omite, se usa el mes seleccionado en la interfaz.' },
 } as const
+
+/** Month arguments as the model may send them: both optional, resolved from the Session's selection. */
+interface MonthArgs { rfc?: string | undefined; periodo?: string | undefined }
+
+/** Tools whose explicit month becomes the Session's selection, so the panel follows the conversation. */
+const SELECTING = new Set(['abrir_mes', 'subir', 'estado', 'procesar', 'responder', 'cobertura', 'importable'])
 
 const text = {
   schema: { type: 'string' },
@@ -106,10 +127,27 @@ const coverageOutput = {
   presentationMeta: (_args: unknown, value: string) => parsed(value),
 } as const
 
-function registerTools(ctx: Context, config: Config): void {
+function registerTools(ctx: Context, config: Config, bindings: SessionBindings): void {
   const run = async (command: string, payload: object, signal: AbortSignal) => {
     const result = await callBridge(config, command, payload, signal)
     if (!result.ok) throw new Error(result.error ?? 'Error del motor FiscalCFDI AI')
+    return JSON.stringify(result, null, 1)
+  }
+  /** Run a month command for the month the model named, or the one selected for its Session. */
+  const runMonth = async (command: string, args: MonthArgs & Record<string, unknown>, exec: ToolExecution) => {
+    const session = exec.agent?.session.id
+    const bound = session === undefined ? undefined : bindings.get(session)
+    const rfc = args.rfc ?? bound?.rfc
+    const periodo = args.periodo ?? bound?.periodo
+    if (rfc === undefined || periodo === undefined) {
+      throw new Error('No hay empresa y mes seleccionados. Pregúntale al usuario cuáles, o pídele que los elija en el selector junto a la caja de texto.')
+    }
+    const result = await callBridge(config, command, { ...args, rfc, periodo }, exec.signal)
+    if (!result.ok) throw new Error(result.error ?? 'Error del motor FiscalCFDI AI')
+    if (session !== undefined && SELECTING.has(command)) {
+      const empresa = typeof result.empresa === 'string' ? result.empresa : bound?.rfc === rfc ? bound.empresa : rfc
+      bindings.set(session, { rfc, periodo, empresa })
+    }
     return JSON.stringify(result, null, 1)
   }
 
@@ -126,7 +164,7 @@ function registerTools(ctx: Context, config: Config): void {
     description: 'Abre (o retoma) el trabajo contable de una empresa y mes. Cada empresa+mes tiene un solo trabajo que conserva archivos, respuestas, intentos e importables. Devuelve el estado, los archivos ya cargados y qué falta para procesar.',
     parameters: month,
     output: text,
-    execute: (args, exec) => run('abrir_mes', args, exec.signal),
+    execute: (args, exec) => runMonth('abrir_mes', args, exec),
   }))
 
   ctx.tools.register(defineTool({
@@ -137,7 +175,7 @@ function registerTools(ctx: Context, config: Config): void {
       rutas: { type: 'array', items: { type: 'string' }, required: true, description: 'Rutas absolutas de los archivos adjuntos.' },
     },
     output: text,
-    execute: (args, exec) => run('subir', args, exec.signal),
+    execute: (args, exec) => runMonth('subir', args, exec),
   }))
 
   ctx.tools.register(defineTool({
@@ -145,7 +183,7 @@ function registerTools(ctx: Context, config: Config): void {
     description: 'Consulta el estado del mes contable: archivos, si está listo para procesar, si el agente contable está trabajando, los pasos de su avance, sus preguntas pendientes y, al terminar, pólizas, cobertura bancaria e IVA. El usuario ve el resultado como una tarjeta del mes. Úsala para seguir el avance mientras el motor trabaja (cada consulta es barata).',
     parameters: month,
     output: monthOutput,
-    execute: (args, exec) => run('estado', args, exec.signal),
+    execute: (args, exec) => runMonth('estado', args, exec),
   }))
 
   ctx.tools.register(defineTool({
@@ -158,7 +196,7 @@ function registerTools(ctx: Context, config: Config): void {
       aprueba_propuesta: { type: 'boolean', description: 'true solo si el usuario aprobó explícitamente la propuesta del agente.' },
     },
     output: text,
-    execute: (args, exec) => run('responder', args, exec.signal),
+    execute: (args, exec) => runMonth('responder', args, exec),
   }))
 
   ctx.tools.register(defineTool({
@@ -166,7 +204,7 @@ function registerTools(ctx: Context, config: Config): void {
     description: 'Inicia la contabilización autónoma del mes: el agente contable consulta el historial de CONTPAQi, aplica las políticas de la empresa, concilia bancos, genera pólizas y las audita. Corre en segundo plano y tarda varios minutos; sigue el avance con contabiliai_estado. Si falta información, devuelve qué falta sin iniciar.',
     parameters: month,
     output: monthOutput,
-    execute: (args, exec) => run('procesar', args, exec.signal),
+    execute: (args, exec) => runMonth('procesar', args, exec),
   }))
 
   ctx.tools.register(defineTool({
@@ -174,7 +212,7 @@ function registerTools(ctx: Context, config: Config): void {
     description: 'Muestra la cobertura bancaria del último intento con pólizas: totales de cargos y abonos por banco y cada movimiento del estado de cuenta con la póliza y las cuentas con que se registró. El usuario ve una tarjeta con todos los movimientos; tú recibes los totales y los movimientos que quedaron sin póliza. Úsala al terminar un mes o cuando el usuario pregunte cómo quedó un movimiento.',
     parameters: month,
     output: coverageOutput,
-    execute: (args, exec) => run('cobertura', args, exec.signal),
+    execute: (args, exec) => runMonth('cobertura', args, exec),
   }))
 
   ctx.tools.register(defineTool({
@@ -190,25 +228,105 @@ function registerTools(ctx: Context, config: Config): void {
     description: 'Obtiene la ruta del archivo importable a CONTPAQi (.xls P/M1/AM/AD) de un mes terminado. Solo existe si la auditoría lo aprobó y el archivo no cambió después. Después llama a la herramienta present con esa ruta para que el usuario lo descargue.',
     parameters: month,
     output: text,
-    execute: (args, exec) => run('importable', args, exec.signal),
+    execute: (args, exec) => runMonth('importable', args, exec),
   }))
 }
 
+function remoteFailure(result: BridgeResult): RemoteError<'gateway/internal'> {
+  return new RemoteError('gateway/internal', result.error ?? 'Error del motor FiscalCFDI AI', {})
+}
+
+function nullableNumber(value: unknown): number | null {
+  return typeof value === 'number' ? value : null
+}
+
+function nullableString(value: unknown): string | null {
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : null
+}
+
+function list<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value as T[] : []
+}
+
+/** Project the engine's month snapshot onto the panel's typed detail. */
+function monthDetail(raw: BridgeResult): ContabiliaiMonthDetail {
+  const result = raw.resultado as Record<string, unknown> | null | undefined
+  const avance = (raw.avance ?? {}) as { pasos?: unknown; cobertura?: Record<string, unknown> }
+  const live = avance.cobertura ?? {}
+  return {
+    rfc: String(raw.rfc), empresa: String(raw.empresa), periodo: String(raw.periodo),
+    estado: String(raw.estado), descripcion: nullableString(raw.descripcion) ?? '', intento: Number(raw.intento ?? 0),
+    mensaje: nullableString(raw.mensaje ?? raw.aviso), error: nullableString(raw.error), listo: raw.listo_para_procesar === true,
+    archivos: list<Record<string, unknown>>(raw.archivos).map(file => ({
+      nombre: String(file.nombre), tipo: nullableString(file.tipo), rol: nullableString(file.rol), estado: nullableString(file.estado) ?? '',
+    })),
+    preguntas: list<Record<string, unknown>>(raw.preguntas)
+      .map(question => ({ id: String(question.id), pregunta: String(question.pregunta) })),
+    requisitos: list<Record<string, unknown>>(raw.requisitos).map(item => ({
+      clave: String(item.clave), titulo: String(item.titulo), listo: item.listo === true,
+    })),
+    pasos: list<Record<string, unknown>>(avance.pasos)
+      .map(step => ({ clave: String(step.clave), titulo: String(step.titulo), estado: String(step.estado) })),
+    cubiertos: nullableNumber(result?.movimientos_bancarios_cubiertos ?? live.movimientos_bancarios_cubiertos),
+    total: nullableNumber(result?.movimientos_bancarios_total ?? live.movimientos_bancarios_total),
+    resultado: result === null || result === undefined ? null : {
+      auditoria_aprobada: result.auditoria_aprobada === true,
+      polizas: nullableNumber(result.polizas),
+      cubiertos: nullableNumber(result.movimientos_bancarios_cubiertos),
+      total: nullableNumber(result.movimientos_bancarios_total),
+      iva_acreditable: nullableString(result.iva_acreditable_pagado),
+      iva_trasladado: nullableString(result.iva_trasladado_cobrado),
+    },
+    importable: raw.importable_disponible === true,
+  }
+}
+
 /**
- * The FiscalCFDI AI Host service: registers the accounting tools and serves the
- * Client panels (start-page months) through the `contabiliai` Remote namespace.
+ * The FiscalCFDI AI Host service: registers the accounting tools, remembers
+ * which company month each chat works on (the composer selector and the month
+ * panel), tells the agent about that selection, and serves the Client panels
+ * through the `contabiliai` Remote namespace.
  */
 export class Contabiliai extends TypertRemoteService {
-  static inject = ['tools']
+  static inject = ['tools', 'agents']
   static Config = Config
 
+  private readonly bindings: SessionBindings
+  private readonly uploads: string
+
   /**
-   * @param ctx - Host context owning the tool registry.
+   * @param ctx - Host context owning the tool registry and agent steps.
    * @param config - Engine interpreter, bridge and call budget.
    */
   constructor(ctx: Context, private readonly config: Config) {
     super(ctx, 'contabiliai')
-    registerTools(ctx, config)
+    const home = process.env.DSH_HOME ?? join(homedir(), '.contabiliai')
+    this.bindings = new SessionBindings(home)
+    this.uploads = join(home, 'contabiliai', 'uploads')
+    registerTools(ctx, config, this.bindings)
+    // Each turn's first request carries the month the user selected, so the agent never asks for it again.
+    ctx.on('agent/pre-step', async ({ agent, step }: { agent: Agent; step: number }, next: () => Promise<PreStepDecision>) => {
+      const decision = await next()
+      if (decision.kind === 'reject' || step !== 1) return decision
+      const bound = this.bindings.get(agent.session.id)
+      if (bound === undefined) return decision
+      const text = `Mes contable seleccionado en la interfaz: ${bound.empresa} (RFC ${bound.rfc}), periodo ${bound.periodo}. `
+        + 'Las herramientas contabiliai_* lo usan cuando omites rfc y periodo; no se lo vuelvas a preguntar al usuario. '
+        + 'El usuario ve el panel «Mes contable» con archivos, avance, dudas y descarga.'
+      return {
+        ...decision,
+        messages: [...decision.messages, createUserMessage({
+          content: [{ type: 'text', text }],
+          source: { kind: 'contabiliai-context', form: 'snapshot', sections: [{ name: 'contabiliai-context', text }] },
+        })],
+      }
+    }, { prepend: true })
+  }
+
+  private async bridge(command: string, payload: object, signal?: AbortSignal): Promise<BridgeResult> {
+    const result = await callBridge(this.config, command, payload, signal ?? new AbortController().signal)
+    if (!result.ok) throw remoteFailure(result)
+    return result
   }
 
   /**
@@ -218,9 +336,118 @@ export class Contabiliai extends TypertRemoteService {
    */
   @Remote('months')
   async months(signal?: AbortSignal): Promise<ContabiliaiMonth[]> {
-    const result = await callBridge(this.config, 'meses', {}, signal ?? new AbortController().signal)
-    if (!result.ok) throw new RemoteError('gateway/internal', result.error ?? 'Error del motor FiscalCFDI AI', {})
-    return result.meses as ContabiliaiMonth[]
+    return (await this.bridge('meses', {}, signal)).meses as ContabiliaiMonth[]
+  }
+
+  /**
+   * The CONTPAQi companies the engine can post.
+   * @param signal - Remote caller cancellation.
+   * @returns companies by display name.
+   */
+  @Remote('companies')
+  async companies(signal?: AbortSignal): Promise<ContabiliaiCompany[]> {
+    const rows = (await this.bridge('empresas', {}, signal)).empresas as { rfc: string; nombre: string }[]
+    return rows.map(({ rfc, nombre }) => ({ rfc, nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+  }
+
+  /**
+   * The company month a chat Session works on.
+   * @param request - the Session.
+   * @returns its selection, or null when it has none.
+   */
+  @Remote('binding')
+  binding(request: ContabiliaiSessionRequest): ContabiliaiBinding | null {
+    return this.bindings.get(request.sessionId) ?? null
+  }
+
+  /**
+   * Select a company month for a chat Session and open it in the engine.
+   * @param request - the Session and the company month.
+   * @param signal - Remote caller cancellation.
+   * @returns the opened month.
+   */
+  @Remote('bind')
+  async bind(request: ContabiliaiBindRequest, signal?: AbortSignal): Promise<ContabiliaiMonthDetail> {
+    const opened = await this.bridge('abrir_mes', { rfc: request.rfc, periodo: request.periodo }, signal)
+    this.bindings.set(request.sessionId, { rfc: request.rfc, periodo: request.periodo, empresa: String(opened.empresa) })
+    return monthDetail({ ...opened, ...await this.bridge('estado', { rfc: request.rfc, periodo: request.periodo }, signal) })
+  }
+
+  /**
+   * Clear a chat Session's company month.
+   * @param request - the Session.
+   */
+  @Remote('unbind')
+  unbind(request: ContabiliaiSessionRequest): void {
+    this.bindings.delete(request.sessionId)
+  }
+
+  /**
+   * One company month as the month panel shows it.
+   * @param request - the company month.
+   * @param signal - Remote caller cancellation.
+   * @returns files, checklist, progress, questions and result.
+   */
+  @Remote('month')
+  async month(request: ContabiliaiMonthRequest, signal?: AbortSignal): Promise<ContabiliaiMonthDetail> {
+    return monthDetail(await this.bridge('estado', { rfc: request.rfc, periodo: request.periodo }, signal))
+  }
+
+  /**
+   * Load files dropped on the month panel; the engine recognizes each by its content.
+   * @param request - the company month and the files.
+   * @param signal - Remote caller cancellation.
+   * @returns the month after loading.
+   */
+  @Remote('upload')
+  async upload(request: ContabiliaiUploadRequest, signal?: AbortSignal): Promise<ContabiliaiMonthDetail> {
+    await mkdir(this.uploads, { recursive: true })
+    const folder = await mkdtemp(join(this.uploads, `${request.rfc}-${request.periodo}-`))
+    const rutas: string[] = []
+    const nombres: Record<string, string> = {}
+    for (const file of request.files) {
+      const path = join(folder, basename(file.name))
+      await writeFile(path, Buffer.from(file.data, 'base64'))
+      rutas.push(path)
+      nombres[path] = file.name
+    }
+    return monthDetail(await this.bridge('subir', { rfc: request.rfc, periodo: request.periodo, rutas, nombres }, signal))
+  }
+
+  /**
+   * Send the user's answer to the engine: a pending question, a preparation confirmation or a correction.
+   * @param request - the company month and the user's words.
+   * @param signal - Remote caller cancellation.
+   * @returns the month after the answer.
+   */
+  @Remote('answer')
+  async answer(request: ContabiliaiAnswerRequest, signal?: AbortSignal): Promise<ContabiliaiMonthDetail> {
+    const payload = { rfc: request.rfc, periodo: request.periodo, texto: request.texto, pregunta_id: request.pregunta_id }
+    await this.bridge('responder', payload, signal)
+    return this.month(request, signal)
+  }
+
+  /**
+   * Start the autonomous posting run of a ready month.
+   * @param request - the company month.
+   * @param signal - Remote caller cancellation.
+   * @returns the month as the run starts, or what is still missing.
+   */
+  @Remote('process')
+  async process(request: ContabiliaiMonthRequest, signal?: AbortSignal): Promise<ContabiliaiMonthDetail> {
+    return monthDetail(await this.bridge('procesar', { rfc: request.rfc, periodo: request.periodo }, signal))
+  }
+
+  /**
+   * The audited CONTPAQi importable of a finished month.
+   * @param request - the company month.
+   * @param signal - Remote caller cancellation.
+   * @returns the file name and its bytes.
+   */
+  @Remote('importable')
+  async importable(request: ContabiliaiMonthRequest, signal?: AbortSignal): Promise<ContabiliaiImportable> {
+    const result = await this.bridge('importable', { rfc: request.rfc, periodo: request.periodo }, signal)
+    return { nombre: String(result.nombre), data: (await readFile(String(result.ruta))).toString('base64') }
   }
 }
 
