@@ -1,8 +1,11 @@
 /** Local project instructions and documents owned by an existing Workspace. */
 import { lstat, mkdir, readFile, readdir, realpath, rename, unlink, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import type { ProjectContext, ProjectContextFile, ProjectFileKind, ProjectInputValue, ProjectPending, ProjectWorkpaperPendings } from './types.ts'
+import type {
+  ProjectCalculation, ProjectContext, ProjectContextFile, ProjectFileContent, ProjectFileEntry, ProjectFileKind,
+  ProjectFilesView, ProjectInputValue, ProjectPending, ProjectWorkpaperPendings,
+} from './types.ts'
 
 const DIRECTORY = '.eqidis-context'
 /** Official workpaper templates the workpaper agent fills, one copy per period. */
@@ -12,6 +15,12 @@ const WORKPAPER_EXTENSIONS = /\.(xlsx|xlsm|xls|ods)$/iu
 const INPUT_DIRECTORY = 'Insumos'
 /** Follow-up items the workpaper tools keep for each filled copy. */
 const PENDINGS_DIRECTORY = join('.eqidis-workpapers', 'pendientes')
+/** What each calculation started with, one JSON file per conversation. */
+const CALCULATIONS_DIRECTORY = join('.eqidis-workpapers', 'calculos')
+/** Filled workpapers, one folder per period. */
+const OUTPUT_DIRECTORY = 'Papeles de trabajo'
+/** Largest file the panel hands back for saving a copy. */
+const MAX_COPY_BYTES = 100 * 1024 * 1024
 /** How the agent works whenever the project has official workpapers; the results must always come out in them. */
 const WORKPAPER_PROCEDURE = `Este proyecto trabaja con los papeles de trabajo oficiales de la empresa. Todo cálculo de impuestos se entrega llenando una copia del papel oficial que corresponda; no entregues cálculos en otro formato ni inventes plantillas.
 Procedimiento cuando el usuario sube balanza, auxiliares u otros insumos o pide un cálculo:
@@ -197,6 +206,122 @@ export class ProjectContextFiles {
       if (items.length > 0) out.push({ file: `Papeles de trabajo/${period}/${stem}.xlsx`, items })
     }
     return out.sort((a, b) => b.file.localeCompare(a.file))
+  }
+
+  /** A project-relative path inside the project, refusing anything that escapes it. */
+  private async inside(root: string, file: string): Promise<{ base: string; path: string }> {
+    const base = await realpath(root)
+    const path = resolve(base, file)
+    const rel = relative(base, path)
+    if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) throw new Error('Choose a file inside the project.')
+    return { base, path }
+  }
+
+  private async entry(base: string, path: string): Promise<ProjectFileEntry | null> {
+    const info = await lstat(path).catch(() => undefined)
+    if (info === undefined || !info.isFile()) return null
+    return { path: relative(base, path).split(sep).join('/'), name: basename(path), bytes: info.size, modified: info.mtime.toISOString() }
+  }
+
+  private async entries(base: string, folder: string): Promise<ProjectFileEntry[]> {
+    const names = await readdir(join(base, folder)).catch(() => [] as string[])
+    const out: ProjectFileEntry[] = []
+    for (const name of names.filter(entry => !entry.startsWith('.')).sort((a, b) => a.localeCompare(b))) {
+      const found = await this.entry(base, join(base, folder, name))
+      if (found !== null) out.push(found)
+    }
+    return out
+  }
+
+  private calculationPath(base: string, sessionId: string): string {
+    if (!/^[A-Za-z0-9_-]{1,120}$/u.test(sessionId)) throw new Error('Invalid conversation id.')
+    return join(base, CALCULATIONS_DIRECTORY, `${sessionId}.json`)
+  }
+
+  /**
+   * Record the files a conversation's calculation started with.
+   * @param root - registered project folder.
+   * @param calculation - period, workpapers and input paths.
+   * @returns the stored record.
+   */
+  recordCalculation(root: string, calculation: Omit<ProjectCalculation, 'createdAt'>): Promise<ProjectCalculation> {
+    return this.enqueue(async () => {
+      const base = await realpath(root)
+      for (const file of [calculation.balance, ...calculation.ledgers, ...calculation.others]) await this.inside(root, file)
+      for (const name of calculation.workpapers) this.filename(name)
+      const record: ProjectCalculation = { ...calculation, createdAt: new Date().toISOString() }
+      const path = this.calculationPath(base, calculation.sessionId)
+      await mkdir(join(path, '..'), { recursive: true })
+      await this.atomic(path, JSON.stringify(record, null, 1))
+      return record
+    })
+  }
+
+  /**
+   * Add inputs to a conversation's recorded calculation.
+   * @returns the updated record.
+   */
+  addToCalculation(root: string, sessionId: string, section: 'ledgers' | 'others', paths: readonly string[]): Promise<ProjectCalculation> {
+    return this.enqueue(async () => {
+      const base = await realpath(root)
+      const path = this.calculationPath(base, sessionId)
+      if (!await regular(path)) throw new Error('This conversation has no recorded calculation.')
+      for (const file of paths) await this.inside(root, file)
+      const record = JSON.parse(await readFile(path, 'utf8')) as ProjectCalculation
+      record[section] = [...record[section], ...paths.filter(file => !record[section].includes(file))]
+      await this.atomic(path, JSON.stringify(record, null, 1))
+      return record
+    })
+  }
+
+  /**
+   * The files panel: what this conversation's calculation used and produced, and every file of the project.
+   * @param root - registered project folder.
+   * @param sessionId - the conversation.
+   */
+  async files(root: string, sessionId: string): Promise<ProjectFilesView> {
+    const base = await realpath(root)
+    const workpapers = await this.entries(base, WORKPAPER_DIRECTORY)
+    const periods: ProjectFilesView['periods'] = []
+    const labels = new Set([
+      ...await readdir(join(base, INPUT_DIRECTORY)).catch(() => [] as string[]),
+      ...await readdir(join(base, OUTPUT_DIRECTORY)).catch(() => [] as string[]),
+    ])
+    for (const period of [...labels].filter(label => !label.startsWith('.')).sort().reverse()) {
+      periods.push({
+        period,
+        inputs: await this.entries(base, join(INPUT_DIRECTORY, period)),
+        filled: await this.entries(base, join(OUTPUT_DIRECTORY, period)),
+      })
+    }
+    const recordPath = this.calculationPath(base, sessionId)
+    let calculation: ProjectFilesView['calculation'] = null
+    if (await regular(recordPath)) {
+      const record = JSON.parse(await readFile(recordPath, 'utf8')) as ProjectCalculation
+      const pick = async (file: string) => this.entry(base, join(base, file))
+      const present = (items: (ProjectFileEntry | null)[]) => items.filter((item): item is ProjectFileEntry => item !== null)
+      calculation = {
+        ...record,
+        workpaperFiles: present(await Promise.all(record.workpapers.map(name => pick(join(WORKPAPER_DIRECTORY, name))))),
+        filled: present(await Promise.all(record.workpapers.map(name =>
+          pick(join(OUTPUT_DIRECTORY, record.period, `${name.replace(/\.[^.]+$/u, '')} - ${record.period}.xlsx`))))),
+        balanceFile: await pick(record.balance),
+        ledgerFiles: present(await Promise.all(record.ledgers.map(pick))),
+        otherFiles: present(await Promise.all(record.others.map(pick))),
+      }
+    }
+    return { calculation, root: base, workpapers, periods }
+  }
+
+  /**
+   * Read a project file to save a copy elsewhere.
+   * @returns its name and bytes.
+   */
+  async copyOf(root: string, file: string): Promise<ProjectFileContent> {
+    const { path } = await this.inside(root, file)
+    if (!await regular(path)) throw new Error('The file does not exist.')
+    if ((await lstat(path)).size > MAX_COPY_BYTES) throw new Error('The file is too large to download from here; open it in Finder.')
+    return { name: basename(path), base64: (await readFile(path)).toString('base64') }
   }
 
   /**

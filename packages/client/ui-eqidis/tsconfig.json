@@ -16,6 +16,7 @@
     { "path": "../ui-tool" },
     { "path": "../ui-chat/tsconfig.client.json" },
     { "path": "../../util/values" },
+    { "path": "../../util/workspace-path" },
     { "path": "../ui-conversation/tsconfig.client.json" },
     { "path": "../ui-primitives" },
     { "path": "../../api/remotes/tsconfig.client.json" },

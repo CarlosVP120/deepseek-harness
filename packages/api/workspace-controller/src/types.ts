@@ -203,5 +203,54 @@ export interface ProjectPending {
 }
 /** The follow-up items of one filled workpaper. */
 export interface ProjectWorkpaperPendings { file: string; items: ProjectPending[] }
+/** The files a calculation started with, as the intake recorded them. */
+export interface ProjectCalculation {
+  sessionId: string
+  period: string
+  /** Official workpaper file names (in the project's workpaper folder). */
+  workpapers: string[]
+  /** Project-relative paths of the inputs. */
+  balance: string
+  ledgers: string[]
+  others: string[]
+  createdAt: string
+}
+/** Record the files a calculation started with. */
+export interface ProjectCalculationRequest extends ProjectContextRequest {
+  sessionId: string
+  period: string
+  workpapers: string[]
+  balance: string
+  ledgers: string[]
+  others: string[]
+}
+/** Add inputs to a recorded calculation. */
+export interface ProjectCalculationAddRequest extends ProjectContextRequest {
+  sessionId: string
+  section: 'ledgers' | 'others'
+  paths: string[]
+}
+/** A conversation of a project. */
+export interface ProjectSessionRequest extends ProjectContextRequest { sessionId: string }
+/** One file of the project, for the files panel. */
+export interface ProjectFileEntry { path: string; name: string; bytes: number; modified: string }
+/** The files panel: the conversation's calculation and everything in the project. */
+export interface ProjectFilesView {
+  /** The calculation this conversation started, with its files; null when none was recorded. */
+  calculation: (ProjectCalculation & {
+    workpaperFiles: ProjectFileEntry[]
+    filled: ProjectFileEntry[]
+    balanceFile: ProjectFileEntry | null
+    ledgerFiles: ProjectFileEntry[]
+    otherFiles: ProjectFileEntry[]
+  }) | null
+  root: string
+  workpapers: ProjectFileEntry[]
+  periods: { period: string; inputs: ProjectFileEntry[]; filled: ProjectFileEntry[] }[]
+}
+/** One project file by its project-relative path. */
+export interface ProjectFileRequest extends ProjectContextRequest { file: string }
+/** A project file's bytes, for saving a copy. */
+export interface ProjectFileContent { name: string; base64: string }
 /** Where the input was stored, relative to the project. */
 export interface ProjectInputValue { path: string }

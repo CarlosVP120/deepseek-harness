@@ -90,7 +90,9 @@ export function WorkpaperCard(props: Props) {
         <li key={item}><IconCheckOutlineRegular size={14} className={css.okText} /><span>{item}</span></li>)}</ul>
     </section>}
     <footer className={css.foot}>
-      <span className={css.muted}>{t('card.file')}: <span className={css.path}>{data.archivo}</span></span>
+      <span className={css.muted}>{t('card.file')}: <span className={css.path}>{data.archivo}</span>
+        {props.follow !== undefined && <> · <button type="button" className={css.panelLink} onClick={props.follow.openFiles}>{t('card.files')}</button></>}
+      </span>
       <span className={css.muted}>{t('card.captured', { count: data.capturas })}</span>
     </footer>
   </div>

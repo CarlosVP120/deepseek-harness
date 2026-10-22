@@ -85,3 +85,24 @@ it('reads the follow-up items of a filled workpaper by its file name only', asyn
   expect(await files.allPendings(root)).toEqual([{ file: 'Papeles de trabajo/2026-09/Papel - 2026-09.xlsx', items }])
   await expect(files.pendings(root, '..')).rejects.toThrow('valid name')
 })
+it('records what a calculation used and lists it with the filled workpaper and every period', async () => {
+  await files.upload(root, 'Papel.xlsx', 'YQ==', 'workpaper')
+  const balance = (await files.storeInput(root, '2026-09', 'Balanza.xlsx', 'Yg==')).path
+  const ledger = (await files.storeInput(root, '2026-09', 'Auxiliar.xlsx', 'Yw==')).path
+  await files.recordCalculation(root, { sessionId: 's-1', period: '2026-09', workpapers: ['Papel.xlsx'], balance, ledgers: [ledger], others: [] })
+  await mkdir(join(root, 'Papeles de trabajo', '2026-09'), { recursive: true })
+  await writeFile(join(root, 'Papeles de trabajo', '2026-09', 'Papel - 2026-09.xlsx'), 'd')
+  const extra = (await files.storeInput(root, '2026-09', 'Poliza.pdf', 'ZQ==')).path
+  await files.addToCalculation(root, 's-1', 'others', [extra])
+  const view = await files.files(root, 's-1')
+  expect(view.calculation?.workpaperFiles.map(file => file.path)).toEqual(['.eqidis-workpapers/plantillas/Papel.xlsx'])
+  expect(view.calculation?.filled.map(file => file.name)).toEqual(['Papel - 2026-09.xlsx'])
+  expect(view.calculation?.balanceFile?.path).toBe('Insumos/2026-09/Balanza.xlsx')
+  expect(view.calculation?.ledgerFiles.map(file => file.name)).toEqual(['Auxiliar.xlsx'])
+  expect(view.calculation?.otherFiles.map(file => file.name)).toEqual(['Poliza.pdf'])
+  expect(view.periods.map(period => [period.period, period.inputs.length, period.filled.length])).toEqual([['2026-09', 3, 1]])
+  expect((await files.files(root, 's-2')).calculation).toBeNull()
+  expect(await files.copyOf(root, 'Insumos/2026-09/Balanza.xlsx')).toEqual({ name: 'Balanza.xlsx', base64: 'Yg==' })
+  await expect(files.copyOf(root, '../outside.txt')).rejects.toThrow('inside the project')
+  await expect(files.files(root, '../x')).rejects.toThrow('conversation id')
+})

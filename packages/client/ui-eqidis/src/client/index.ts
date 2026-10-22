@@ -15,6 +15,9 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
 import type {} from '@deepseek-ai/dsh-client-ui-tool/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import { fileAddressFor } from '@deepseek-ai/dsh-util-workspace-path'
+import { IconChecklistOutlineRegular, IconFolderOpenRegular } from '@deepseek-ai/dsh-client-ui-primitives'
+import { FilesPanel, type FilesPanelInjected } from './FilesPanel.tsx'
 import { PendingsPanel, type PendingsPanelInjected } from './PendingsPanel.tsx'
 import { IntakePanel, type IntakeInjected, type IntakeProject } from './IntakePanel.tsx'
 import type { FollowUp } from './PendingList.tsx'
@@ -27,11 +30,17 @@ import { en, es, NS, zh, type EqidisKey } from './locales.ts'
 const PENDINGS_TAB_ID = '@deepseek-ai/dsh-client-ui-eqidis/pendings'
 /** The pending-items panel's tab kind. */
 const PENDINGS_TAB_KIND = 'eqidisPendings'
+/** The files panel's identity in the right Sidebar's tab system. */
+const FILES_TAB_ID = '@deepseek-ai/dsh-client-ui-eqidis/files'
+/** The files panel's tab kind. */
+const FILES_TAB_KIND = 'eqidisFiles'
 
 declare module '@deepseek-ai/dsh-client-ui-sidebar-right/client' {
   interface SidebarRightTabParamsMap {
     /** The conversation whose project's pending items the panel shows. */
     eqidisPendings: { sessionId: SessionId }
+    /** The conversation whose calculation files the panel shows. */
+    eqidisFiles: { sessionId: SessionId }
   }
 }
 
@@ -43,7 +52,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 }
 
 /** Required services: Remote, Workspace state, dictionaries, Sessions and UI slots. */
-export const inject = ['remote', 'remote.workspace', 'workspaces', 'slots', 'locale', 'sessions', 'uiConversation', 'sidebarRight', 'sidebarRightTabs']
+export const inject = ['remote', 'remote.workspace', 'workspaces', 'slots', 'locale', 'sessions', 'uiConversation', 'sidebarRight', 'sidebarRightTabs', 'remote.session']
 
 /**
  * Register the card and the chip.
@@ -88,16 +97,71 @@ export function apply(ctx: Context): void {
   const t = ctx.locale.bind(NS)
   ctx.effect(() => ctx.sidebarRightTabs.register({
     id: PENDINGS_TAB_ID, kind: PENDINGS_TAB_KIND, priority: 'builtin', title: () => t('panel.title'),
+    guide: [{ id: 'pendings', order: 6, title: () => t('panel.title'), description: () => t('panel.guide'), icon: IconChecklistOutlineRegular }],
   }), 'ui-eqidis: pending-items tab type')
-  const openPanel = (sessionId: SessionId) => {
-    const existing = ctx.sidebarRight.tabsIn(sessionId).find(tab => tab.kind === PENDINGS_TAB_KIND)
+  ctx.effect(() => ctx.sidebarRightTabs.register({
+    id: FILES_TAB_ID, kind: FILES_TAB_KIND, priority: 'builtin', title: () => t('files.title'),
+    guide: [{ id: 'files', order: 5, title: () => t('files.guideTitle'), description: () => t('files.guide'), icon: IconFolderOpenRegular }],
+  }), 'ui-eqidis: files tab type')
+  const show = (sessionId: SessionId, kind: typeof PENDINGS_TAB_KIND | typeof FILES_TAB_KIND) => {
+    const existing = ctx.sidebarRight.tabsIn(sessionId).find(tab => tab.kind === kind)
     if (existing === undefined) {
-      ctx.sidebarRight.openTab(PENDINGS_TAB_KIND, { params: { sessionId } })
+      ctx.sidebarRight.openTab(kind, { params: { sessionId } })
       return
     }
     if (!ctx.sidebarRight.isExpanded()) ctx.sidebarRight.toggleExpanded()
     ctx.sidebarRight.focus(existing.id)
   }
+  const openPanel = (sessionId: SessionId) => { show(sessionId, PENDINGS_TAB_KIND) }
+  const base64Of = (file: File) => new Promise<string>((done, fail) => {
+    const reader = new FileReader()
+    reader.onload = () => { done(typeof reader.result === 'string' ? reader.result.split(',')[1] ?? '' : '') }
+    reader.onerror = () => { fail(reader.error ?? new Error('read failed')) }
+    reader.readAsDataURL(file)
+  })
+  const projectOrFail = (sessionId: string) => {
+    const found = project(sessionId as SessionId)
+    if (found === null) throw new Error(t('panel.noProject'))
+    return found
+  }
+  const files: FilesPanelInjected = {
+    list: async (sessionId) => {
+      const found = project(sessionId as SessionId)
+      return found === null ? null : unwrap(ctx.remote.workspace.listProjectFiles({ workspaceId: id(found.workspaceId), sessionId }))
+    },
+    preview: (sessionId, file) => { ctx.sidebarRight.openResource(fileAddressFor(sessionId, undefined, file)) },
+    open: async (_sessionId, absolute, reveal) => {
+      const result = await ctx.remote.session.openWorkspacePath(reveal ? { path: absolute, action: 'reveal' } : { path: absolute })
+      if (!result.ok) throw new Error(result.error.message)
+    },
+    download: async (sessionId, file) => {
+      const copy = await unwrap(ctx.remote.workspace.readProjectFile({ workspaceId: id(projectOrFail(sessionId).workspaceId), file }))
+      const bytes = Uint8Array.from(atob(copy.base64), char => char.charCodeAt(0))
+      const url = URL.createObjectURL(new Blob([bytes]))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = copy.name
+      link.click()
+      setTimeout(() => { URL.revokeObjectURL(url) }, 60_000)
+    },
+    add: async (sessionId, section, picked) => {
+      const found = projectOrFail(sessionId)
+      const calc = await unwrap(ctx.remote.workspace.listProjectFiles({ workspaceId: id(found.workspaceId), sessionId }))
+      if (calc.calculation === null) throw new Error(t('files.noCalculation'))
+      const paths: string[] = []
+      for (const file of picked) {
+        paths.push((await unwrap(ctx.remote.workspace.storeProjectInput({
+          workspaceId: id(found.workspaceId), period: calc.calculation.period, name: file.name, base64: await base64Of(file),
+        }))).path)
+      }
+      await unwrap(ctx.remote.workspace.addToCalculation({ workspaceId: id(found.workspaceId), sessionId, section, paths }))
+      return paths
+    },
+    prepare: (sessionId, text) => { prepare(sessionId as SessionId, text, false) },
+  }
+  ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register({
+    name: 'sidebar.right.pane.tab', key: FILES_TAB_ID, locale: NS, inject: () => files,
+  }, FilesPanel))
   // Shown by itself once per conversation; after that the accountant decides.
   const revealed = new Set<SessionId>()
   const panel: PendingsPanelInjected = {
@@ -112,6 +176,7 @@ export function apply(ctx: Context): void {
   }, PendingsPanel))
   const followUp = (sessionId: SessionId): FollowUp => ({
     openPanel: () => { openPanel(sessionId) },
+    openFiles: () => { show(sessionId, FILES_TAB_KIND) },
     revealOnce: () => {
       if (revealed.has(sessionId)) return
       revealed.add(sessionId)
@@ -148,7 +213,16 @@ export function apply(ctx: Context): void {
       },
       storeInput: async (workspaceId, period, name, base64) =>
         (await unwrap(ctx.remote.workspace.storeProjectInput({ workspaceId: id(workspaceId), period, name, base64 }))).path,
-      start: (text) => { prepare(sessionId, text, true) },
+      record: async (workspaceId, calculation) => {
+        await unwrap(ctx.remote.workspace.recordCalculation({
+          workspaceId: id(workspaceId), sessionId, period: calculation.period, workpapers: [...calculation.workpapers],
+          balance: calculation.balance, ledgers: [...calculation.ledgers], others: [...calculation.others],
+        }))
+      },
+      start: (text) => {
+        prepare(sessionId, text, true)
+        show(sessionId, FILES_TAB_KIND)
+      },
     }),
   }, IntakePanel))
 }

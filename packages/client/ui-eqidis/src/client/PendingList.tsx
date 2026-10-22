@@ -13,6 +13,8 @@ export interface FollowUp {
   readonly prepare: (text: string) => void
   /** Show the pending-items panel beside the conversation. */
   readonly openPanel: () => void
+  /** Show the calculation's files beside the conversation. */
+  readonly openFiles: () => void
   /** Show the panel once per conversation, the first time a card with open items appears. */
   readonly revealOnce: () => void
 }

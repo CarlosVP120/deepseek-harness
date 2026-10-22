@@ -14,6 +14,15 @@ export interface IntakeProject {
   readonly title: string
 }
 
+/** The files a calculation starts with. */
+export interface IntakeCalculation {
+  readonly period: string
+  readonly workpapers: readonly string[]
+  readonly balance: string
+  readonly ledgers: readonly string[]
+  readonly others: readonly string[]
+}
+
 /** What the panel receives from the plugin for its Session. */
 export interface IntakeInjected {
   /** Subscribe to changes of the Session's project (the user may switch it before starting). */
@@ -26,6 +35,8 @@ export interface IntakeInjected {
   readonly addWorkpaper: (workspaceId: string, name: string, base64: string) => Promise<readonly string[]>
   /** Keep an input in the project's period folder; returns its project path. */
   readonly storeInput: (workspaceId: string, period: string, name: string, base64: string) => Promise<string>
+  /** Record what the calculation started with, for the files panel. */
+  readonly record: (workspaceId: string, calculation: IntakeCalculation) => Promise<void>
   /** Send the prepared request as the conversation's first message. */
   readonly start: (text: string) => void
 }
@@ -156,6 +167,7 @@ export function IntakePanel(props: Props) {
       for (const file of ledgers) ledgerPaths.push(await store(file))
       const otherPaths: string[] = []
       for (const file of others) otherPaths.push(await store(file))
+      await props.record(workspaceId, { period, workpapers: chosen, balance: balancePath, ledgers: ledgerPaths, others: otherPaths })
       const bullet = (items: readonly string[]) => items.map(item => `• ${item}`).join('\n')
       const text = [
         t('intake.message.title', { label: periodLabel(period, locale), period }),

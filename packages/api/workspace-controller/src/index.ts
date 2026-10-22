@@ -7,7 +7,8 @@ import { ProjectContextFiles } from './project-context.ts'
 import { initializeProjectInstructions } from './default-project-instructions.ts'
 import type {
   ProjectContext, ProjectContextRequest, ProjectInputRequest, ProjectInputValue, ProjectInstructionsRequest,
-  ProjectPending, ProjectPendingsRequest, ProjectRemoveRequest, ProjectUploadRequest, ProjectWorkpaperPendings,
+  ProjectCalculation, ProjectCalculationAddRequest, ProjectCalculationRequest, ProjectFileContent, ProjectFileRequest, ProjectFilesView,
+  ProjectPending, ProjectPendingsRequest, ProjectRemoveRequest, ProjectSessionRequest, ProjectUploadRequest, ProjectWorkpaperPendings,
 } from './types.ts'
 import { WorkspaceCommands } from './commands.ts'
 import { DirectoryPickerController } from './directory-picker.ts'
@@ -143,6 +144,47 @@ export class WorkspaceController extends TypertRemoteService {
   @Remote('listWorkpaperPendings')
   listWorkpaperPendings(request: ProjectContextRequest): Promise<ProjectWorkpaperPendings[]> {
     return this.projectFiles.allPendings(this.projectPath(request))
+  }
+
+  /**
+   * Record the files a conversation's calculation started with, for the files panel.
+   * @param request - project, conversation, period, workpapers and inputs.
+   * @returns the stored record.
+   */
+  @Remote('recordCalculation')
+  recordCalculation(request: ProjectCalculationRequest): Promise<ProjectCalculation> {
+    const { workspaceId: _workspaceId, ...calculation } = request
+    return this.projectFiles.recordCalculation(this.projectPath(request), calculation)
+  }
+
+  /**
+   * Add inputs to a conversation's recorded calculation.
+   * @param request - project, conversation, section and stored input paths.
+   * @returns the updated record.
+   */
+  @Remote('addToCalculation')
+  addToCalculation(request: ProjectCalculationAddRequest): Promise<ProjectCalculation> {
+    return this.projectFiles.addToCalculation(this.projectPath(request), request.sessionId, request.section, request.paths)
+  }
+
+  /**
+   * The files panel of a conversation: its calculation's files and every file of the project.
+   * @param request - project and conversation.
+   * @returns files grouped by section and period.
+   */
+  @Remote('listProjectFiles')
+  listProjectFiles(request: ProjectSessionRequest): Promise<ProjectFilesView> {
+    return this.projectFiles.files(this.projectPath(request), request.sessionId)
+  }
+
+  /**
+   * Read a project file so the user can save a copy.
+   * @param request - project and the file's project-relative path.
+   * @returns the file name and bytes.
+   */
+  @Remote('readProjectFile')
+  readProjectFile(request: ProjectFileRequest): Promise<ProjectFileContent> {
+    return this.projectFiles.copyOf(this.projectPath(request), request.file)
   }
 
   /**

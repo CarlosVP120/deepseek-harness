@@ -76,6 +76,12 @@ class FakeWorkspaceRemote implements WorkspaceRemote {
   storeProjectInput: WorkspaceRemote['storeProjectInput'] = async request => remoteOk({ path: `Insumos/${request.period}/${request.name}` })
   getWorkpaperPendings: WorkspaceRemote['getWorkpaperPendings'] = async () => remoteOk([])
   listWorkpaperPendings: WorkspaceRemote['listWorkpaperPendings'] = async () => remoteOk([])
+  recordCalculation: WorkspaceRemote['recordCalculation'] = async ({ workspaceId: _id, ...request }) => remoteOk({ ...request, createdAt: '' })
+  addToCalculation: WorkspaceRemote['addToCalculation'] = async request => remoteOk({
+    sessionId: request.sessionId, period: '', workpapers: [], balance: '', ledgers: request.paths, others: [], createdAt: '',
+  })
+  listProjectFiles: WorkspaceRemote['listProjectFiles'] = async () => remoteOk({ calculation: null, root: '', workpapers: [], periods: [] })
+  readProjectFile: WorkspaceRemote['readProjectFile'] = async request => remoteOk({ name: request.file, base64: '' })
   readonly initializeDefault = vi.fn<WorkspaceRemote['initializeDefault']>(async () => remoteOk({ workspace: workspace('default') }))
   readonly calls: Array<{ readonly method: string; readonly request: unknown }> = []
   onCreate: (request: WorkspaceCreateRequest) => Promise<RemoteResult<WorkspaceCreateValue>> = request =>
