@@ -3,6 +3,8 @@ import { IconCheckOutlineRegular, IconWarningTriangleOutlineRegular } from '@dee
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
 import type { WorkpaperPending } from '@deepseek-ai/dsh-eqidis-workpapers/types'
+import type { ProjectFileEntry, ProjectFilesView } from '@deepseek-ai/dsh-api-workspace-controller/types'
+import { type FileActions, FileRow } from './FileRow.tsx'
 import { periodLabel } from './WorkpaperCard.tsx'
 import type { NS } from './locales.ts'
 import css from './eqidis.module.css'
@@ -14,7 +16,9 @@ export interface WorkpaperPendings {
 }
 
 /** What the panel needs for the conversation it sits beside. */
-export interface PendingsPanelInjected {
+export interface PendingsPanelInjected extends FileActions {
+  /** The project's files, for the workpapers shown on top; `null` without a project. */
+  readonly files: (sessionId: string) => Promise<ProjectFilesView | null>
   /** Every filled workpaper of the conversation's project with its items; `null` without a project. */
   readonly list: (sessionId: string) => Promise<readonly WorkpaperPendings[] | null>
   /** Put a follow-up request in that conversation's composer, without sending it. */
@@ -36,16 +40,21 @@ function describeFile(file: string): { name: string; period: string } {
  * The project's follow-up items beside the conversation: per filled workpaper, its progress,
  * the open items with a «Resolver» button and the resolved ones with their resolution.
  */
-export function PendingsPanel({ sessionId, list, prepare, t }: Props) {
+export function PendingsPanel(props: Props) {
+  const { sessionId, list, prepare, t } = props
   const locale = t('time.locale')
   const [groups, setGroups] = useState<readonly WorkpaperPendings[] | null | 'error' | undefined>()
+  const [view, setView] = useState<ProjectFilesView | null>(null)
+  const [busy, setBusy] = useState<string>()
+  const [failure, setFailure] = useState<string>()
   useEffect(() => {
     let current = true
     let timer: ReturnType<typeof setTimeout> | undefined
     const refresh = () => {
-      list(sessionId).then((next) => {
+      Promise.all([list(sessionId), props.files(sessionId).catch(() => null)]).then(([next, files]) => {
         if (!current) return
         setGroups(next)
+        setView(files)
         timer = setTimeout(refresh, REFRESH_MS)
       }, () => { if (current) { setGroups('error'); timer = setTimeout(refresh, REFRESH_MS * 3) } })
     }
@@ -57,6 +66,17 @@ export function PendingsPanel({ sessionId, list, prepare, t }: Props) {
   if (groups === undefined) return <div className={css.panel}><p className={css.muted}>{t('panel.loading')}</p></div>
   if (groups === 'error') return <div className={css.panel}><p className={css.errorText}>{t('panel.error')}</p></div>
   if (groups === null) return <div className={css.panel}><p className={css.muted}>{t('panel.noProject')}</p></div>
+  // The results first: this conversation's filled workpapers and deliverables, else every period's, newest first.
+  const results: readonly ProjectFileEntry[] = view === null ? [] : view.calculation !== null
+    ? [...view.calculation.filled, ...view.calculation.deliverables]
+    : view.periods.flatMap(period => period.filled)
+  const act = (label: string, run: () => Promise<void>) => {
+    setBusy(label); setFailure(undefined)
+    run()
+      .catch((reason: unknown) => { setFailure(reason instanceof Error ? reason.message : String(reason)) })
+      .finally(() => { setBusy(undefined) })
+  }
+  const actions: FileActions = { preview: props.preview, open: props.open, download: props.download }
   const open = groups.reduce((sum, group) => sum + group.items.filter(item => item.estado === 'abierto').length, 0)
   const done = groups.reduce((sum, group) => sum + group.items.filter(item => item.estado === 'resuelto').length, 0)
   return <div className={css.panel} data-eqidis-pendings="">
@@ -66,6 +86,14 @@ export function PendingsPanel({ sessionId, list, prepare, t }: Props) {
         {open > 0 ? t('panel.open', { count: open }) : t('panel.allDone')}
       </span>
     </header>
+    <section className={css.resultsBlock} aria-label={t('panel.results')}>
+      <h4 className={css.label}>{t('panel.results')}</h4>
+      {results.length === 0
+        ? <p className={css.muted}>{t('files.notFilled')}</p>
+        : <ul className={css.fileList}>{results.map(file => <FileRow key={file.path} file={file} root={view?.root ?? ''} sessionId={sessionId}
+          actions={actions} disabled={busy !== undefined} act={act} t={t} />)}</ul>}
+      {failure !== undefined && <p role="alert" className={css.errorText}>{failure}</p>}
+    </section>
     {groups.length === 0 && <p className={css.muted}>{t('panel.empty')}</p>}
     {groups.length > 0 && <p className={css.muted}>{t('panel.summary', { open, done })}</p>}
     {groups.map((group) => {

@@ -165,6 +165,10 @@ export function apply(ctx: Context): void {
   // Shown by itself once per conversation; after that the accountant decides.
   const revealed = new Set<SessionId>()
   const panel: PendingsPanelInjected = {
+    files: sessionId => files.list(sessionId),
+    preview: (sessionId, file) => { files.preview(sessionId, file) },
+    open: (sessionId, absolute, reveal) => files.open(sessionId, absolute, reveal),
+    download: (sessionId, file) => files.download(sessionId, file),
     list: async (sessionId) => {
       const found = project(sessionId as SessionId)
       return found === null ? null : unwrap(ctx.remote.workspace.listWorkpaperPendings({ workspaceId: id(found.workspaceId) }))

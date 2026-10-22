@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { IconPaperclipOutlineRegular, IconPlusOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconPlusOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
+import { type FileActions, FileRow } from './FileRow.tsx'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
 import type { ProjectFileEntry, ProjectFilesView } from '@deepseek-ai/dsh-api-workspace-controller/types'
@@ -8,15 +9,9 @@ import type { NS } from './locales.ts'
 import css from './eqidis.module.css'
 
 /** What the files panel needs for the conversation it sits beside. */
-export interface FilesPanelInjected {
+export interface FilesPanelInjected extends FileActions {
   /** The conversation's calculation files and every project file; `null` without a project. */
   readonly list: (sessionId: string) => Promise<ProjectFilesView | null>
-  /** Show a file in the app's document preview. */
-  readonly preview: (sessionId: string, file: string) => void
-  /** Open a file in its default application, or show it in Finder / Explorer. */
-  readonly open: (sessionId: string, absolute: string, reveal: boolean) => Promise<void>
-  /** Save a copy of a file wherever the user chooses. */
-  readonly download: (sessionId: string, file: string) => Promise<void>
   /** Add files to the conversation's calculation; returns their project paths. */
   readonly add: (sessionId: string, section: 'ledgers' | 'others', files: readonly File[]) => Promise<readonly string[]>
   /** Put a message in the conversation's composer, without sending it. */
@@ -27,10 +22,6 @@ type Props = PropsRuntime<'sidebar.right.pane.tab'> & PropsLocale<typeof NS> & I
 
 const REFRESH_MS = 5000
 const SPREADSHEET = '.xlsx,.xlsm,.xls,.ods,.csv'
-
-function size(bytes: number): string {
-  return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`
-}
 
 /**
  * Everything a calculation used and produced, beside the conversation: the workpapers to fill,
@@ -70,22 +61,9 @@ export function FilesPanel({ sessionId, list, preview, open, download, add, prep
     catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)) }
     finally { setBusy(undefined) }
   }
-  const absolute = (file: ProjectFileEntry) => `${view.root.replace(/[\\/]+$/u, '')}/${file.path}`
-  const row = (file: ProjectFileEntry) => <li key={file.path} className={css.fileRow}>
-    <IconPaperclipOutlineRegular size={14} className={css.fileIcon} />
-    <button type="button" className={css.fileOpen} title={file.path} onClick={() => { preview(sessionId, file.path) }}>
-      <span className={css.fileName}>{file.name}</span>
-      <span className={css.muted}>{size(file.bytes)}</span>
-    </button>
-    <span className={css.fileActions}>
-      <button type="button" className={css.fileAction} disabled={busy !== undefined}
-        onClick={() => { void act(file.path, () => open(sessionId, absolute(file), false)) }}>{t('files.open')}</button>
-      <button type="button" className={css.fileAction} disabled={busy !== undefined}
-        onClick={() => { void act(file.path, () => open(sessionId, absolute(file), true)) }}>{t('files.reveal')}</button>
-      <button type="button" className={css.fileAction} disabled={busy !== undefined}
-        onClick={() => { void act(file.path, () => download(sessionId, file.path)) }}>{t('files.download')}</button>
-    </span>
-  </li>
+  const actions: FileActions = { preview, open, download }
+  const row = (file: ProjectFileEntry) => <FileRow key={file.path} file={file} root={view.root} sessionId={sessionId} actions={actions}
+    disabled={busy !== undefined} act={(label, run) => { void act(label, run) }} t={t} />
   const section = (title: string, files: readonly ProjectFileEntry[], empty: string, extra?: ReactNode) =>
     <section className={css.fileSection}>
       <h4 className={css.label}>{title}</h4>
