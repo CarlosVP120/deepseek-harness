@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import ExcelJS from 'exceljs'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { calculate, copyTemplate, describe, disposeConverter, excelLookupCompat, find, pasteGrid, readGrid, table, writeCells, writeFormulas } from '../src/workbook.ts'
+import { writeSummary } from '../src/summary.ts'
 import { inside, isOutput, readable, storeInput, templates, TEMPLATES_DIR } from '../src/project.ts'
 
 let root: string
@@ -103,4 +104,20 @@ it('updates formulas in a copy, keeping their style and reporting what each cell
   const result = await calculate(copy, ['Cálculo!D6:E6'])
   expect(result.values.map(cell => cell.value)).toEqual([400, 401])
   await expect(writeFormulas(copy, [{ sheet: 'Cálculo', cell: 'D7', formula: '=' }])).rejects.toThrow('vacía')
+}, 60_000)
+
+it('writes the client summary from workpaper cells, in Excel and PDF', async () => {
+  const copy = join(root, 'Papeles de trabajo', '2026-09', 'Resumen - 2026-09.xlsx')
+  await copyTemplate(join(root, TEMPLATES_DIR, 'Utilidad.xlsx'), copy)
+  await writeCells(copy, [{ sheet: 'Cálculo', cell: 'D3', value: 1000 }, { sheet: 'Cálculo', cell: 'D4', value: 0.2 }])
+  const result = await writeSummary(copy, join(root, 'Papeles de trabajo', '2026-09'), 'Resumen ejecutivo - Cliente - 2026-09', {
+    cliente: 'Cliente', periodo: 'Septiembre 2026', titulo: 'Resumen', fuente: 'Resumen - 2026-09',
+    lineas: [{ concepto: 'Utilidad estimada', celda: 'Cálculo!D6', destacado: true }], observaciones: ['Todo en orden.'], proximos_pasos: [],
+  })
+  expect(result.importes).toEqual([{ concepto: 'Utilidad estimada', celda: 'Cálculo!D6', valor: 200 }])
+  expect((await readFile(result.pdf)).subarray(0, 4).toString()).toBe('%PDF')
+  expect((await readGrid(result.xlsx, 'Resumen ejecutivo', 'C7:C7')).rows).toEqual([[200]])
+  await expect(writeSummary(copy, root, 'x', {
+    cliente: 'C', periodo: 'P', titulo: 'T', fuente: 'F', lineas: [], observaciones: [], proximos_pasos: [],
+  })).rejects.toThrow('al menos una línea')
 }, 60_000)

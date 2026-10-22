@@ -256,12 +256,19 @@
     - id: approval
       name: '@deepseek-ai/dsh-user-approval'
       config:
-        policy: !!js "(process.env.DSH_PERMISSION_MODE ?? 'workspace-write') === 'danger-full-access' ? 'never' : 'ask'"
+        # EQIDIS AI: accountants are not asked to approve commands; anything beyond the project is rejected instead.
+        policy: !!js "(process.env.DSH_PERMISSION_MODE ?? 'proyecto') === 'workspace-write' ? 'ask' : 'never'"
 
     - id: permission
       name: '@deepseek-ai/dsh-permission-presets'
       config:
         presets:
+          # EQIDIS AI default: write inside the project, never prompt; wider access is rejected.
+          proyecto:
+            sandbox: workspace-write
+            approval: never
+            name: Proyecto
+            description: Trabaja dentro del proyecto sin pedir permisos; lo que salga del proyecto se rechaza.
           read-only:
             sandbox: read-only
             approval: ask
@@ -271,6 +278,7 @@
           danger-full-access:
             sandbox: danger-full-access
             approval: never
+        defaultPreset: proyecto
 
     - id: shell-env
       name: '@deepseek-ai/dsh-shell-env'

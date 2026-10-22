@@ -81,3 +81,10 @@
 }
 .primary:hover:not(:disabled) { filter: brightness(1.08); }
 .primary:disabled { opacity: 0.45; cursor: default; }
+
+.deliverable {
+  display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 0.5px solid var(--dsw-alias-border-l1);
+  border-radius: 12px; background: var(--eq-accent-soft); cursor: pointer;
+}
+.deliverable input { margin-top: 3px; accent-color: var(--eq-accent); }
+.deliverable > span { display: flex; flex-direction: column; gap: 2px; }

@@ -11,6 +11,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { defineTool, type ToolExecution } from '@deepseek-ai/dsh-tools'
 import type {} from '@deepseek-ai/dsh-agent'
 import { calculate, type Calculation, copyTemplate, describe, disposeConverter, find, pasteGrid, readGrid, table, writeCells, writeFormulas, type CellWrite } from './workbook.ts'
+import { writeSummary } from './summary.ts'
 import { compareGrids, dependents, ledger, readCompact, sheetBlocks } from './analysis.ts'
 import {
   INPUT_DIR, inside, isOutput, OUTPUT_DIR, period, openPendings, periods, readable, readPendings,
@@ -453,6 +454,49 @@ export function apply(ctx: Context): void {
     execute: async (args, exec) => {
       await saveCriteria(root(exec), args.contenido)
       return 'Criterios del cliente guardados.'
+    },
+  }))
+
+  ctx.tools.register(defineTool({
+    name: 'workpaper_summary',
+    description: 'Genera el resumen ejecutivo para el cliente de un papel ya cerrado: una hoja con buen formato (encabezado con cliente y periodo, tabla de impuestos con el importe destacado, observaciones y próximos pasos en lenguaje claro para el cliente) en Excel y en PDF, junto al papel del periodo. Los importes se leen del papel recalculado por celda, así que indica la celda de cada línea; no escribas cifras. Úsala después de workpaper_finish y entrega los dos archivos con present. No uses la terminal ni scripts para hacer resúmenes.',
+    parameters: {
+      ruta: { type: 'string', required: true, description: 'Ruta de la copia del papel, la misma de workpaper_finish.' },
+      cliente: { type: 'string', required: true, description: 'Nombre del cliente como debe verlo.' },
+      periodo: { type: 'string', required: true, description: 'Periodo en palabras, por ejemplo «Septiembre 2026».' },
+      titulo: { type: 'string', description: 'Título; por omisión «Resumen ejecutivo de impuestos».' },
+      lineas: {
+        type: 'array',
+        required: true,
+        description: 'Conceptos en el orden en que el cliente los lee; el último suele ser el total a pagar.',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            concepto: { type: 'string', required: true, description: 'Concepto en lenguaje del cliente, por ejemplo «ISR del mes».' },
+            celda: { type: 'string', required: true, description: 'Celda «Hoja!A1» del papel de donde sale el importe.' },
+            nota: { type: 'string', description: 'Aclaración breve, por ejemplo «compensado con saldo a favor 2023».' },
+            destacado: { type: 'boolean', description: 'true para la línea principal (total a pagar o a favor).' },
+          },
+        },
+      },
+      observaciones: { type: 'array', items: { type: 'string' }, required: true, description: 'Dos a cuatro puntos clave para el cliente, sin tecnicismos internos.' },
+      proximos_pasos: { type: 'array', items: { type: 'string' }, required: true, description: 'Qué debe hacer el cliente y cuándo (pago, fecha límite, documentos); vacío si nada.' },
+      preparado_por: { type: 'string', description: 'Despacho o contador que firma, si el contador lo indicó.' },
+    },
+    output: text,
+    execute: async (args, exec) => {
+      const dir = root(exec)
+      const copy = await inside(dir, args.ruta)
+      if (!await isOutput(dir, copy)) throw new Error(`La ruta no es una copia dentro de «${OUTPUT_DIR}/».`)
+      const label = basename(join(copy, '..'))
+      const client = args.cliente.replace(/[\\/:*?"<>|]/gu, ' ').trim().slice(0, 60)
+      const result = await writeSummary(copy, join(copy, '..'), `Resumen ejecutivo - ${client} - ${label}`, {
+        cliente: args.cliente, periodo: args.periodo, titulo: args.titulo ?? 'Resumen ejecutivo de impuestos',
+        lineas: args.lineas, observaciones: args.observaciones, proximos_pasos: args.proximos_pasos,
+        preparado_por: args.preparado_por, fuente: basename(copy, extname(copy)),
+      })
+      return json({ excel: await shown(dir, result.xlsx), pdf: await shown(dir, result.pdf), importes: result.importes })
     },
   }))
 

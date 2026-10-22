@@ -243,6 +243,8 @@ export interface ProjectFilesView {
     balanceFile: ProjectFileEntry | null
     ledgerFiles: ProjectFileEntry[]
     otherFiles: ProjectFileEntry[]
+    /** Client-facing summaries generated for the period. */
+    deliverables: ProjectFileEntry[]
   }) | null
   root: string
   workpapers: ProjectFileEntry[]

@@ -100,6 +100,10 @@ export const es = {
   'intake.message.others': 'Otros documentos:',
   'intake.message.notes': 'Notas:',
   'intake.message.stored': 'Los archivos ya están guardados en el proyecto.',
+  'intake.summary': 'Resumen ejecutivo para el cliente',
+  'intake.summaryHelp': 'Al terminar, el asistente prepara un resumen con buen formato en PDF y Excel, listo para enviar.',
+  'intake.message.summary': 'Entregables: resumen ejecutivo para el cliente (PDF y Excel).',
+  'files.deliverables': 'Entregables al cliente',
 }
 
 /** Every key of the namespace. */
@@ -202,6 +206,10 @@ export const en: Record<EqidisKey, string> = {
   'intake.message.others': 'Other documents:',
   'intake.message.notes': 'Notes:',
   'intake.message.stored': 'The files are already stored in the project.',
+  'intake.summary': 'Executive summary for the client',
+  'intake.summaryHelp': 'When done, the assistant prepares a well-formatted summary in PDF and Excel, ready to send.',
+  'intake.message.summary': 'Deliverables: executive summary for the client (PDF and Excel).',
+  'files.deliverables': 'Client deliverables',
 }
 
 /** Chinese dictionary. */

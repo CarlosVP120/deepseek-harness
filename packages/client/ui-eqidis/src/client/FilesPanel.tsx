@@ -114,6 +114,7 @@ export function FilesPanel({ sessionId, list, preview, open, download, add, prep
       : <>
         {section(t('files.workpapers'), calc.workpaperFiles, t('files.none'))}
         {section(t('files.filled'), calc.filled, t('files.notFilled'))}
+        {calc.deliverables.length > 0 && section(t('files.deliverables'), calc.deliverables, t('files.none'))}
         {section(t('files.balance'), calc.balanceFile === null ? [] : [calc.balanceFile], t('files.none'))}
         {section(t('files.ledgers'), calc.ledgerFiles, t('files.none'), <>
           <button type="button" className={css.link} disabled={busy !== undefined} onClick={() => pickLedgers.current?.click()}>

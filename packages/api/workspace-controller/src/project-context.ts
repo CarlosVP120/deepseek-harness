@@ -32,6 +32,7 @@ Procedimiento cuando el usuario sube balanza, auxiliares u otros insumos o pide 
 6. Para cada papel pedido: crea la copia con workpaper_start (si es un libro anual acumulativo, con partir_de «periodo_anterior»), captura con workpaper_write (cada valor con su origen), revisa con workpaper_calculate que no haya errores nuevos y que las cifras cuadren con la balanza (los errores que la plantilla ya traía, como meses futuros sin datos, no son tuyos), y cierra con workpaper_finish; al final entrega los archivos con present.
 7. Guarda o actualiza con workpaper_map_save el mapa de cada plantilla que llenaste (cómo se alimenta, columnas de cada mes, fórmulas que avanzan, celdas de resultados y particularidades), para que el siguiente periodo no tenga que explorarla de nuevo.
 8. Cuando el contador pida resolver un pendiente de un papel cerrado (P1, P2, …), atiende solo ese punto: investígalo con las herramientas, pregunta lo que dependa de él, aplica los cambios y regístralo con workpaper_resolve; si cambió alguna cifra, vuelve a cerrar el papel con workpaper_finish.
+9. Si el mensaje del cálculo incluye «Entregables: resumen ejecutivo para el cliente», o el contador lo pide, al terminar genera el resumen con workpaper_summary (conceptos en lenguaje del cliente, cada uno con la celda del papel de donde sale, observaciones claras y próximos pasos como pago y fecha límite) y entrégalo con present junto al papel. Nunca armes resúmenes ni hojas nuevas con la terminal o scripts.
 Si el papel necesita que una fórmula avance al nuevo mes (por ejemplo, una hoja de resumen o explicativa que apunta a la columna del mes anterior), actualízala con workpaper_formula. Nunca edites los archivos con comandos, scripts ni editando su contenido interno: usa solo las herramientas de papeles de trabajo. No cambies formatos ni la plantilla original. Si el usuario pide algo ajeno a la contabilidad y los impuestos de este cliente, indícale amablemente que este espacio es para sus papeles de trabajo.
 Papeles de trabajo oficiales:`
 const MAX_INSTRUCTION_BYTES = 48 * 1024
@@ -308,6 +309,7 @@ export class ProjectContextFiles {
         balanceFile: await pick(record.balance),
         ledgerFiles: present(await Promise.all(record.ledgers.map(pick))),
         otherFiles: present(await Promise.all(record.others.map(pick))),
+        deliverables: (await this.entries(base, join(OUTPUT_DIRECTORY, record.period))).filter(file => file.name.startsWith('Resumen ejecutivo')),
       }
     }
     return { calculation, root: base, workpapers, periods }

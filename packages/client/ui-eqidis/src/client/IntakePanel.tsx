@@ -90,6 +90,7 @@ export function IntakePanel(props: Props) {
   const [ledgers, setLedgers] = useState<readonly File[]>([])
   const [others, setOthers] = useState<readonly File[]>([])
   const [notes, setNotes] = useState('')
+  const [summary, setSummary] = useState(true)
   const [busy, setBusy] = useState<string>()
   const [error, setError] = useState<string>()
   const pickWorkpaper = useRef<HTMLInputElement>(null)
@@ -179,6 +180,7 @@ export function IntakePanel(props: Props) {
         t('intake.message.ledgers'),
         bullet(ledgerPaths),
         ...(otherPaths.length === 0 ? [] : [t('intake.message.others'), bullet(otherPaths)]),
+        ...(summary ? ['', t('intake.message.summary')] : []),
         ...(notes.trim() === '' ? [] : ['', `${t('intake.message.notes')} ${notes.trim()}`]),
         '',
         t('intake.message.stored'),
@@ -279,6 +281,11 @@ export function IntakePanel(props: Props) {
       <input ref={pickLedgers} className={css.hidden} type="file" multiple accept=".xlsx,.xlsm,.xls,.ods,.csv" aria-label={t('intake.chooseLedgers')}
         onChange={(event) => { const picked = accept(event.target.files, SPREADSHEET); setLedgers(previous => [...previous, ...picked]); event.target.value = '' }} />
     </div>
+
+    <label className={css.deliverable}>
+      <input type="checkbox" checked={summary} disabled={busy !== undefined} onChange={(event) => { setSummary(event.target.checked) }} />
+      <span><span className={css.stepTitle}>{t('intake.summary')}</span><span className={css.muted}>{t('intake.summaryHelp')}</span></span>
+    </label>
 
     <details className={css.optional}>
       <summary>{t('intake.optional')}</summary>
