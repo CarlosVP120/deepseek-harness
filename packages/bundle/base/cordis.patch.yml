@@ -292,6 +292,10 @@
     - id: tool-fs
       name: '@deepseek-ai/dsh-tool-fs'
 
+    # EQIDIS AI: fill the company's official workpapers from any balanza and auxiliares.
+    - id: eqidis-workpapers
+      name: '@deepseek-ai/dsh-eqidis-workpapers'
+
     - id: tool-fs-search
       name: '@deepseek-ai/dsh-tool-fs-search'
       config:

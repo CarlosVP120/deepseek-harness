@@ -247,13 +247,13 @@ export function apply(ctx: Context): void {
       if (!result.ok) throw new Error(result.error.message)
       return result.value
     },
-    uploadProjectDocument: async (workspaceId, name, base64) => {
-      const result = await ctx.remote.workspace.uploadProjectDocument({ workspaceId, name, base64 })
+    uploadProjectDocument: async (workspaceId, name, base64, kind) => {
+      const result = await ctx.remote.workspace.uploadProjectDocument({ workspaceId, name, base64, kind })
       if (!result.ok) throw new Error(result.error.message)
       return result.value
     },
-    removeProjectDocument: async (workspaceId, name) => {
-      const result = await ctx.remote.workspace.removeProjectDocument({ workspaceId, name })
+    removeProjectDocument: async (workspaceId, name, kind) => {
+      const result = await ctx.remote.workspace.removeProjectDocument({ workspaceId, name, kind })
       if (!result.ok) throw new Error(result.error.message)
       return result.value
     },

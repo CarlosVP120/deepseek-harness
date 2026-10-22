@@ -172,13 +172,36 @@ export type WorkspaceFollowFrame =
 
 /** One project reference document stored in its local folder. */
 export interface ProjectContextFile { name: string; bytes: number }
-/** Editable instructions plus local project document metadata. */
-export interface ProjectContext { instructions: string; files: ProjectContextFile[]; maxDocumentBytes: number }
+/** Which managed folder a project file belongs to: reference documents or official workpaper templates. */
+export type ProjectFileKind = 'document' | 'workpaper'
+/** Editable instructions plus local project document and workpaper metadata. */
+export interface ProjectContext {
+  instructions: string
+  files: ProjectContextFile[]
+  workpapers: ProjectContextFile[]
+  maxDocumentBytes: number
+}
 /** A project context operation targeting a registered Workspace. */
 export interface ProjectContextRequest { workspaceId: WorkspaceId }
 /** Save the complete project instruction document. */
 export interface ProjectInstructionsRequest extends ProjectContextRequest { instructions: string }
 /** Upload one document without overwriting an existing name. */
-export interface ProjectUploadRequest extends ProjectContextRequest { name: string; base64: string }
+export interface ProjectUploadRequest extends ProjectContextRequest { name: string; base64: string; kind?: ProjectFileKind | undefined }
 /** Remove one document from the project's managed context folder. */
-export interface ProjectRemoveRequest extends ProjectContextRequest { name: string }
+export interface ProjectRemoveRequest extends ProjectContextRequest { name: string; kind?: ProjectFileKind | undefined }
+/** A calculation input (trial balance, ledger details, support) kept with the period it was used for. */
+export interface ProjectInputRequest extends ProjectContextRequest { period: string; name: string; base64: string }
+/** A filled workpaper whose follow-up items are requested, by its project-relative path. */
+export interface ProjectPendingsRequest extends ProjectContextRequest { file: string }
+/** One follow-up item of a filled workpaper. */
+export interface ProjectPending {
+  id: string
+  texto: string
+  estado: 'abierto' | 'resuelto'
+  resolucion?: string | undefined
+  resuelto_en?: string | undefined
+}
+/** The follow-up items of one filled workpaper. */
+export interface ProjectWorkpaperPendings { file: string; items: ProjectPending[] }
+/** Where the input was stored, relative to the project. */
+export interface ProjectInputValue { path: string }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it } from 'vitest'
-import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ProjectContextFiles } from '../src/project-context.ts'
@@ -15,7 +15,7 @@ it('saves existing instructions and makes uploaded documents discoverable withou
   await files.save(root, 'Updated rules')
   await files.upload(root, 'Company policy.pdf', Buffer.from('document').toString('base64'))
   const fresh = new ProjectContextFiles()
-  expect(await fresh.read(root)).toEqual({ maxDocumentBytes: 30 * 1024 * 1024, instructions: 'Updated rules', files: [{ name: 'Company policy.pdf', bytes: 8 }] })
+  expect(await fresh.read(root)).toEqual({ maxDocumentBytes: 30 * 1024 * 1024, instructions: 'Updated rules', files: [{ name: 'Company policy.pdf', bytes: 8 }], workpapers: [] })
   const index = await readFile(join(root, 'AGENTS.local.md'), 'utf8')
   expect(index).toContain('Local rules')
   expect(index).toContain('Company policy.pdf')
@@ -56,4 +56,32 @@ it('accepts documents above the old 10 MiB limit and honors the configured uploa
 it('keeps more than 64 project document references', async () => {
   for (let i = 0; i < 65; i++) await files.upload(root, `document-${i}.txt`, 'YQ==')
   expect((await files.read(root)).files).toHaveLength(65)
+})
+it('keeps official workpapers apart from documents and indexes both', async () => {
+  await expect(files.upload(root, 'notes.pdf', 'YQ==', 'workpaper')).rejects.toThrow('Excel')
+  await files.upload(root, 'policy.txt', 'YQ==')
+  const result = await files.upload(root, 'Pagos provisionales.xlsx', 'Yg==', 'workpaper')
+  expect(result.workpapers).toEqual([{ name: 'Pagos provisionales.xlsx', bytes: 1 }])
+  expect(result.files).toEqual([{ name: 'policy.txt', bytes: 1 }])
+  expect(await readFile(join(root, '.eqidis-workpapers', 'plantillas', 'Pagos provisionales.xlsx'), 'utf8')).toBe('b')
+  const index = await readFile(join(root, 'AGENTS.local.md'), 'utf8')
+  expect(index).toContain('.eqidis-workpapers/plantillas/"Pagos provisionales.xlsx"')
+  expect(index).toContain('.eqidis-context/"policy.txt"')
+  expect((await files.remove(root, 'Pagos provisionales.xlsx', 'workpaper')).workpapers).toEqual([])
+})
+it('keeps calculation inputs per period without replacing earlier copies', async () => {
+  expect(await files.storeInput(root, '2026-09', 'Balanza.xlsx', 'YQ==')).toEqual({ path: 'Insumos/2026-09/Balanza.xlsx' })
+  expect(await files.storeInput(root, '2026-09', 'Balanza.xlsx', 'Yg==')).toEqual({ path: 'Insumos/2026-09/Balanza (2).xlsx' })
+  expect(await readFile(join(root, 'Insumos', '2026-09', 'Balanza.xlsx'), 'utf8')).toBe('a')
+  await expect(files.storeInput(root, '../x', 'Balanza.xlsx', 'YQ==')).rejects.toThrow('period')
+  await expect(files.storeInput(root, '2026-09', '../Balanza.xlsx', 'YQ==')).rejects.toThrow('valid name')
+})
+it('reads the follow-up items of a filled workpaper by its file name only', async () => {
+  expect(await files.pendings(root, 'Papeles de trabajo/2026-09/Papel - 2026-09.xlsx')).toEqual([])
+  await mkdir(join(root, '.eqidis-workpapers', 'pendientes'), { recursive: true })
+  const items = [{ id: 'P1', texto: 'Revisar IVA', estado: 'resuelto', resolucion: 'Cuadra' }]
+  await writeFile(join(root, '.eqidis-workpapers', 'pendientes', 'Papel - 2026-09.json'), JSON.stringify(items))
+  expect(await files.pendings(root, 'Papeles de trabajo/2026-09/Papel - 2026-09.xlsx')).toEqual(items)
+  expect(await files.allPendings(root)).toEqual([{ file: 'Papeles de trabajo/2026-09/Papel - 2026-09.xlsx', items }])
+  await expect(files.pendings(root, '..')).rejects.toThrow('valid name')
 })

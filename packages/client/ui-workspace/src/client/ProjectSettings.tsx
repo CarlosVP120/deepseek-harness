@@ -1,9 +1,11 @@
 /** UI for local project instructions and reference documents. */
 import { useEffect, useRef, useState } from 'react'
 import { Button, IconPlusOutlineRegular, IconTrashOutlineRegular, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { WorkspaceId, ProjectContext } from '@deepseek-ai/dsh-api-workspace-controller/types'
+import type { WorkspaceId, ProjectContext, ProjectFileKind } from '@deepseek-ai/dsh-api-workspace-controller/types'
 import type { WorkspaceBrowserProps } from './contract/slots.ts'
 import css from './ProjectSettings.module.css'
+
+const WORKPAPER = /\.(xlsx|xlsm|xls|ods)$/iu
 
 type ProjectActions = Pick<WorkspaceBrowserProps, 'readProjectContext' | 'saveProjectInstructions' | 'uploadProjectDocument' | 'removeProjectDocument' | 'renameWorkspace' | 't'>
 
@@ -25,8 +27,9 @@ export function ProjectSettings({
   const [context, setContext] = useState<ProjectContext | null>(null)
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [pendingRemoval, setPendingRemoval] = useState<string | null>(null)
+  const [pendingRemoval, setPendingRemoval] = useState<{ name: string; kind: ProjectFileKind } | null>(null)
   const upload = useRef<HTMLInputElement>(null)
+  const workpaperUpload = useRef<HTMLInputElement>(null)
   useEffect(() => {
     let current = true
     readProjectContext(workspaceId).then((value) => {
@@ -48,10 +51,11 @@ export function ProjectSettings({
     await saveProjectInstructions(workspaceId, instructions)
     onClose()
   })
-  const addFiles = (files: FileList | null) => run(async () => {
+  const addFiles = (files: FileList | null, kind: ProjectFileKind = 'document') => run(async () => {
     if (files === null) return
     for (const file of Array.from(files)) {
       if (context === null) return
+      if (kind === 'workpaper' && !WORKPAPER.test(file.name)) throw new Error(t('project.workpaperOnlyExcel'))
       if (file.size > context.maxDocumentBytes) throw new Error(t('project.fileTooLarge', { limit: String(Math.round(context.maxDocumentBytes / 1024 / 1024)) }))
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
@@ -62,11 +66,15 @@ export function ProjectSettings({
         reader.onerror = () =>{  reject(new Error(t('project.fileReadFailed'))) }
         reader.readAsDataURL(file)
       })
-      const updated = await uploadProjectDocument(workspaceId, file.name, base64)
+      const updated = await uploadProjectDocument(workspaceId, file.name, base64, kind)
       setContext(updated)
     }
     if (upload.current) upload.current.value = ''
+    if (workpaperUpload.current) workpaperUpload.current.value = ''
   })
+  const fileRow = (file: ProjectContext['files'][number], kind: ProjectFileKind) => (
+    <li key={file.name}><span className={css.filename}>{file.name}</span><span className={css.size}>{t('project.fileSize', { size: String(Math.ceil(file.bytes / 1024)) })}</span><Button variant="outline" disabled={busy} aria-label={t('project.removeFile', { name: file.name })} onClick={() =>{  setPendingRemoval({ name: file.name, kind }) }}><IconTrashOutlineRegular size={16} /></Button></li>
+  )
   return (
     <Modal open className={css.dialog ?? ''} contentClassName={css.content ?? ''} onClose={() => { if (!busy) onClose() }} closeLabel={t('close')} title={t('project.settings')}
       footer={<><Button variant="outline" disabled={busy} onClick={onClose}>{t('cancel')}</Button><Button variant="primary" disabled={busy || context === null || !name.trim()} onClick={() => { void save() }}>{t('project.save')}</Button></>}>
@@ -75,14 +83,21 @@ export function ProjectSettings({
         <p className={css.path}>{path}</p>
         <label className={css.field}>{t('project.instructions')}<textarea rows={7} value={instructions} disabled={busy || context === null} placeholder={t('project.instructionsPlaceholder')} onChange={(event) =>{  setInstructions(event.target.value) }} /></label>
         <p className={css.help}>{t('project.instructionsHelp')}</p>
+        <section aria-label={t('project.workpapers')}>
+          <div className={css.heading}><h3>{t('project.workpapers')}</h3><Button variant="outline" disabled={busy || context === null} onClick={() => workpaperUpload.current?.click()}><IconPlusOutlineRegular size={16} />{t('project.addWorkpapers')}</Button></div>
+          <input ref={workpaperUpload} className={css.fileInput} type="file" multiple accept=".xlsx,.xlsm,.xls,.ods" aria-label={t('project.addWorkpapers')} onChange={(event) => { void addFiles(event.target.files, 'workpaper') }} />
+          <p className={css.help}>{t('project.workpapersHelp')}</p>
+          {context?.workpapers.length === 0 && <p className={css.empty}>{t('project.workpapersEmpty')}</p>}
+          <ul className={css.files}>{context?.workpapers.map(file => fileRow(file, 'workpaper'))}</ul>
+        </section>
         <section aria-label={t('project.documents')}>
           <div className={css.heading}><h3>{t('project.documents')}</h3><Button variant="outline" disabled={busy || context === null} onClick={() => upload.current?.click()}><IconPlusOutlineRegular size={16} />{t('project.addFiles')}</Button></div>
           <input ref={upload} className={css.fileInput} type="file" multiple aria-label={t('project.addFiles')} onChange={(event) => { void addFiles(event.target.files) }} />
           <p className={css.help}>{t('project.documentsHelp', { limit: String(Math.round((context?.maxDocumentBytes ?? 30 * 1024 * 1024) / 1024 / 1024)) })}</p>
           {context?.files.length === 0 && <p className={css.empty}>{t('project.empty')}</p>}
-          <ul className={css.files}>{context?.files.map(file => <li key={file.name}><span className={css.filename}>{file.name}</span><span className={css.size}>{t('project.fileSize', { size: String(Math.ceil(file.bytes / 1024)) })}</span><Button variant="outline" disabled={busy} aria-label={t('project.removeFile', { name: file.name })} onClick={() =>{  setPendingRemoval(file.name) }}><IconTrashOutlineRegular size={16} /></Button></li>)}</ul>
-          {pendingRemoval !== null && <div className={css.removal}><p>{t('project.confirmRemove', { name: pendingRemoval })}</p><Button variant="outline" disabled={busy} onClick={() =>{  setPendingRemoval(null) }}>{t('cancel')}</Button><Button variant="outline" disabled={busy} onClick={() => { void run(async () => { setContext(await removeProjectDocument(workspaceId, pendingRemoval)); setPendingRemoval(null) }) }}>{t('project.remove')}</Button></div>}
+          <ul className={css.files}>{context?.files.map(file => fileRow(file, 'document'))}</ul>
         </section>
+        {pendingRemoval !== null && <div className={css.removal}><p>{t('project.confirmRemove', { name: pendingRemoval.name })}</p><Button variant="outline" disabled={busy} onClick={() =>{  setPendingRemoval(null) }}>{t('cancel')}</Button><Button variant="outline" disabled={busy} onClick={() => { void run(async () => { setContext(await removeProjectDocument(workspaceId, pendingRemoval.name, pendingRemoval.kind)); setPendingRemoval(null) }) }}>{t('project.remove')}</Button></div>}
         {busy && <p role="status" className={css.help}>{t('project.working')}</p>}
         {error !== null && <p role="alert" className={css.error}>{error}</p>}
       </div>

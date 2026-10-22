@@ -5,7 +5,10 @@ import z from '@deepseek-ai/schemastery'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { ProjectContextFiles } from './project-context.ts'
 import { initializeProjectInstructions } from './default-project-instructions.ts'
-import type { ProjectContext, ProjectContextRequest, ProjectInstructionsRequest, ProjectUploadRequest, ProjectRemoveRequest } from './types.ts'
+import type {
+  ProjectContext, ProjectContextRequest, ProjectInputRequest, ProjectInputValue, ProjectInstructionsRequest,
+  ProjectPending, ProjectPendingsRequest, ProjectRemoveRequest, ProjectUploadRequest, ProjectWorkpaperPendings,
+} from './types.ts'
 import { WorkspaceCommands } from './commands.ts'
 import { DirectoryPickerController } from './directory-picker.ts'
 import { WorkspaceFeed, workspaceView } from './feed.ts'
@@ -119,7 +122,37 @@ export class WorkspaceController extends TypertRemoteService {
    */
   @Remote('uploadProjectDocument')
   uploadProjectDocument(request: ProjectUploadRequest): Promise<ProjectContext> {
-    return this.projectFiles.upload(this.projectPath(request), request.name, request.base64)
+    return this.projectFiles.upload(this.projectPath(request), request.name, request.base64, request.kind)
+  }
+
+  /**
+   * Read the follow-up items of a filled workpaper so its card can show their progress.
+   * @param request - project and the copy's project-relative path.
+   * @returns the items with their state.
+   */
+  @Remote('getWorkpaperPendings')
+  getWorkpaperPendings(request: ProjectPendingsRequest): Promise<ProjectPending[]> {
+    return this.projectFiles.pendings(this.projectPath(request), request.file)
+  }
+
+  /**
+   * List the follow-up items of every filled workpaper in the project, for the pending-items panel.
+   * @param request - registered project.
+   * @returns each workpaper's path and items.
+   */
+  @Remote('listWorkpaperPendings')
+  listWorkpaperPendings(request: ProjectContextRequest): Promise<ProjectWorkpaperPendings[]> {
+    return this.projectFiles.allPendings(this.projectPath(request))
+  }
+
+  /**
+   * Keep a calculation input (balanza, auxiliares, support) in the project's period folder.
+   * @param request - project, period, filename and encoded file.
+   * @returns the stored file's project-relative path.
+   */
+  @Remote('storeProjectInput')
+  storeProjectInput(request: ProjectInputRequest): Promise<ProjectInputValue> {
+    return this.projectFiles.storeInput(this.projectPath(request), request.period, request.name, request.base64)
   }
 
   /**
@@ -129,7 +162,7 @@ export class WorkspaceController extends TypertRemoteService {
    */
   @Remote('removeProjectDocument')
   removeProjectDocument(request: ProjectRemoveRequest): Promise<ProjectContext> {
-    return this.projectFiles.remove(this.projectPath(request), request.name)
+    return this.projectFiles.remove(this.projectPath(request), request.name, request.kind)
   }
 
   /**

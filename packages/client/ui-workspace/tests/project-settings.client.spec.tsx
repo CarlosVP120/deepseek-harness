@@ -11,10 +11,10 @@ afterEach(cleanup)
 function fixture() {
   return {
     workspaceId: WorkspaceId('project'), title: 'Project', path: '/project', t: makeTranslate(en, common), onClose: vi.fn(),
-    readProjectContext: vi.fn().mockResolvedValue({ maxDocumentBytes: 30 * 1024 * 1024, instructions: 'Existing instructions', files: [{ name: 'policy.txt', bytes: 42 }] }),
-    saveProjectInstructions: vi.fn().mockResolvedValue({ maxDocumentBytes: 30 * 1024 * 1024, instructions: 'Updated instructions', files: [] }),
+    readProjectContext: vi.fn().mockResolvedValue({ maxDocumentBytes: 30 * 1024 * 1024, instructions: 'Existing instructions', files: [{ name: 'policy.txt', bytes: 42 }], workpapers: [{ name: 'Pagos provisionales.xlsx', bytes: 9000 }] }),
+    saveProjectInstructions: vi.fn().mockResolvedValue({ maxDocumentBytes: 30 * 1024 * 1024, instructions: 'Updated instructions', files: [], workpapers: [] }),
     uploadProjectDocument: vi.fn(),
-    removeProjectDocument: vi.fn().mockResolvedValue({ maxDocumentBytes: 30 * 1024 * 1024, instructions: 'Existing instructions', files: [] }),
+    removeProjectDocument: vi.fn().mockResolvedValue({ maxDocumentBytes: 30 * 1024 * 1024, instructions: 'Existing instructions', files: [], workpapers: [] }),
     renameWorkspace: vi.fn().mockResolvedValue(undefined),
   }
 }
@@ -35,7 +35,7 @@ it('requires confirmation before removing an uploaded copy', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Remove policy.txt' }))
   expect(props.removeProjectDocument).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: /^Remove$/ }))
-  await waitFor(() =>{  expect(props.removeProjectDocument).toHaveBeenCalledWith(props.workspaceId, 'policy.txt') })
+  await waitFor(() =>{  expect(props.removeProjectDocument).toHaveBeenCalledWith(props.workspaceId, 'policy.txt', 'document') })
   await waitFor(() =>{  expect(screen.queryByText('policy.txt')).toBeNull() })
 })
 it('keeps instructions available when saving fails', async () => {
@@ -46,4 +46,16 @@ it('keeps instructions available when saving fails', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Save' }))
   expect((await screen.findByRole('alert')).textContent).toContain('Write failed')
   expect(props.onClose).not.toHaveBeenCalled()
+})
+it('lists official workpapers apart and only accepts Excel files for them', async () => {
+  const props = fixture()
+  render(<ProjectSettings {...props} />)
+  expect(await screen.findByText('Pagos provisionales.xlsx')).toBeTruthy()
+  const input = screen.getByLabelText('Add workpapers', { selector: 'input' })
+  fireEvent.change(input, { target: { files: [new File(['x'], 'notes.pdf')] } })
+  expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'A workpaper must be an Excel file (.xlsx, .xlsm, .xls or .ods).')
+  expect(props.uploadProjectDocument).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Remove Pagos provisionales.xlsx' }))
+  fireEvent.click(screen.getByRole('button', { name: /^Remove$/ }))
+  await waitFor(() =>{  expect(props.removeProjectDocument).toHaveBeenCalledWith(props.workspaceId, 'Pagos provisionales.xlsx', 'workpaper') })
 })

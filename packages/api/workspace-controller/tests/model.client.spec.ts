@@ -69,10 +69,13 @@ function deferred<T>(): Deferred<T> {
 }
 
 class FakeWorkspaceRemote implements WorkspaceRemote {
-  getProjectContext: WorkspaceRemote['getProjectContext'] = async () => remoteOk({ maxDocumentBytes: 30 * 1024 * 1024, instructions: '', files: [] })
-  saveProjectInstructions: WorkspaceRemote['saveProjectInstructions'] = async request => remoteOk({ maxDocumentBytes: 30 * 1024 * 1024, instructions: request.instructions, files: [] })
-  uploadProjectDocument: WorkspaceRemote['uploadProjectDocument'] = async () => remoteOk({ maxDocumentBytes: 30 * 1024 * 1024, instructions: '', files: [] })
-  removeProjectDocument: WorkspaceRemote['removeProjectDocument'] = async () => remoteOk({ maxDocumentBytes: 30 * 1024 * 1024, instructions: '', files: [] })
+  getProjectContext: WorkspaceRemote['getProjectContext'] = async () => remoteOk({ maxDocumentBytes: 30 * 1024 * 1024, instructions: '', files: [], workpapers: [] })
+  saveProjectInstructions: WorkspaceRemote['saveProjectInstructions'] = async request => remoteOk({ maxDocumentBytes: 30 * 1024 * 1024, instructions: request.instructions, files: [], workpapers: [] })
+  uploadProjectDocument: WorkspaceRemote['uploadProjectDocument'] = async () => remoteOk({ maxDocumentBytes: 30 * 1024 * 1024, instructions: '', files: [], workpapers: [] })
+  removeProjectDocument: WorkspaceRemote['removeProjectDocument'] = async () => remoteOk({ maxDocumentBytes: 30 * 1024 * 1024, instructions: '', files: [], workpapers: [] })
+  storeProjectInput: WorkspaceRemote['storeProjectInput'] = async request => remoteOk({ path: `Insumos/${request.period}/${request.name}` })
+  getWorkpaperPendings: WorkspaceRemote['getWorkpaperPendings'] = async () => remoteOk([])
+  listWorkpaperPendings: WorkspaceRemote['listWorkpaperPendings'] = async () => remoteOk([])
   readonly initializeDefault = vi.fn<WorkspaceRemote['initializeDefault']>(async () => remoteOk({ workspace: workspace('default') }))
   readonly calls: Array<{ readonly method: string; readonly request: unknown }> = []
   onCreate: (request: WorkspaceCreateRequest) => Promise<RemoteResult<WorkspaceCreateValue>> = request =>

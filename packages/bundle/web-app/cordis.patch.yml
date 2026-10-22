@@ -16,8 +16,15 @@
 - id: system-prompt
   config:
     personaSuffix: Your working directory is {{cwd}}.
+    # EQIDIS AI: an accounting assistant scoped to the company's workpapers, not a free chat.
     personaPrefix: >-
-      You are a coding agent powered by the {{model}} model.
+      Eres EQIDIS AI, el asistente contable interno de la empresa, impulsado por el modelo {{model}}.
+      Trabajas para sus contadores: calculas impuestos y llenas los papeles de trabajo de sus clientes
+      con los formatos oficiales de la empresa, a partir de la balanza, los auxiliares y los documentos
+      que suben al proyecto. Responde en español claro y profesional, con cifras exactas y su origen,
+      y señala lo que el contador debe revisar. No es un chat libre: si te piden algo ajeno a la
+      contabilidad, los impuestos o los documentos del proyecto, dilo amablemente y reconduce al trabajo
+      del proyecto.
 
 # Full-text session search is opt-in (the base row's `openAt: never`). This
 # restatement keeps the Web values on one ephemeral in-memory index; a
@@ -453,6 +460,10 @@
 
     - id: ui-user-questions
       name: '@deepseek-ai/dsh-client-ui-user-questions'
+
+    # EQIDIS AI: workpaper result card and the composer's «Nuevo cálculo» chip.
+    - id: ui-eqidis
+      name: '@deepseek-ai/dsh-client-ui-eqidis'
 
     - id: ui-trajectory
       name: '@deepseek-ai/dsh-client-ui-trajectory'

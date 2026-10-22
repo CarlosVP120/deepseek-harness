@@ -261,9 +261,9 @@ export type WorkspaceBrowserInjected = {
   /** Persist local instructions. */
   saveProjectInstructions: (workspaceId: WorkspaceId, instructions: string) => Promise<import('@deepseek-ai/dsh-api-workspace-controller/types').ProjectContext>
   /** Copy an uploaded document into the project. */
-  uploadProjectDocument: (workspaceId: WorkspaceId, name: string, base64: string) => Promise<import('@deepseek-ai/dsh-api-workspace-controller/types').ProjectContext>
+  uploadProjectDocument: (workspaceId: WorkspaceId, name: string, base64: string, kind?: import('@deepseek-ai/dsh-api-workspace-controller/types').ProjectFileKind) => Promise<import('@deepseek-ai/dsh-api-workspace-controller/types').ProjectContext>
   /** Remove an uploaded document. */
-  removeProjectDocument: (workspaceId: WorkspaceId, name: string) => Promise<import('@deepseek-ai/dsh-api-workspace-controller/types').ProjectContext>
+  removeProjectDocument: (workspaceId: WorkspaceId, name: string, kind?: import('@deepseek-ai/dsh-api-workspace-controller/types').ProjectFileKind) => Promise<import('@deepseek-ai/dsh-api-workspace-controller/types').ProjectContext>
   /** Rename a Host Workspace (rejects on name conflict; resolves on durability). */
   renameWorkspace: (workspaceId: WorkspaceId, title: string) => Promise<void>
   /** Delete only a Host Workspace registration; directory and Session logs remain. */
