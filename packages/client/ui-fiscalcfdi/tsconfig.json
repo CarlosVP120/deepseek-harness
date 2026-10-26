@@ -49,6 +49,9 @@
     },
     {
       "path": "../ui-primitives"
+    },
+    {
+      "path": "../ui-settings/tsconfig.client.json"
     }
   ]
 }

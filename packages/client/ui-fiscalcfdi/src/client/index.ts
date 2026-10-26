@@ -14,6 +14,7 @@ import type { ComposerChainProps } from '@deepseek-ai/dsh-client-ui-conversation
 import type {} from '@deepseek-ai/dsh-client-ui-tool/client'
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
+import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { CoverageCard } from './CoverageCard.tsx'
 import { MonthCard } from './MonthCard.tsx'
@@ -24,6 +25,7 @@ import { MonthSelector, type MonthSelectorInjected } from './MonthSelector.tsx'
 import { MonthPanel, type MonthPanelInjected } from './MonthPanel.tsx'
 import { GuidedStart, type GuidedStartInjected } from './GuidedStart.tsx'
 import { PlainBackdrop } from './PlainBackdrop.tsx'
+import { SqlSection, type SqlSectionInjected } from './SqlSection.tsx'
 import { TurnCards } from './TurnCards.tsx'
 import { en, es, NS, zh, type FiscalcfdiKey } from './locales.ts'
 
@@ -124,6 +126,20 @@ function registerUi(ctx: Context): void {
   ctx.slots.inject('conversation.home.panels', () => ctx.slots.register({
     name: 'conversation.home.panels', id: 'fiscalcfdi-months', order: 0, locale: NS, inject: () => panel,
   }, MonthsPanel))
+
+  // Settings: the CONTPAQi SQL Server the engine reads.
+  const sql: SqlSectionInjected = {
+    loadSql: () => unwrap(ctx.remote.fiscalcfdi.sqlConnection()),
+    checkSql: (request, save) => unwrap(ctx.remote.fiscalcfdi.checkSql({ ...request, save })),
+    refreshCompanies: async () => {
+      const result = await unwrap(ctx.remote.fiscalcfdi.refreshCompanies())
+      months.forgetCompanies()
+      return result
+    },
+  }
+  ctx.slots.inject('settings.section', () => ctx.slots.register({
+    name: 'settings.section', id: 'fiscalcfdi-sql', order: 15, label: () => t('sql.nav'), locale: NS, inject: () => sql,
+  }, SqlSection))
 
   // A plain start page: blank space above the headline instead of the landscape.
   ctx.slots.inject('conversation.home.backdrop', () => ctx.slots.register({ name: 'conversation.home.backdrop' }, PlainBackdrop))

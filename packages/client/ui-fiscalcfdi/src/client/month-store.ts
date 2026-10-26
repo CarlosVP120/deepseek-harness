@@ -221,6 +221,11 @@ export class MonthRegistry {
     return true
   }
 
+  /** Read the companies again on next use, after they were refreshed from CONTPAQi. */
+  forgetCompanies(): void {
+    this.companies = undefined
+  }
+
   /** @returns the companies, read once and retried after a failure. */
   listCompanies(): Promise<FiscalcfdiCompany[]> {
     this.companies ??= this.remote.companies().catch((error: unknown) => {

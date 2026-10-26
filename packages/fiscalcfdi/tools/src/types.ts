@@ -176,3 +176,51 @@ export interface FiscalcfdiAnswerRequest extends FiscalcfdiMonthRequest {
   /** Question answered; the first pending one when omitted. */
   pregunta_id?: string | undefined
 }
+
+/** The saved CONTPAQi SQL connection; the password never leaves the Host. */
+export interface FiscalcfdiSqlConnection {
+  /** Server IP or host name. */
+  server: string
+  /** SQL Server TCP port. */
+  port: number
+  /** SQL login. */
+  user: string
+  /** Database used for the login. */
+  database: string
+  /** Whether a password is saved. */
+  passwordConfigured: boolean
+}
+
+/** A connection to test or save; an empty password keeps the saved one. */
+export interface FiscalcfdiSqlRequest {
+  /** Server IP or host name. */
+  server: string
+  /** SQL Server TCP port. */
+  port: number
+  /** SQL login. */
+  user: string
+  /** Database used for the login. */
+  database: string
+  /** New password, or empty to keep the saved one. */
+  password: string
+}
+
+/** A connection that answered. */
+export interface FiscalcfdiSqlCheck {
+  /** The saved connection after the call. */
+  connection: FiscalcfdiSqlConnection
+  /** SQL Server version the server reported. */
+  version: string | null
+  /** Whether the call saved the connection. */
+  saved: boolean
+  /** Whether the saved server, port, login or database changed; the company list then needs a refresh. */
+  changed: boolean
+}
+
+/** Result of re-reading the companies from the saved server. */
+export interface FiscalcfdiCompanyRefresh {
+  /** Companies available now. */
+  companies: number
+  /** Company databases the login could not read. */
+  unavailable: number
+}

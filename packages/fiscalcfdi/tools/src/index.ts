@@ -22,6 +22,7 @@ import { SessionBindings } from './bindings.ts'
 import type {
   FiscalcfdiAnswerRequest, FiscalcfdiBindRequest, FiscalcfdiBinding, FiscalcfdiCompany, FiscalcfdiImportable, FiscalcfdiMonth,
   FiscalcfdiMonthDetail, FiscalcfdiMonthRequest, FiscalcfdiSessionRequest, FiscalcfdiUploadRequest,
+  FiscalcfdiCompanyRefresh, FiscalcfdiSqlCheck, FiscalcfdiSqlConnection, FiscalcfdiSqlRequest,
 } from './types.ts'
 
 declare module '@deepseek-ai/dsh-llm' {
@@ -291,6 +292,16 @@ function list<T>(value: unknown): T[] {
   return Array.isArray(value) ? value as T[] : []
 }
 
+/** Project the engine's public SQL settings onto the settings page's connection. */
+function sqlConnection(raw: unknown): FiscalcfdiSqlConnection {
+  const conf = (raw ?? {}) as Record<string, unknown>
+  return {
+    server: typeof conf.server === 'string' ? conf.server : '', port: Number(conf.port ?? 1433),
+    user: typeof conf.user === 'string' ? conf.user : '',
+    database: typeof conf.database === 'string' ? conf.database : 'master', passwordConfigured: conf.password_configured === true,
+  }
+}
+
 /** Project the engine's month snapshot onto the panel's typed detail. */
 function monthDetail(raw: BridgeResult): FiscalcfdiMonthDetail {
   const result = raw.resultado as Record<string, unknown> | null | undefined
@@ -485,6 +496,43 @@ export class Fiscalcfdi extends TypertRemoteService {
   @Remote('process')
   async process(request: FiscalcfdiMonthRequest, signal?: AbortSignal): Promise<FiscalcfdiMonthDetail> {
     return monthDetail(await this.bridge('procesar', { rfc: request.rfc, periodo: request.periodo }, signal))
+  }
+
+  /**
+   * The saved CONTPAQi SQL connection, without its password.
+   * @param signal - Remote caller cancellation.
+   * @returns server, port, login, database and whether a password is saved.
+   */
+  @Remote('sqlConnection')
+  async sqlConnection(signal?: AbortSignal): Promise<FiscalcfdiSqlConnection> {
+    return sqlConnection((await this.bridge('sql', {}, signal)).conexion)
+  }
+
+  /**
+   * Connect to a CONTPAQi SQL server and, when `save` is set and it answers, keep it as the saved connection.
+   * @param request - the connection; an empty password keeps the saved one.
+   * @param signal - Remote caller cancellation.
+   * @returns the saved connection after the call and what the server reported.
+   */
+  @Remote('checkSql')
+  async checkSql(request: FiscalcfdiSqlRequest & { save: boolean }, signal?: AbortSignal): Promise<FiscalcfdiSqlCheck> {
+    const { save, ...connection } = request
+    const result = await this.bridge(save ? 'sql_guardar' : 'sql_probar', connection, signal)
+    return {
+      connection: sqlConnection(result.conexion), version: nullableString(result.version),
+      saved: result.guardada === true, changed: result.cambio_servidor === true,
+    }
+  }
+
+  /**
+   * Re-read the CONTPAQi companies from the saved server.
+   * @param signal - Remote caller cancellation.
+   * @returns how many companies are available and how many databases could not be read.
+   */
+  @Remote('refreshCompanies')
+  async refreshCompanies(signal?: AbortSignal): Promise<FiscalcfdiCompanyRefresh> {
+    const result = await this.bridge('sql_empresas', {}, signal)
+    return { companies: Number(result.empresas ?? 0), unavailable: Number(result.no_disponibles ?? 0) }
   }
 
   /**

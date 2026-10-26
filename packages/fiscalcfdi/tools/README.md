@@ -16,6 +16,8 @@ Registers the `fiscalcfdi_*` tools: list CONTPAQi companies, open a company mont
 | `waitPollMs` | `10000` | Milliseconds between engine reads while such a call waits |
 | `apiKeyRef` | `OPENROUTER_API_KEY` | Credential the bridge receives as `OPENROUTER_API_KEY`, so the engine's agents run on the chat's OpenRouter key |
 
+The Remote `sqlConnection`, `checkSql` and `refreshCompanies` methods serve the CONTPAQi settings page; the password reaches the engine on `checkSql` only and is never returned.
+
 `fiscalcfdi_estado` with `esperar: true` re-reads a running month in the Host, without model turns, and returns once it stops running, asks a question, or `waitMs` passes; the model makes one call per wait instead of polling.
 
 Every bridge call receives the resolved `apiKeyRef` credential (the Models settings page, then the environment) as `OPENROUTER_API_KEY`, which the engine prefers over its own `.env`; without a credential the engine keeps its `.env` key.
