@@ -3,7 +3,9 @@
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   height: 100%;
-  overflow: hidden;
+  /* clip, not hidden: a collapsed right track still holds its panel's width,
+     and a hidden overflow lets scrollIntoView pan the whole frame sideways. */
+  overflow: clip;
   background: var(--dsw-alias-bg-base);
 }
 

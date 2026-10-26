@@ -10,7 +10,7 @@ import fiscalcfdiRemote from '@deepseek-ai/dsh-fiscalcfdi-tools/remote'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
-import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
+import type { ComposerChainProps } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-tool/client'
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
@@ -22,6 +22,7 @@ import { fiscalcfdiTurnDefinition } from './turn.ts'
 import { MonthRegistry, type MonthRemote } from './month-store.ts'
 import { MonthSelector, type MonthSelectorInjected } from './MonthSelector.tsx'
 import { MonthPanel, type MonthPanelInjected } from './MonthPanel.tsx'
+import { GuidedStart, type GuidedStartInjected } from './GuidedStart.tsx'
 import { TurnCards } from './TurnCards.tsx'
 import { en, es, NS, zh, type FiscalcfdiKey } from './locales.ts'
 
@@ -102,6 +103,16 @@ function registerUi(ctx: Context): void {
   ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register({
     name: 'sidebar.right.pane.tab', key: MONTH_TAB_ID, locale: NS, inject: (): MonthPanelInjected => ({ months }),
   }, MonthPanel))
+  // A blank chat opens on the guided start instead of the open composer; the first message hands back to the chat.
+  ctx.slots.inject('conversation.composer', () => ctx.slots.register({
+    name: 'conversation.composer',
+    priority: 10,
+    select: ({ session }: ComposerChainProps): Record<string, never> | null =>
+      session !== undefined && session.blank && session.subagent === null && !session.awaitingFirstTurn
+        && session.pendingSubmissions.length === 0 ? {} : null,
+    locale: NS,
+    inject: (): GuidedStartInjected => ({ months }),
+  }, GuidedStart))
   ctx.slots.inject('conversation.input.left', () => ctx.slots.register({
     name: 'conversation.input.left', id: 'fiscalcfdi-month', order: 0, locale: NS,
     inject: (): MonthSelectorInjected => ({ months, openPanel }),
