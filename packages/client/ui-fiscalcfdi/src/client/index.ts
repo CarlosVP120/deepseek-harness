@@ -23,6 +23,7 @@ import { MonthRegistry, type MonthRemote } from './month-store.ts'
 import { MonthSelector, type MonthSelectorInjected } from './MonthSelector.tsx'
 import { MonthPanel, type MonthPanelInjected } from './MonthPanel.tsx'
 import { GuidedStart, type GuidedStartInjected } from './GuidedStart.tsx'
+import { PlainBackdrop } from './PlainBackdrop.tsx'
 import { TurnCards } from './TurnCards.tsx'
 import { en, es, NS, zh, type FiscalcfdiKey } from './locales.ts'
 
@@ -121,6 +122,9 @@ function registerUi(ctx: Context): void {
   ctx.slots.inject('conversation.home.panels', () => ctx.slots.register({
     name: 'conversation.home.panels', id: 'fiscalcfdi-months', order: 0, locale: NS, inject: () => panel,
   }, MonthsPanel))
+
+  // A plain start page: blank space above the headline instead of the landscape.
+  ctx.slots.inject('conversation.home.backdrop', () => ctx.slots.register({ name: 'conversation.home.backdrop' }, PlainBackdrop))
 }
 
 /**

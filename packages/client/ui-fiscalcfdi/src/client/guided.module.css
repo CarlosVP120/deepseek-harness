@@ -110,3 +110,6 @@
   .zones, .picker { grid-template-columns: minmax(0, 1fr); }
   .footer { flex-direction: column; align-items: stretch; }
 }
+
+/* start-page spacer in place of the landscape banner */
+.backdrop { flex: none; height: clamp(32px, 10vh, 112px); }

@@ -191,6 +191,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     'conversation.hero.brand.mark': { kind: 'single'; scope: 'root'; owner: HeroBrandMarkOwnerProps }
     /** Product panels shown on the start page above the local Session catalog. */
     'conversation.home.panels': { kind: 'list'; scope: 'root'; owner: HomePanelOwnerProps }
+    /** Artwork above the start-page headline; the landscape banner draws when unoccupied. */
+    'conversation.home.backdrop': { kind: 'single'; scope: 'root'; owner: HomeBackdropOwnerProps }
     /** Agent-preset control staged for a New Session. */
     'conversation.hero.agentPreset': { kind: 'single'; scope: 'session-maybe'; owner: HeroAgentPresetOwnerProps }
     /** Full-width entries above the composer card. */
@@ -237,6 +239,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
         'conversation.input.dock': { kind: 'list'; scope: 'session' }
         'conversation.hero.brand.mark': { kind: 'single'; scope: 'root' }
         'conversation.home.panels': { kind: 'list'; scope: 'root' }
+        'conversation.home.backdrop': { kind: 'single'; scope: 'root' }
         'conversation.hero.workspace': { kind: 'single'; scope: 'root' }
         'conversation.hero.agentPreset': { kind: 'single'; scope: 'session-maybe' }
       }
@@ -452,6 +455,12 @@ export interface HeroBrandMarkOwnerProps {
   size: number
   /** Host class preserving the surrounding mark geometry. */
   className?: string | undefined
+}
+
+/** Owner share of the start-page backdrop. */
+export interface HomeBackdropOwnerProps {
+  /** Marker field: the occupant draws its own artwork, or nothing. */
+  children?: never
 }
 
 /** Callbacks a start-page panel uses to hand work to the blank Session. */

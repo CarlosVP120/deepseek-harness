@@ -198,7 +198,7 @@ export function ConversationContent(props: ConversationContentProps) {
       data-content-phase={phase}
     >
       <div className={css.scrollBody} data-conversation-scroll="">
-        {hero && props.variant === 'main' && <AsciiLandscape />}
+        {hero && props.variant === 'main' && renderSlot('conversation.home.backdrop', {}, { fallback: <AsciiLandscape /> })}
         {sessionId === undefined ? null : <Views />}
         {composerSeat}
         {hero && props.variant === 'main' && renderSlot('conversation.home.panels', {
