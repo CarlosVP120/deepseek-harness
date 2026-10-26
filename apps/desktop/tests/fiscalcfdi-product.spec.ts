@@ -1,5 +1,5 @@
 /** FiscalCFDI AI ships from this shell with its own name, data, profile, artwork and package identity. */
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, it } from 'vitest'
@@ -36,6 +36,19 @@ it('reads the recorded product and the engine location from the data root', () =
     expect(fiscalcfdiEngineEnvironment(root, { FISCALCFDI_ENGINE_BRIDGE: '/override.py' })).toEqual({
       FISCALCFDI_ENGINE_PYTHON: '/engine/bin/python',
     })
+    // Without its own engine.json, the data root runs the engine the installer carries.
+    rmSync(join(root, 'engine.json'))
+    const resources = join(root, 'resources')
+    mkdirSync(join(resources, 'engine'), { recursive: true })
+    expect(fiscalcfdiEngineEnvironment(root, {}, resources)).toEqual({})
+    writeFileSync(join(resources, 'engine', 'engine.json'), JSON.stringify({ python: 'python/bin/python3', bridge: 'motor/bridge.py' }))
+    expect(fiscalcfdiEngineEnvironment(root, {}, resources)).toEqual({
+      FISCALCFDI_ENGINE_PYTHON: join(resources, 'engine', 'python/bin/python3'),
+      FISCALCFDI_ENGINE_BRIDGE: join(resources, 'engine', 'motor/bridge.py'),
+      ACCOUNTING_ENGINE_PYTHON: join(resources, 'engine', 'python/bin/python3'),
+      ACCOUNTING_UI_DATA: join(root, 'motor'),
+      PYTHONDONTWRITEBYTECODE: '1', PYTHONNOUSERSITE: '1', PYTHONUTF8: '1',
+    })
   } finally {
     rmSync(root, { recursive: true, force: true })
   }
@@ -49,5 +62,8 @@ it('packages FiscalCFDI AI under its own name, manifest, artifacts and artwork',
   expect(config.artifactName.startsWith('fiscalcfdi-ai-')).toBe(true)
   expect(config.protocols[0].name).toBe('FiscalCFDI AI')
   expect(config.mac.extendInfo.NSMicrophoneUsageDescription).toContain('FiscalCFDI AI')
-  for (const resource of config.extraResources) expect(existsSync(resource.from) || resource.to === 'runtime').toBe(true)
+  // Read destinations as plain text: the inferred config type omits the product-conditional engine entry.
+  const destination = (resource: { readonly to: string }): string => resource.to
+  for (const resource of config.extraResources) expect(existsSync(resource.from) || ['runtime', 'engine'].includes(destination(resource))).toBe(true)
+  expect(config.extraResources.map(destination)).toContain('engine')
 })

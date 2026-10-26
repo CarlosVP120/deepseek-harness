@@ -323,8 +323,9 @@ function createWindow(preload: string, show = false, primary = false): BrowserWi
 async function main(): Promise<void> {
   // Pin the home before profile access and the protected login-shell environment read.
   process.env.DSH_HOME = resolveDesktopHome(app.isPackaged)
-  // The accounting engine is a separate installation; its data root names where it lives.
-  Object.assign(process.env, fiscalcfdiEngineEnvironment(process.env.DSH_HOME))
+  // The accounting engine: the one the data root names, or the one this installer carries.
+  const engineResources = app.isPackaged ? process.resourcesPath : undefined
+  Object.assign(process.env, fiscalcfdiEngineEnvironment(process.env.DSH_HOME, process.env, engineResources))
   void pruneCrashReports(app.getPath('logs'))
   const journalDirectory = process.env.DSH_DESKTOP_UPDATE_JOURNAL_DIR
   const updateJournal = journalDirectory === undefined ? undefined : new DesktopUpdateJournal(journalDirectory, app.getVersion())

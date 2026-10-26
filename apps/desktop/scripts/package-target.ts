@@ -473,6 +473,8 @@ export async function packageTarget(
   await execute(['run', 'prepare:packages'], targetEnv)
   await execute(['run', 'prepare:dsh', ...(signPrimaryRuntime ? ['--defer-runtime-smoke'] : [])], downloadEnv)
   if (signPrimaryRuntime) await execute(['run', 'sign:primary-runtime', '--dsh'], electronBuilderEnv)
+  // FiscalCFDI AI carries its accounting engine: a portable Python with the engine's sources and wheels.
+  if (resolveDesktopPackagingProduct(environment).id === 'fiscalcfdi') await execute(['run', 'prepare:engine'], downloadEnv)
   if (invocation.prepareOnly) return
   if (target.platform === 'darwin' && invocation.unsigned) {
     await execute(desktopElectronBuilderArguments(target, invocation.directory), electronBuilderEnv)

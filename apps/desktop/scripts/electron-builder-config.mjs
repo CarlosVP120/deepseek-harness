@@ -153,6 +153,8 @@ export function createElectronBuilderConfig(
     asarUnpack: unpack,
     extraResources: [
       { from: buildPaths.runtime, to: 'runtime' },
+      // FiscalCFDI AI's accounting engine, prepared by `prepare:engine`.
+      ...(product.id === 'fiscalcfdi' ? [{ from: join(buildPaths.root, 'engine'), to: 'engine' }] : []),
       { from: join(product.resources, 'icon-windows.png'), to: 'icon.png' },
       // Windows tray bitmaps; macOS keeps the Dock and ships no menu bar icon.
       ...(packagesWindows ? [{ from: join(product.resources, 'tray-windows.ico'), to: 'tray.ico' }] : []),
