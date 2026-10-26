@@ -13,6 +13,7 @@ import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import Schema from '@deepseek-ai/schemastery'
+import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import type { Agent, PreStepDecision } from '@deepseek-ai/dsh-agent'
 import { createUserMessage, type ContextFormed } from '@deepseek-ai/dsh-llm'
 import { defineTool, type ToolExecution } from '@deepseek-ai/dsh-tools'
@@ -38,19 +39,31 @@ export interface Config {
   bridge: string
   /** Milliseconds one bridge call may run; processing itself runs detached. */
   timeoutMs: number
+  /** Longest a waiting fiscalcfdi_estado call follows a running month before it returns to the model. */
+  waitMs: number
+  /** Milliseconds between engine reads while a fiscalcfdi_estado call waits. */
+  waitPollMs: number
+  /** Credential holding the OpenRouter key that the Models settings page stores; the engine runs on the same key. */
+  apiKeyRef: string
 }
 
 export const Config: Schema<Config> = Schema.object({
   python: Schema.string().required(),
   bridge: Schema.string().required(),
   timeoutMs: Schema.number().default(120000),
+  waitMs: Schema.number().default(600000),
+  waitPollMs: Schema.number().default(10000),
+  apiKeyRef: Schema.string().default('OPENROUTER_API_KEY'),
 })
 
 type BridgeResult = { ok: boolean; error?: string } & Record<string, unknown>
 
-function callBridge(config: Config, command: string, payload: object, signal: AbortSignal): Promise<BridgeResult> {
+/** Environment of one bridge call; `OPENROUTER_API_KEY` there overrides the engine's own `.env`. */
+type EngineEnvironment = () => Promise<NodeJS.ProcessEnv>
+
+function callBridge(config: Config, command: string, payload: object, signal: AbortSignal, env: NodeJS.ProcessEnv): Promise<BridgeResult> {
   return new Promise((resolve, reject) => {
-    const child = spawn(config.python, [config.bridge, command], { stdio: ['pipe', 'pipe', 'pipe'], signal, timeout: config.timeoutMs })
+    const child = spawn(config.python, [config.bridge, command], { stdio: ['pipe', 'pipe', 'pipe'], signal, timeout: config.timeoutMs, env })
     let stdout = ''
     let stderr = ''
     child.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString('utf8') })
@@ -73,7 +86,7 @@ const month = {
 } as const
 
 /** Month arguments as the model may send them: both optional, resolved from the Session's selection. */
-interface MonthArgs { rfc?: string | undefined; periodo?: string | undefined }
+interface MonthArgs { rfc?: string | undefined; periodo?: string | undefined; esperar?: boolean | undefined }
 
 /** Tools whose explicit month becomes the Session's selection, so the panel follows the conversation. */
 const SELECTING = new Set(['abrir_mes', 'subir', 'estado', 'procesar', 'responder', 'cobertura', 'importable'])
@@ -127,9 +140,28 @@ const coverageOutput = {
   presentationMeta: (_args: unknown, value: string) => parsed(value),
 } as const
 
-function registerTools(ctx: Context, config: Config, bindings: SessionBindings): void {
+/** Resolve after `ms`, or reject as soon as `signal` aborts. */
+function pause(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(signal.reason as Error)
+      return
+    }
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', abort)
+      resolve()
+    }, ms)
+    const abort = () => {
+      clearTimeout(timer)
+      reject(signal.reason as Error)
+    }
+    signal.addEventListener('abort', abort, { once: true })
+  })
+}
+
+function registerTools(ctx: Context, config: Config, bindings: SessionBindings, environment: EngineEnvironment): void {
   const run = async (command: string, payload: object, signal: AbortSignal) => {
-    const result = await callBridge(config, command, payload, signal)
+    const result = await callBridge(config, command, payload, signal, await environment())
     if (!result.ok) throw new Error(result.error ?? 'Error del motor FiscalCFDI AI')
     return JSON.stringify(result, null, 1)
   }
@@ -142,7 +174,15 @@ function registerTools(ctx: Context, config: Config, bindings: SessionBindings):
     if (rfc === undefined || periodo === undefined) {
       throw new Error('No hay empresa y mes seleccionados. Pregúntale al usuario cuáles, o pídele que los elija en el selector junto a la caja de texto.')
     }
-    const result = await callBridge(config, command, { ...args, rfc, periodo }, exec.signal)
+    const { esperar, ...payload } = args
+    const env = await environment()
+    let result = await callBridge(config, command, { ...payload, rfc, periodo }, exec.signal, env)
+    // A waiting status read follows the run here, without model turns, until it stops running.
+    const deadline = Date.now() + config.waitMs
+    while (esperar === true && result.ok && result.estado === 'running' && Date.now() < deadline) {
+      await pause(config.waitPollMs, exec.signal)
+      result = await callBridge(config, command, { ...payload, rfc, periodo }, exec.signal, env)
+    }
     if (!result.ok) throw new Error(result.error ?? 'Error del motor FiscalCFDI AI')
     if (session !== undefined && SELECTING.has(command)) {
       const empresa = typeof result.empresa === 'string' ? result.empresa : bound?.rfc === rfc ? bound.empresa : rfc
@@ -180,8 +220,11 @@ function registerTools(ctx: Context, config: Config, bindings: SessionBindings):
 
   ctx.tools.register(defineTool({
     name: 'fiscalcfdi_estado',
-    description: 'Consulta el estado del mes contable: archivos, si está listo para procesar, si el agente contable está trabajando, los pasos de su avance, sus preguntas pendientes y, al terminar, pólizas, cobertura bancaria e IVA. El usuario ve el resultado como una tarjeta del mes. Úsala para seguir el avance mientras el motor trabaja (cada consulta es barata).',
-    parameters: month,
+    description: 'Consulta el estado del mes contable: archivos, si está listo para procesar, si el agente contable está trabajando, los pasos de su avance, sus preguntas pendientes y, al terminar, pólizas, cobertura bancaria e IVA. El usuario ve el resultado como una tarjeta del mes. Mientras el agente contable trabaja, llámala con esperar=true: regresa cuando termina, pregunta algo o se detiene. No la llames repetidamente para seguir el avance.',
+    parameters: {
+      ...month,
+      esperar: { type: 'boolean', description: 'true para esperar, mientras el agente contable trabaja, a que termine, pregunte algo o se detenga (hasta unos minutos), en vez de devolver el avance de inmediato.' },
+    },
     output: monthOutput,
     execute: (args, exec) => runMonth('estado', args, exec),
   }))
@@ -201,7 +244,7 @@ function registerTools(ctx: Context, config: Config, bindings: SessionBindings):
 
   ctx.tools.register(defineTool({
     name: 'fiscalcfdi_procesar',
-    description: 'Inicia la contabilización autónoma del mes: el agente contable consulta el historial de CONTPAQi, aplica las políticas de la empresa, concilia bancos, genera pólizas y las audita. Corre en segundo plano y tarda varios minutos; sigue el avance con fiscalcfdi_estado. Si falta información, devuelve qué falta sin iniciar.',
+    description: 'Inicia la contabilización autónoma del mes: el agente contable consulta el historial de CONTPAQi, aplica las políticas de la empresa, concilia bancos, genera pólizas y las audita. Corre en segundo plano y tarda varios minutos; después llama una vez a fiscalcfdi_estado con esperar=true. Si falta información, devuelve qué falta sin iniciar.',
     parameters: month,
     output: monthOutput,
     execute: (args, exec) => runMonth('procesar', args, exec),
@@ -303,7 +346,7 @@ export class Fiscalcfdi extends TypertRemoteService {
     const home = process.env.DSH_HOME ?? join(homedir(), '.fiscalcfdi-ai')
     this.bindings = new SessionBindings(home)
     this.uploads = join(home, 'fiscalcfdi', 'uploads')
-    registerTools(ctx, config, this.bindings)
+    registerTools(ctx, config, this.bindings, this.environment)
     // Each turn's first request carries the month the user selected, so the agent never asks for it again.
     ctx.on('agent/pre-step', async ({ agent, step }: { agent: Agent; step: number }, next: () => Promise<PreStepDecision>) => {
       const decision = await next()
@@ -323,8 +366,14 @@ export class Fiscalcfdi extends TypertRemoteService {
     }, { prepend: true })
   }
 
+  /** The engine's environment: this process's, with the OpenRouter key stored in the Models settings when there is one. */
+  private readonly environment: EngineEnvironment = async () => {
+    const stored = await this.ctx.get('credentials')?.resolve(credentialRef(this.config.apiKeyRef))
+    return stored === undefined ? process.env : { ...process.env, OPENROUTER_API_KEY: stored.value }
+  }
+
   private async bridge(command: string, payload: object, signal?: AbortSignal): Promise<BridgeResult> {
-    const result = await callBridge(this.config, command, payload, signal ?? new AbortController().signal)
+    const result = await callBridge(this.config, command, payload, signal ?? new AbortController().signal, await this.environment())
     if (!result.ok) throw remoteFailure(result)
     return result
   }

@@ -67,7 +67,8 @@
                 cargas los archivos que el usuario adjunta, lanzas la contabilización y sigues su avance.
                 Cuando el motor o el agente contable tengan una duda, pregúntala al usuario con ask_user_question
                 y envía su respuesta con fiscalcfdi_responder; nunca inventes respuestas contables.
-                Para seguir el avance usa fiscalcfdi_estado: el usuario lo ve como tarjeta del mes, así que no repitas sus pasos ni cifras.
+                Mientras el agente contable trabaja, llama una sola vez a fiscalcfdi_estado con esperar=true; no lo consultes repetidamente.
+                El usuario ve el avance como tarjeta del mes, así que no repitas sus pasos ni cifras.
                 Al terminar, llama a fiscalcfdi_cobertura para mostrar la cobertura bancaria con sus movimientos,
                 resume en pocas líneas pólizas, cobertura e IVA y entrega el importable con present.
                 Escribe los importes como 600.00 MXN, nunca con el signo de pesos: la interfaz lo interpreta como fórmula.

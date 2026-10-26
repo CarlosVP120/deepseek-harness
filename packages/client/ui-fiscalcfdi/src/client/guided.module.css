@@ -113,3 +113,17 @@
 
 /* start-page spacer in place of the landscape banner */
 .backdrop { flex: none; height: clamp(32px, 10vh, 112px); }
+
+/* a started month: progress, questions and result in place of the drop zones */
+.run { display: flex; flex-direction: column; gap: 14px; }
+.runHead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 16px; font-size: 13px; }
+.coverage { display: flex; flex-direction: column; gap: 6px; }
+.coverageLine { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; }
+.result { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: var(--dsw-alias-interactive-bg-hover-solid); font-size: 13px; }
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.metrics dt { color: var(--dsw-alias-label-tertiary); font-size: 12px; }
+.metrics dd { margin: 2px 0 0; font-size: 16px; font-weight: 600; }
+@media (max-width: 760px) {
+  .steps, .metrics { grid-template-columns: minmax(0, 1fr); }
+}

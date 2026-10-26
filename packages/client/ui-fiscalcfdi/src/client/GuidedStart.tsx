@@ -4,6 +4,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { FiscalcfdiCompany, FiscalcfdiMonthFile } from '@deepseek-ai/dsh-fiscalcfdi-tools/types'
 import { FiscalcfdiMark } from './brand-mark.tsx'
 import { monthLabel } from './format.ts'
+import { MonthRun } from './MonthRun.tsx'
 import type { MonthRegistry, SessionMonth } from './month-store.ts'
 import type { NS } from './locales.ts'
 import css from './guided.module.css'
@@ -165,13 +166,13 @@ function DropZone({ zone, files, ready, disabled, onFiles, t }: {
 /**
  * The start page of a blank chat, in place of the open composer: choose the
  * company and month, drop the month's files in three labelled sections, and
- * post. Starting the run sends the request to the chat, where the agent shows
- * its progress; a short question box keeps the chat open for anything else.
+ * post. Contabilizar starts the engine directly, and the same card then
+ * follows the run, takes the engine's questions and offers the importable, so
+ * no chat turn is spent on it; the question box hands anything else to the chat.
  */
 export function GuidedStart({ sessionId, inputActions, months, t }: Props) {
   const month = months.for(sessionId)
   const state = useSyncExternalStore(month.subscribe, month.getSnapshot)
-  const locale = t('time.locale')
   const [notice, setNotice] = useState<string | undefined>()
   const [question, setQuestion] = useState('')
   const [reply, setReply] = useState('')
@@ -189,6 +190,8 @@ export function GuidedStart({ sessionId, inputActions, months, t }: Props) {
     inputActions.setDraft(text)
     inputActions.submit()
   }
+  // Month tiles on the start page open their month here.
+  useEffect(() => months.showGuided(sessionId), [months, sessionId])
 
   const upload = async (zone: Zone, files: File[]) => {
     setNotice(undefined)
@@ -211,38 +214,37 @@ export function GuidedStart({ sessionId, inputActions, months, t }: Props) {
   const engineAsks = detail !== undefined && detail.estado === 'draft' && !detail.listo && detail.mensaje !== null
     && detail.mensaje.includes('¿') && missing.length === 0
   const canStart = detail !== undefined && detail.listo && !busy
-  const start = () => {
-    if (state.binding === null || state.binding === undefined) return
-    send(t('guided.startPrompt', { empresa: state.binding.empresa, periodo: monthLabel(state.binding.periodo, locale).toLowerCase() }))
-  }
+  const started = detail !== undefined && detail.estado !== 'draft'
 
   return <div className={css.root} data-fiscalcfdi-guided="">
     <h1 className={css.headline}><FiscalcfdiMark size={34} /><span>{t('guided.headline')} <em>{t('guided.headlineAccent')}</em></span></h1>
     <div className={css.card}>
       <CompanyMonth month={month} months={months} t={t} />
-      <div className={`${css.zones} ${bound ? '' : css.zonesLocked}`}>
-        {ZONES.map(zone => <DropZone key={zone} zone={zone} files={byZone[zone]} ready={ready[zone]} disabled={!bound || state.busy === 'upload'}
-          onFiles={(z, files) => { void upload(z, files) }} t={t} />)}
-      </div>
-      {state.busy === 'upload' && <p className={css.status}>{t('panel.uploading')}</p>}
-      {notice !== undefined && <p className={css.notice}>{notice}</p>}
-      {engineAsks && <div className={css.question}>
-        <p>{detail.mensaje}</p>
-        <div className={css.questionActions}>
-          <button type="button" className={css.primary} disabled={busy} onClick={() => { void month.answer('Sí, úsalas') }}>{t('guided.yesUseThem')}</button>
-          <input className={css.search} value={reply} placeholder={t('panel.replyPlaceholder')} disabled={busy}
-            onChange={(event) => { setReply(event.target.value) }}
-            onKeyDown={(event) => { if (event.key === 'Enter' && reply.trim() !== '') { void month.answer(reply.trim()); setReply('') } }} />
+      {started ? <MonthRun detail={detail} state={state} month={month} t={t} /> : <>
+        <div className={`${css.zones} ${bound ? '' : css.zonesLocked}`}>
+          {ZONES.map(zone => <DropZone key={zone} zone={zone} files={byZone[zone]} ready={ready[zone]} disabled={!bound || state.busy === 'upload'}
+            onFiles={(z, files) => { void upload(z, files) }} t={t} />)}
         </div>
-      </div>}
-      {state.error !== undefined && state.busy === undefined && bound && <p className={css.error}>{state.error}</p>}
-      <div className={css.footer}>
-        <span className={css.muted}>{!bound ? t('guided.firstChoose') : missing.length > 0
-          ? t('guided.missing', { items: missing.join(', ') }) : engineAsks ? t('guided.answerFirst') : t('guided.readyHint')}</span>
-        <button type="button" className={`${css.primary} ${css.start}`} disabled={!canStart} onClick={start}>
-          {t('guided.start')}
-        </button>
-      </div>
+        {state.busy === 'upload' && <p className={css.status}>{t('panel.uploading')}</p>}
+        {notice !== undefined && <p className={css.notice}>{notice}</p>}
+        {engineAsks && <div className={css.question}>
+          <p>{detail.mensaje}</p>
+          <div className={css.questionActions}>
+            <button type="button" className={css.primary} disabled={busy} onClick={() => { void month.answer('Sí, úsalas') }}>{t('guided.yesUseThem')}</button>
+            <input className={css.search} value={reply} placeholder={t('panel.replyPlaceholder')} disabled={busy}
+              onChange={(event) => { setReply(event.target.value) }}
+              onKeyDown={(event) => { if (event.key === 'Enter' && reply.trim() !== '') { void month.answer(reply.trim()); setReply('') } }} />
+          </div>
+        </div>}
+        {state.error !== undefined && state.busy === undefined && bound && <p className={css.error}>{state.error}</p>}
+        <div className={css.footer}>
+          <span className={css.muted}>{!bound ? t('guided.firstChoose') : missing.length > 0
+            ? t('guided.missing', { items: missing.join(', ') }) : engineAsks ? t('guided.answerFirst') : t('guided.readyHint')}</span>
+          <button type="button" className={`${css.primary} ${css.start}`} disabled={!canStart} onClick={() => { void month.process() }}>
+            {state.busy === 'process' ? t('panel.processing') : t('guided.start')}
+          </button>
+        </div>
+      </>}
     </div>
     <form className={css.ask} onSubmit={(event) => { event.preventDefault(); if (question.trim() !== '') send(question.trim()) }}>
       <input className={css.askInput} value={question} placeholder={t('guided.askPlaceholder')} aria-label={t('guided.askPlaceholder')}

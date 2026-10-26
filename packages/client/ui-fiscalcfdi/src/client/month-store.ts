@@ -178,6 +178,7 @@ export class SessionMonth {
 export class MonthRegistry {
   private readonly sessions = new Map<string, SessionMonth>()
   private companies: Promise<FiscalcfdiCompany[]> | undefined
+  private guided: string | undefined
 
   constructor(private readonly remote: MonthRemote) {}
 
@@ -189,6 +190,35 @@ export class MonthRegistry {
       this.sessions.set(sessionId, month)
     }
     return month
+  }
+
+  /**
+   * Record the Session whose guided start is on screen.
+   * @returns the disposer that forgets it when the guided start leaves.
+   */
+  showGuided(sessionId: string): () => void {
+    this.guided = sessionId
+    return () => { if (this.guided === sessionId) this.guided = undefined }
+  }
+
+  /**
+   * Open a company month in the guided start on screen.
+   * @returns false when no guided start is showing.
+   */
+  openInGuided(company: FiscalcfdiCompany, periodo: string): boolean {
+    if (this.guided === undefined) return false
+    void this.for(this.guided).select(company, periodo)
+    return true
+  }
+
+  /**
+   * Return the guided start on screen to choosing a company and month.
+   * @returns false when no guided start is showing.
+   */
+  startInGuided(): boolean {
+    if (this.guided === undefined) return false
+    void this.for(this.guided).clear()
+    return true
   }
 
   /** @returns the companies, read once and retried after a failure. */

@@ -11,6 +11,10 @@ import css from './fiscalcfdi.module.css'
 export interface MonthsPanelInjected {
   /** Read every company month from the engine. */
   loadMonths: () => Promise<FiscalcfdiMonth[]>
+  /** Open a month in the guided start; false when none is showing. */
+  openMonth: (month: FiscalcfdiMonth) => boolean
+  /** Return the guided start to choosing a month; false when none is showing. */
+  startMonth: () => boolean
 }
 
 type Props = PropsRuntime<'conversation.home.panels'> & PropsLocale<typeof NS> & InjectFace<MonthsPanelInjected>
@@ -22,9 +26,10 @@ type Load = { phase: 'loading' } | { phase: 'error' } | { phase: 'ready'; months
 
 /**
  * Start-page panel listing the accounting months by company with their state
- * and bank coverage; choosing one asks FiscalCFDI AI to open it in a new chat.
+ * and bank coverage. Choosing one opens it in the guided start without a chat
+ * turn; only without a guided start does the request go to the chat.
  */
-export function MonthsPanel({ compose, loadMonths, t }: Props) {
+export function MonthsPanel({ compose, loadMonths, openMonth, startMonth, t }: Props) {
   const [load, setLoad] = useState<Load>({ phase: 'loading' })
   const [all, setAll] = useState(false)
   const locale = t('time.locale')
@@ -48,14 +53,17 @@ export function MonthsPanel({ compose, loadMonths, t }: Props) {
   return <section className={css.monthsPanel} data-fiscalcfdi-months="">
     <header className={css.monthsHead}>
       <h2 className={css.monthsTitle}>{t('months.title')}{load.phase === 'ready' && <span className={css.muted}>{months.length}</span>}</h2>
-      <button type="button" className={css.newMonth} onClick={() => { compose(t('months.newPrompt'), false) }}>+ {t('months.new')}</button>
+      <button type="button" className={css.newMonth} onClick={() => { if (!startMonth()) compose(t('months.newPrompt'), false) }}>+ {t('months.new')}</button>
     </header>
     {load.phase === 'loading' && <p className={css.note}>{t('months.loading')}</p>}
     {load.phase === 'error' && <p className={css.note}>{t('months.error')} <button type="button" className={css.link} onClick={refresh}>{t('months.retry')}</button></p>}
     {load.phase === 'ready' && months.length === 0 && <p className={css.note}>{t('months.empty')}</p>}
     {shown.length > 0 && <div className={css.monthGrid}>
       {shown.map(m => <button type="button" key={`${m.rfc}-${m.periodo}`} className={css.monthTile}
-        onClick={() => { compose(t('months.prompt', { periodo: monthLabel(m.periodo, locale).toLowerCase(), empresa: m.empresa, rfc: m.rfc }), true) }}>
+        onClick={() => {
+          if (openMonth(m)) return
+          compose(t('months.prompt', { periodo: monthLabel(m.periodo, locale).toLowerCase(), empresa: m.empresa, rfc: m.rfc }), true)
+        }}>
         <span className={css.tileTop}>
           <span className={css.tilePeriod}>{monthLabel(m.periodo, locale)}</span>
           <StateChip state={m.estado} t={t} />

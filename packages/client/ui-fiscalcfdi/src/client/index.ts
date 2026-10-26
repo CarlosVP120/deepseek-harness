@@ -51,13 +51,6 @@ export const inject = ['remote', 'slots', 'locale', 'uiConversation', 'sidebarRi
 
 function registerUi(ctx: Context): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en, es }), 'ui-fiscalcfdi: dictionaries')
-  const panel: MonthsPanelInjected = {
-    loadMonths: async () => {
-      const result = await ctx.remote.fiscalcfdi.months()
-      if (!result.ok) throw result.error
-      return result.value
-    },
-  }
   // Inside the Tool group each call keeps its card; the Turn's latest ones
   // repeat beneath the closing reply, where the accountant reads the result.
   ctx.slots.inject('tool.call.toolview', function* () {
@@ -88,6 +81,15 @@ function registerUi(ctx: Context): void {
     importable: (rfc, periodo) => unwrap(ctx.remote.fiscalcfdi.importable({ rfc, periodo })),
   }
   const months = new MonthRegistry(remote)
+  const panel: MonthsPanelInjected = {
+    loadMonths: async () => {
+      const result = await ctx.remote.fiscalcfdi.months()
+      if (!result.ok) throw result.error
+      return result.value
+    },
+    openMonth: m => months.openInGuided({ rfc: m.rfc, nombre: m.empresa }, m.periodo),
+    startMonth: () => months.startInGuided(),
+  }
   const openPanel = (sessionId: string) => {
     const existing = ctx.sidebarRight.tabsIn(sessionId as SessionId).find(tab => tab.kind === MONTH_TAB_KIND)
     if (existing === undefined) {
@@ -104,7 +106,7 @@ function registerUi(ctx: Context): void {
   ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register({
     name: 'sidebar.right.pane.tab', key: MONTH_TAB_ID, locale: NS, inject: (): MonthPanelInjected => ({ months }),
   }, MonthPanel))
-  // A blank chat opens on the guided start instead of the open composer; the first message hands back to the chat.
+  // A blank chat opens on the guided start instead of the open composer; the run itself needs no chat turn.
   ctx.slots.inject('conversation.composer', () => ctx.slots.register({
     name: 'conversation.composer',
     priority: 10,
