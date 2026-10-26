@@ -19,6 +19,7 @@ import { createUserMessage, type ContextFormed } from '@deepseek-ai/dsh-llm'
 import { defineTool, type ToolExecution } from '@deepseek-ai/dsh-tools'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { SessionBindings } from './bindings.ts'
+import { AccountingRunner, type EngineLaunch } from './runner.ts'
 import type {
   FiscalcfdiAnswerRequest, FiscalcfdiBindRequest, FiscalcfdiBinding, FiscalcfdiCompany, FiscalcfdiImportable, FiscalcfdiMonth,
   FiscalcfdiMonthDetail, FiscalcfdiMonthRequest, FiscalcfdiSessionRequest, FiscalcfdiUploadRequest,
@@ -61,6 +62,15 @@ type BridgeResult = { ok: boolean; error?: string } & Record<string, unknown>
 
 /** Environment of one bridge call; `OPENROUTER_API_KEY` there overrides the engine's own `.env`. */
 type EngineEnvironment = () => Promise<NodeJS.ProcessEnv>
+
+/**
+ * One bridge call that also starts the native run of every month the call claimed: on `agent`, the chat
+ * agent that made the call, which then receives the planning instructions and tools; otherwise in the background.
+ */
+type EngineCall = (command: string, payload: object, signal: AbortSignal, agent?: Agent) => Promise<BridgeResult>
+
+/** Commands whose launch the calling chat agent hosts. */
+const HOSTING = new Set(['procesar', 'responder'])
 
 function callBridge(config: Config, command: string, payload: object, signal: AbortSignal, env: NodeJS.ProcessEnv): Promise<BridgeResult> {
   return new Promise((resolve, reject) => {
@@ -160,9 +170,9 @@ function pause(ms: number, signal: AbortSignal): Promise<void> {
   })
 }
 
-function registerTools(ctx: Context, config: Config, bindings: SessionBindings, environment: EngineEnvironment): void {
+function registerTools(ctx: Context, config: Config, bindings: SessionBindings, call: EngineCall, runner: AccountingRunner): void {
   const run = async (command: string, payload: object, signal: AbortSignal) => {
-    const result = await callBridge(config, command, payload, signal, await environment())
+    const result = await call(command, payload, signal)
     if (!result.ok) throw new Error(result.error ?? 'Error del motor FiscalCFDI AI')
     return JSON.stringify(result, null, 1)
   }
@@ -176,13 +186,17 @@ function registerTools(ctx: Context, config: Config, bindings: SessionBindings, 
       throw new Error('No hay empresa y mes seleccionados. Pregúntale al usuario cuáles, o pídele que los elija en el selector junto a la caja de texto.')
     }
     const { esperar, ...payload } = args
-    const env = await environment()
-    let result = await callBridge(config, command, { ...payload, rfc, periodo }, exec.signal, env)
-    // A waiting status read follows the run here, without model turns, until it stops running.
+    const host = HOSTING.has(command) ? exec.agent : undefined
+    // The attempt in progress ends first, so the engine has recorded its questions before the answer arrives.
+    if (host !== undefined) await runner.finishSession(host.session.id)
+    let result = await call(command, { ...payload, rfc, periodo }, exec.signal, host)
+    // A waiting status read follows the run here, without model turns, until it stops running;
+    // a run this same chat hosts never waits on itself.
     const deadline = Date.now() + config.waitMs
-    while (esperar === true && result.ok && result.estado === 'running' && Date.now() < deadline) {
+    const hosted = session !== undefined && runner.hosts(session)
+    while (esperar === true && !hosted && result.ok && result.estado === 'running' && Date.now() < deadline) {
       await pause(config.waitPollMs, exec.signal)
-      result = await callBridge(config, command, { ...payload, rfc, periodo }, exec.signal, env)
+      result = await call(command, { ...payload, rfc, periodo }, exec.signal)
     }
     if (!result.ok) throw new Error(result.error ?? 'Error del motor FiscalCFDI AI')
     if (session !== undefined && SELECTING.has(command)) {
@@ -232,7 +246,7 @@ function registerTools(ctx: Context, config: Config, bindings: SessionBindings, 
 
   ctx.tools.register(defineTool({
     name: 'fiscalcfdi_responder',
-    description: 'Envía al motor la respuesta del usuario: a una pregunta del agente contable (estado "waiting"), a una confirmación de preparación (por ejemplo qué hojas del PDT usar) o una corrección sobre un resultado terminado, que reabre el mes para un nuevo intento auditado. Usa las palabras del usuario; nunca inventes respuestas contables.',
+    description: 'Envía al motor la respuesta del usuario: a una pregunta del agente contable (estado "waiting"), a una confirmación de preparación (por ejemplo qué hojas del PDT usar) o una corrección sobre un resultado terminado, que reabre el mes para un nuevo intento auditado. Cuando se abre el nuevo intento devuelve otra vez agente_contable: continúa la contabilización con esas herramientas. Usa las palabras del usuario; nunca inventes respuestas contables.',
     parameters: {
       ...month,
       texto: { type: 'string', required: true, description: 'Respuesta o instrucción del usuario, en sus propias palabras.' },
@@ -245,7 +259,7 @@ function registerTools(ctx: Context, config: Config, bindings: SessionBindings, 
 
   ctx.tools.register(defineTool({
     name: 'fiscalcfdi_procesar',
-    description: 'Inicia la contabilización autónoma del mes: el agente contable consulta el historial de CONTPAQi, aplica las políticas de la empresa, concilia bancos, genera pólizas y las audita. Corre en segundo plano y tarda varios minutos; después llama una vez a fiscalcfdi_estado con esperar=true. Si falta información, devuelve qué falta sin iniciar.',
+    description: 'Inicia la contabilización del mes. El motor prepara el expediente (fuentes, historial de CONTPAQi y catálogo; puede tardar un par de minutos) y devuelve en agente_contable las instrucciones, la tarea y las herramientas del agente contable (inspect_case, search_history, preview_plan, generate_importable…). Desde ese momento tú eres el agente contable: sigue esas instrucciones en esta misma conversación hasta generar el importable auditado. Si falta información, devuelve qué falta sin iniciar.',
     parameters: month,
     output: monthOutput,
     execute: (args, exec) => runMonth('procesar', args, exec),
@@ -342,11 +356,12 @@ function monthDetail(raw: BridgeResult): FiscalcfdiMonthDetail {
  * through the `fiscalcfdi` Remote namespace.
  */
 export class Fiscalcfdi extends TypertRemoteService {
-  static inject = ['tools', 'agents']
+  static inject = ['tools', 'agents', 'agentDefaultModel', 'sessionTitle', 'workspaceRegistry']
   static Config = Config
 
   private readonly bindings: SessionBindings
   private readonly uploads: string
+  private readonly runner: AccountingRunner
 
   /**
    * @param ctx - Host context owning the tool registry and agent steps.
@@ -357,7 +372,8 @@ export class Fiscalcfdi extends TypertRemoteService {
     const home = process.env.DSH_HOME ?? join(homedir(), '.fiscalcfdi-ai')
     this.bindings = new SessionBindings(home)
     this.uploads = join(home, 'fiscalcfdi', 'uploads')
-    registerTools(ctx, config, this.bindings, this.environment)
+    this.runner = new AccountingRunner(ctx, { python: config.python, home, environment: this.environment })
+    registerTools(ctx, config, this.bindings, this.call, this.runner)
     // Each turn's first request carries the month the user selected, so the agent never asks for it again.
     ctx.on('agent/pre-step', async ({ agent, step }: { agent: Agent; step: number }, next: () => Promise<PreStepDecision>) => {
       const decision = await next()
@@ -377,14 +393,35 @@ export class Fiscalcfdi extends TypertRemoteService {
     }, { prepend: true })
   }
 
-  /** The engine's environment: this process's, with the OpenRouter key stored in the Models settings when there is one. */
+  /**
+   * The engine's environment: this process's, with the OpenRouter key stored in the Models settings when
+   * there is one, and `FISCALCFDI_AGENT_HOST=app` so months it claims run their planning agent in this app.
+   */
   private readonly environment: EngineEnvironment = async () => {
     const stored = await this.ctx.get('credentials')?.resolve(credentialRef(this.config.apiKeyRef))
-    return stored === undefined ? process.env : { ...process.env, OPENROUTER_API_KEY: stored.value }
+    return { ...process.env, FISCALCFDI_AGENT_HOST: 'app', ...stored === undefined ? {} : { OPENROUTER_API_KEY: stored.value } }
+  }
+
+  private readonly call: EngineCall = async (command, payload, signal, agent) => {
+    let result = await callBridge(this.config, command, payload, signal, await this.environment())
+    for (const launch of list<EngineLaunch>(result.lanzar)) {
+      if (agent === undefined) {
+        this.runner.start(launch)
+        continue
+      }
+      const spec = await this.runner.attach(launch, agent)
+      // A failed preparation (for example SQL) is already recorded on the month; report it as it stands now.
+      if (spec === undefined) result = { ...result, ...await callBridge(this.config, 'estado', payload, signal, await this.environment()) }
+      else {
+        const herramientas = spec.tools.map(tool => tool.name)
+        result = { ...result, agente_contable: { instrucciones: spec.instructions, tarea: spec.message, herramientas } }
+      }
+    }
+    return result
   }
 
   private async bridge(command: string, payload: object, signal?: AbortSignal): Promise<BridgeResult> {
-    const result = await callBridge(this.config, command, payload, signal ?? new AbortController().signal, await this.environment())
+    const result = await this.call(command, payload, signal ?? new AbortController().signal)
     if (!result.ok) throw remoteFailure(result)
     return result
   }

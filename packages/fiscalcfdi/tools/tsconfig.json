@@ -28,6 +28,27 @@
     },
     {
       "path": "../../credentials/credentials"
+    },
+    {
+      "path": "../../core/agent-default-model"
+    },
+    {
+      "path": "../../util/brand"
+    },
+    {
+      "path": "../../core/session"
+    },
+    {
+      "path": "../../session/session-title"
+    },
+    {
+      "path": "../../subagent/subagent"
+    },
+    {
+      "path": "../../core/system-prompt"
+    },
+    {
+      "path": "../../workspace/workspace"
     }
   ]
 }

@@ -165,14 +165,15 @@ function DropZone({ zone, files, ready, disabled, onFiles, t }: {
 
 /**
  * The start page of a blank chat, in place of the open composer: choose the
- * company and month, drop the month's files in three labelled sections, and
- * post. Contabilizar starts the engine directly, and the same card then
- * follows the run, takes the engine's questions and offers the importable, so
- * no chat turn is spent on it; the question box hands anything else to the chat.
+ * company and month and drop the month's files in three labelled sections.
+ * Contabilizar sends the request to the chat, where the agent posts the month
+ * in the conversation. A month already started shows its state, with the next
+ * step handed to the chat as well.
  */
 export function GuidedStart({ sessionId, inputActions, months, t }: Props) {
   const month = months.for(sessionId)
   const state = useSyncExternalStore(month.subscribe, month.getSnapshot)
+  const locale = t('time.locale')
   const [notice, setNotice] = useState<string | undefined>()
   const [question, setQuestion] = useState('')
   const [reply, setReply] = useState('')
@@ -215,12 +216,17 @@ export function GuidedStart({ sessionId, inputActions, months, t }: Props) {
     && detail.mensaje.includes('¿') && missing.length === 0
   const canStart = detail !== undefined && detail.listo && !busy
   const started = detail !== undefined && detail.estado !== 'draft'
+  /** Send a request about the bound month to the chat. */
+  const ask = (key: 'guided.startPrompt' | 'run.continuePrompt' | 'run.retryPrompt') => {
+    if (state.binding === null || state.binding === undefined) return
+    send(t(key, { empresa: state.binding.empresa, periodo: monthLabel(state.binding.periodo, locale).toLowerCase() }))
+  }
 
   return <div className={css.root} data-fiscalcfdi-guided="">
     <h1 className={css.headline}><FiscalcfdiMark size={34} /><span>{t('guided.headline')} <em>{t('guided.headlineAccent')}</em></span></h1>
     <div className={css.card}>
       <CompanyMonth month={month} months={months} t={t} />
-      {started ? <MonthRun detail={detail} state={state} month={month} t={t} /> : <>
+      {started ? <MonthRun detail={detail} state={state} month={month} t={t} onChat={ask} /> : <>
         <div className={`${css.zones} ${bound ? '' : css.zonesLocked}`}>
           {ZONES.map(zone => <DropZone key={zone} zone={zone} files={byZone[zone]} ready={ready[zone]} disabled={!bound || state.busy === 'upload'}
             onFiles={(z, files) => { void upload(z, files) }} t={t} />)}
@@ -240,8 +246,8 @@ export function GuidedStart({ sessionId, inputActions, months, t }: Props) {
         <div className={css.footer}>
           <span className={css.muted}>{!bound ? t('guided.firstChoose') : missing.length > 0
             ? t('guided.missing', { items: missing.join(', ') }) : engineAsks ? t('guided.answerFirst') : t('guided.readyHint')}</span>
-          <button type="button" className={`${css.primary} ${css.start}`} disabled={!canStart} onClick={() => { void month.process() }}>
-            {state.busy === 'process' ? t('panel.processing') : t('guided.start')}
+          <button type="button" className={`${css.primary} ${css.start}`} disabled={!canStart} onClick={() => { ask('guided.startPrompt') }}>
+            {t('guided.start')}
           </button>
         </div>
       </>}

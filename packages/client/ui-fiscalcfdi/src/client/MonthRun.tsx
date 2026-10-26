@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { FiscalcfdiMonthDetail } from '@deepseek-ai/dsh-fiscalcfdi-tools/types'
 import { money } from './format.ts'
@@ -13,27 +12,19 @@ type T = PropsLocale<typeof NS>['t']
 /** States after which the month can be started again. */
 const RETRYABLE = new Set(['failed', 'blocked', 'cancelled'])
 
-function Answer({ t, busy, onSend }: { t: T; busy: boolean; onSend: (text: string) => void }) {
-  const [text, setText] = useState('')
-  const send = () => {
-    if (text.trim() === '') return
-    onSend(text.trim())
-    setText('')
-  }
-  return <div className={css.questionActions}>
-    <input className={css.search} value={text} placeholder={t('panel.replyPlaceholder')} disabled={busy}
-      onChange={(event) => { setText(event.target.value) }}
-      onKeyDown={(event) => { if (event.key === 'Enter') send() }} />
-    <button type="button" className={css.primary} disabled={busy || text.trim() === ''} onClick={send}>{t('panel.reply')}</button>
-  </div>
-}
-
 /**
  * A started month inside the guided start: the engine's steps and live bank
- * coverage, its questions answered in place, and the audited result with the
- * importable. Everything reads the engine directly; no chat turn runs.
+ * coverage, the audited result with the importable, and the next step —
+ * answering the agent's question or retrying — handed to the chat.
  */
-export function MonthRun({ detail, state, month, t }: { detail: FiscalcfdiMonthDetail; state: MonthState; month: SessionMonth; t: T }) {
+export function MonthRun({ detail, state, month, t, onChat }: {
+  detail: FiscalcfdiMonthDetail
+  state: MonthState
+  month: SessionMonth
+  t: T
+  /** Send the request for this step to the chat. */
+  onChat: (prompt: 'run.continuePrompt' | 'run.retryPrompt') => void
+}) {
   const locale = t('time.locale')
   const busy = state.busy !== undefined
   const result = detail.resultado
@@ -55,10 +46,7 @@ export function MonthRun({ detail, state, month, t }: { detail: FiscalcfdiMonthD
       <CoverageBar covered={detail.cubiertos} total={detail.total} />
     </div>}
 
-    {detail.preguntas.map(question => <div key={question.id} className={css.question}>
-      <p>{question.pregunta}</p>
-      <Answer t={t} busy={busy} onSend={(text) => { void month.answer(text, question.id) }} />
-    </div>)}
+    {detail.preguntas.map(question => <div key={question.id} className={css.question}><p>{question.pregunta}</p></div>)}
 
     {result !== null && <div className={css.result}>
       <span className={result.auditoria_aprobada ? panel.okText : panel.warnText}>
@@ -78,8 +66,10 @@ export function MonthRun({ detail, state, month, t }: { detail: FiscalcfdiMonthD
         ? 'run.waitingHint' : detail.estado === 'completed' ? 'run.doneHint' : 'run.stoppedHint')}</span>
       {detail.importable && <button type="button" className={`${css.primary} ${css.start}`} disabled={busy} onClick={() => { void month.download() }}>
         {state.busy === 'download' ? t('panel.downloading') : `⬇ ${t('panel.download')}`}</button>}
-      {RETRYABLE.has(detail.estado) && <button type="button" className={`${css.primary} ${css.start}`} disabled={busy} onClick={() => { void month.process() }}>
-        {state.busy === 'process' ? t('panel.processing') : t('run.retry')}</button>}
+      {detail.estado === 'waiting' && <button type="button" className={`${css.primary} ${css.start}`} onClick={() => { onChat('run.continuePrompt') }}>
+        {t('run.answerInChat')}</button>}
+      {RETRYABLE.has(detail.estado) && <button type="button" className={`${css.primary} ${css.start}`} onClick={() => { onChat('run.retryPrompt') }}>
+        {t('run.retry')}</button>}
     </div>
   </div>
 }
