@@ -11,8 +11,8 @@ import css from './fiscalcfdi.module.css'
 export interface MonthsPanelInjected {
   /** Read every company month from the engine. */
   loadMonths: () => Promise<FiscalcfdiMonth[]>
-  /** Open a month in the guided start; false when none is showing. */
-  openMonth: (month: FiscalcfdiMonth) => boolean
+  /** Open a month in its chat, or in the guided start; resolves false when neither is available. */
+  openMonth: (month: FiscalcfdiMonth) => Promise<boolean>
   /** Return the guided start to choosing a month; false when none is showing. */
   startMonth: () => boolean
 }
@@ -26,8 +26,8 @@ type Load = { phase: 'loading' } | { phase: 'error' } | { phase: 'ready'; months
 
 /**
  * Start-page panel listing the accounting months by company with their state
- * and bank coverage. Choosing one opens it in the guided start without a chat
- * turn; only without a guided start does the request go to the chat.
+ * and bank coverage. Choosing one opens the chat that works on it, or the
+ * guided start when no chat keeps it; only without either does a request go to the chat.
  */
 export function MonthsPanel({ compose, loadMonths, openMonth, startMonth, t }: Props) {
   const [load, setLoad] = useState<Load>({ phase: 'loading' })
@@ -61,8 +61,9 @@ export function MonthsPanel({ compose, loadMonths, openMonth, startMonth, t }: P
     {shown.length > 0 && <div className={css.monthGrid}>
       {shown.map(m => <button type="button" key={`${m.rfc}-${m.periodo}`} className={css.monthTile}
         onClick={() => {
-          if (openMonth(m)) return
-          compose(t('months.prompt', { periodo: monthLabel(m.periodo, locale).toLowerCase(), empresa: m.empresa, rfc: m.rfc }), true)
+          void openMonth(m).then((opened) => {
+            if (!opened) compose(t('months.prompt', { periodo: monthLabel(m.periodo, locale).toLowerCase(), empresa: m.empresa, rfc: m.rfc }), true)
+          })
         }}>
         <span className={css.tileTop}>
           <span className={css.tilePeriod}>{monthLabel(m.periodo, locale)}</span>

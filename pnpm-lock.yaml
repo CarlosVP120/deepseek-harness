@@ -3913,6 +3913,9 @@ importers:
       '@deepseek-ai/dsh-client-ui-tool':
         specifier: workspace:*
         version: link:../ui-tool
+      '@deepseek-ai/dsh-client-ui-workspace':
+        specifier: workspace:*
+        version: link:../ui-workspace
       '@deepseek-ai/dsh-fiscalcfdi-tools':
         specifier: workspace:*
         version: link:../../fiscalcfdi/tools

@@ -43,6 +43,32 @@ export class SessionBindings {
     if (this.entries.delete(sessionId)) this.save()
   }
 
+  /**
+   * Drop the bindings of Sessions that no longer exist.
+   * @param live - every Session that still exists, archived ones included.
+   * @returns the months that no remaining Session is bound to.
+   */
+  prune(live: ReadonlySet<string>): FiscalcfdiBinding[] {
+    const dropped = [...this.entries].filter(([sessionId]) => !live.has(sessionId))
+    if (dropped.length === 0) return []
+    for (const [sessionId] of dropped) this.entries.delete(sessionId)
+    this.save()
+    const kept = new Set([...this.entries.values()].map(binding => `${binding.rfc}|${binding.periodo}`))
+    const orphaned = new Map<string, FiscalcfdiBinding>()
+    for (const [, binding] of dropped) {
+      const key = `${binding.rfc}|${binding.periodo}`
+      if (!kept.has(key)) orphaned.set(key, binding)
+    }
+    return [...orphaned.values()]
+  }
+
+  /** @returns the Session bound to a company month most recently, if any. */
+  latestFor(rfc: string, periodo: string): string | undefined {
+    let latest: string | undefined
+    for (const [sessionId, binding] of this.entries) if (binding.rfc === rfc && binding.periodo === periodo) latest = sessionId
+    return latest
+  }
+
   private save(): void {
     mkdirSync(dirname(this.path), { recursive: true })
     const temporary = `${this.path}.tmp`

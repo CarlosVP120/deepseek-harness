@@ -15,6 +15,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-tool/client'
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { CoverageCard } from './CoverageCard.tsx'
 import { MonthCard } from './MonthCard.tsx'
@@ -89,7 +90,16 @@ function registerUi(ctx: Context): void {
       if (!result.ok) throw result.error
       return result.value
     },
-    openMonth: m => months.openInGuided({ rfc: m.rfc, nombre: m.empresa }, m.periodo),
+    // A month opens in the chat that works on it; without one, in the guided start on screen.
+    openMonth: async (m) => {
+      const sessionId = await unwrap(ctx.remote.fiscalcfdi.monthSession({ rfc: m.rfc, periodo: m.periodo }))
+      const navigation = ctx.get('uiWorkspace')
+      if (sessionId !== null && navigation !== undefined) {
+        navigation.openSession(sessionId as SessionId)
+        return true
+      }
+      return months.openInGuided({ rfc: m.rfc, nombre: m.empresa }, m.periodo)
+    },
     startMonth: () => months.startInGuided(),
   }
   const openPanel = (sessionId: string) => {

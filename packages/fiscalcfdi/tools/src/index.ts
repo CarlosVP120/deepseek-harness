@@ -433,7 +433,44 @@ export class Fiscalcfdi extends TypertRemoteService {
    */
   @Remote('months')
   async months(signal?: AbortSignal): Promise<FiscalcfdiMonth[]> {
+    await this.reconcile(signal)
     return (await this.bridge('meses', {}, signal)).meses as FiscalcfdiMonth[]
+  }
+
+  /**
+   * The chat that works on a company month, so the start page can open it.
+   * @param request - the company month.
+   * @returns the Session bound to it most recently, or null when no chat keeps it.
+   */
+  @Remote('monthSession')
+  monthSession(request: FiscalcfdiMonthRequest): string | null {
+    const sessionId = this.bindings.latestFor(request.rfc, request.periodo)
+    return sessionId !== undefined && this.liveSessions().has(sessionId) ? sessionId : null
+  }
+
+  /** Every Session that still exists in a workspace, archived ones included. */
+  private liveSessions(): Set<string> {
+    const live = new Set<string>()
+    for (const workspace of this.ctx.workspaceRegistry.list()) for (const sessionId of workspace.sessionIds) live.add(sessionId)
+    return live
+  }
+
+  /**
+   * Keep months in step with their chats: bindings of deleted chats go, and a month no chat keeps
+   * any more is archived by the engine (its files move to the engine's archive folder).
+   */
+  private async reconcile(signal?: AbortSignal): Promise<void> {
+    const live = this.liveSessions()
+    // Before the workspaces load there is no Session to compare against; never read that as "every chat was deleted".
+    if (live.size === 0) return
+    for (const month of this.bindings.prune(live)) {
+      try {
+        await this.bridge('archivar_mes', { rfc: month.rfc, periodo: month.periodo }, signal)
+      } catch (error) {
+        // An archive that fails leaves the month listed; the next read does not retry it, so log it.
+        this.ctx.logger.warn(`fiscalcfdi: archiving ${month.rfc} ${month.periodo} failed: ${String(error)}`)
+      }
+    }
   }
 
   /**

@@ -24,6 +24,8 @@ When a bridge call claims a month (`procesar`, or `responder` once every questio
 
 Without `FISCALCFDI_AGENT_HOST`, the engine keeps running the agent with its own OpenRouter client (`motor-independiente-2026-10-26` tags that state in both repositories).
 
+Months follow their chats. Each read of the Remote `months` first drops the bindings of Sessions no workspace lists any more (a deleted chat or project; archived chats still count) and asks the engine to archive every month left without a bound chat: `archivar_mes` moves the month's folder, attempts and importables to the engine's `data/archivo` and removes it from the active list, never touching a month being posted. `monthSession` returns the chat bound to a month most recently, so the start page opens that chat.
+
 The Remote `sqlConnection`, `checkSql` and `refreshCompanies` methods serve the CONTPAQi settings page; the password reaches the engine on `checkSql` only and is never returned.
 
 `fiscalcfdi_estado` with `esperar: true` re-reads a running month in the Host, without model turns, and returns once it stops running, asks a question, or `waitMs` passes; the model makes one call per wait instead of polling.
