@@ -9,10 +9,11 @@
  * beside this repository), the target from the usual Desktop target variables,
  * and Python with pip on PATH (`python3`; `python` on Windows) to install the target's wheels.
  */
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
+import type { Readable, Writable } from 'node:stream'
 import { desktopTargetBuildPaths, resolveDesktopBuildTarget } from './desktop-build-paths.mjs'
 
 const REPOSITORY_ROOT = resolve(import.meta.dirname, '../../..')
@@ -69,6 +70,17 @@ async function download(url: string, file: string, sha256: string): Promise<void
   writeFileSync(file, bytes)
 }
 
+/** Echo one line through fd 3 → fd 4 of the bundled interpreter, as the app's worker channel does. */
+async function echoOverChannel(python: string, env: NodeJS.ProcessEnv): Promise<string> {
+  const code = 'import os\ninbox = os.fdopen(3, "rb")\noutbox = os.fdopen(4, "wb")\noutbox.write(inbox.readline())\noutbox.flush()'
+  const child = spawn(python, ['-c', code], { stdio: ['ignore', 'ignore', 'inherit', 'pipe', 'pipe'], env })
+  let output = ''
+  ;(child.stdio[4] as Readable).on('data', (chunk: Buffer) => { output += chunk.toString('utf8') })
+  ;(child.stdio[3] as Writable).end('ping\n')
+  await new Promise<void>((resolveExit) => { child.once('close', () => { resolveExit() }) })
+  return output.trim()
+}
+
 async function main(): Promise<void> {
   const target = resolveDesktopBuildTarget()
   const spec = TARGETS[target]
@@ -113,6 +125,8 @@ async function main(): Promise<void> {
     run(python, ['-c', 'import agents, openai, pymssql, openpyxl, pypdf, xlrd, xlwt, sqlglot'], { env })
     const answer = spawnSync(python, [join(engine, 'motor', 'harness', 'fiscalcfdi-plugin', 'bridge.py'), 'empresas'], { input: '{}', encoding: 'utf8', env })
     if (!answer.stdout.includes('"ok": true')) throw new Error(`prepare-fiscalcfdi-engine: bridge smoke failed: ${answer.stdout} ${answer.stderr}`)
+    // The app talks to the engine's worker on fd 3 and fd 4; the bundled interpreter must inherit both.
+    if (await echoOverChannel(python, env) !== 'ping') throw new Error('prepare-fiscalcfdi-engine: the worker channel (fd 3 and 4) did not echo')
     rmSync(data, { recursive: true, force: true })
   }
   process.stdout.write(`prepare-fiscalcfdi-engine: ${target} engine ${commit.slice(0, 10)} with Python ${VERSION}\n`)
