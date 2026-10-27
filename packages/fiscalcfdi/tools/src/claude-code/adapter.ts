@@ -5,7 +5,7 @@
  * (titles, summaries) run a short `claude -p` without tools.
  */
 import { spawn } from 'node:child_process'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
   LlmAdapter, ReasoningEffortId, type GenerateOptions, type LlmModelInfo, type LlmProviderInfo, type LlmResolvedModelInfo,
@@ -180,6 +180,7 @@ export class ClaudeCodeAdapter extends LlmAdapter {
       child.once('close', resolve)
     })
     options.signal?.removeEventListener('abort', abort)
+    await rm(prompt, { force: true })
     if (options.signal?.aborted === true) {
       yield { type: 'finish', reason: { kind: 'aborted', failure: { code: 'ABORTED', message: 'Solicitud cancelada' } } }
       return

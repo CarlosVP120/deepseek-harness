@@ -53,7 +53,7 @@ export class ToolGateway {
   /**
    * Open a channel for one Claude Code process.
    * @param call - runs a tool call and resolves with what Claude Code receives.
-   * @returns the channel, with the `--mcp-config` value that reaches it.
+   * @returns the channel, with the MCP configuration (JSON) that reaches it.
    */
   async open(call: Channel['call']): Promise<GatewayChannel> {
     const { port } = await (this.server ??= this.listen())

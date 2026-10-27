@@ -6,7 +6,7 @@
  * across the whole turn while the harness runs, records and shows every tool call as usual.
  */
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
   ToolCallId, type ContentBlock, type ContentBlockType, type LlmFailure, type RequestMessage, type StreamChunk,
@@ -135,11 +135,15 @@ export class ClaudeConversation {
     this.channel = await this.options.gateway.open((name, args) => this.called(name, args))
     this.channel.setTools(this.tools)
     await mkdir(this.options.cwd, { recursive: true })
-    const prompt = join(this.options.cwd, `system-${process.pid}-${Date.now()}.md`)
+    // The prompt and MCP configuration go in files: long or quoted arguments are fragile on Windows.
+    const stem = join(this.options.cwd, `session-${process.pid}-${Date.now()}`)
+    const prompt = `${stem}.md`
+    const mcp = `${stem}.mcp.json`
     await writeFile(prompt, this.options.system + TOOL_NAMING)
+    await writeFile(mcp, this.channel.config)
     const args = [
       '-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--include-partial-messages',
-      '--strict-mcp-config', '--mcp-config', this.channel.config, '--setting-sources', '', '--tools', '',
+      '--strict-mcp-config', '--mcp-config', mcp, '--setting-sources', '', '--tools', '',
       '--allowedTools', `mcp__${SERVER}`, '--permission-mode', 'dontAsk', '--no-session-persistence',
       '--model', this.options.model, '--system-prompt-file', prompt,
       ...this.options.effort === undefined ? [] : ['--effort', this.options.effort],
@@ -164,7 +168,10 @@ export class ClaudeConversation {
     })
     child.stderr.on('data', (chunk: Buffer) => { this.stderr = `${this.stderr}${chunk.toString('utf8')}`.slice(-4000) })
     child.once('error', (error) => { this.exit(String(error)) })
-    child.once('close', (code) => { this.exit(`Claude Code terminó (código ${String(code)})`) })
+    child.once('close', (code) => {
+      this.exit(`Claude Code terminó (código ${String(code)})`)
+      for (const file of [prompt, mcp]) void rm(file, { force: true })
+    })
   }
 
   /** Offer the request's tools; Claude Code relists them when they changed. */
