@@ -178,6 +178,8 @@ export class SessionMonth {
 export class MonthRegistry {
   private readonly sessions = new Map<string, SessionMonth>()
   private companies: Promise<FiscalcfdiCompany[]> | undefined
+  private companiesRead = 0
+  private readonly companyListeners = new Set<() => void>()
   private guided: string | undefined
 
   constructor(private readonly remote: MonthRemote) {}
@@ -221,14 +223,28 @@ export class MonthRegistry {
     return true
   }
 
-  /** Read the companies again on next use, after they were refreshed from CONTPAQi. */
+  /** Read the companies again, after they were refreshed from CONTPAQi; views showing them read the new list. */
   forgetCompanies(): void {
     this.companies = undefined
+    this.companiesRead += 1
+    for (const listener of this.companyListeners) listener()
   }
 
-  /** @returns the companies, read once and retried after a failure. */
+  /** @returns a counter that changes whenever the company list must be read again. */
+  readonly getCompaniesVersion = (): number => this.companiesRead
+
+  /** Subscribe to {@link forgetCompanies}; @returns the unsubscriber. */
+  readonly subscribeCompanies = (listener: () => void): (() => void) => {
+    this.companyListeners.add(listener)
+    return () => { this.companyListeners.delete(listener) }
+  }
+
+  /** @returns the companies, read once; a failure or an empty list is read again on next use. */
   listCompanies(): Promise<FiscalcfdiCompany[]> {
-    this.companies ??= this.remote.companies().catch((error: unknown) => {
+    this.companies ??= this.remote.companies().then((companies) => {
+      if (companies.length === 0) this.companies = undefined
+      return companies
+    }, (error: unknown) => {
       this.companies = undefined
       throw error
     })

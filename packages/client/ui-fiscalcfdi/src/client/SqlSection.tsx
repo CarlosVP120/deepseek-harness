@@ -52,18 +52,6 @@ export function SqlSection({ loadSql, checkSql, refreshCompanies, t }: Props) {
     setForm(current => ({ ...current, ...patch }))
     setStatus(undefined)
   }
-  const check = async (save: boolean) => {
-    setStatus({ tone: 'busy', text: t('sql.testing') })
-    try {
-      const result = await checkSql(form, save)
-      setSaved(result.connection)
-      setForm(current => ({ ...current, password: '' }))
-      const version = result.version === null ? '' : ` ${t('sql.version', { version: result.version.split('.')[0] ?? result.version })}`
-      setStatus({ tone: 'ok', text: (save ? t('sql.saved') : t('sql.connected')) + version + (result.changed ? ` ${t('sql.refreshHint')}` : '') })
-    } catch (error) {
-      setStatus({ tone: 'error', text: message(error) })
-    }
-  }
   const refresh = async () => {
     setCompanies({ tone: 'busy', text: t('sql.refreshing') })
     try {
@@ -72,6 +60,21 @@ export function SqlSection({ loadSql, checkSql, refreshCompanies, t }: Props) {
     } catch (error) {
       setCompanies({ tone: 'error', text: message(error) })
     }
+  }
+  const check = async (save: boolean) => {
+    setStatus({ tone: 'busy', text: t('sql.testing') })
+    try {
+      const result = await checkSql(form, save)
+      setSaved(result.connection)
+      setForm(current => ({ ...current, password: '' }))
+      const version = result.version === null ? '' : ` ${t('sql.version', { version: result.version.split('.')[0] ?? result.version })}`
+      setStatus({ tone: 'ok', text: (save ? t('sql.saved') : t('sql.connected')) + version })
+    } catch (error) {
+      setStatus({ tone: 'error', text: message(error) })
+      return
+    }
+    // A saved connection can name another server: its companies replace the list right away.
+    if (save) await refresh()
   }
 
   return <section className={css.section} data-fiscalcfdi-sql="">

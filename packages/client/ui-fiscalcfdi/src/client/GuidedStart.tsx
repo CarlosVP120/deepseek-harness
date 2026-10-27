@@ -50,9 +50,13 @@ function CompanyMonth({ month, months, t }: { month: SessionMonth; months: Month
   const [{ year, month: monthNumber }, setPeriod] = useState(previousMonth)
   const bound = state.binding
   const open = editing || bound === null
+  const companiesVersion = useSyncExternalStore(months.subscribeCompanies, months.getCompaniesVersion)
   useEffect(() => {
-    if (open && companies === undefined) months.listCompanies().then(setCompanies, () => { setCompanies('error') })
-  }, [open, companies, months])
+    if (!open) return
+    let current = true
+    months.listCompanies().then((list) => { if (current) setCompanies(list) }, () => { if (current) setCompanies('error') })
+    return () => { current = false }
+  }, [open, companiesVersion, months])
   const visible = useMemo(() => {
     if (!Array.isArray(companies)) return []
     const needle = normalize(query.trim())
