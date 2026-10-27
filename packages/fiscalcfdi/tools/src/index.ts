@@ -18,11 +18,13 @@ import { createUserMessage, type ContextFormed } from '@deepseek-ai/dsh-llm'
 import { defineTool, type ToolExecution } from '@deepseek-ai/dsh-tools'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { SessionBindings } from './bindings.ts'
+import { CLAUDE_CODE_PROVIDER, ClaudeCodeAdapter } from './claude-code/adapter.ts'
+import { ClaudeLogin, claudeLogout, claudeStatus, installClaude, locateClaude } from './claude-code/cli.ts'
 import { AccountingRunner, type EngineLaunch } from './runner.ts'
 import type {
   FiscalcfdiAnswerRequest, FiscalcfdiBindRequest, FiscalcfdiBinding, FiscalcfdiCompany, FiscalcfdiImportable, FiscalcfdiMonth,
   FiscalcfdiMonthDetail, FiscalcfdiMonthRequest, FiscalcfdiSessionRequest, FiscalcfdiUploadRequest,
-  FiscalcfdiCompanyRefresh, FiscalcfdiSqlCheck, FiscalcfdiSqlConnection, FiscalcfdiSqlRequest,
+  FiscalcfdiCompanyRefresh, FiscalcfdiSqlCheck, FiscalcfdiSqlConnection, FiscalcfdiSqlRequest, ClaudeCodeLogin, ClaudeCodeStatus,
 } from './types.ts'
 
 declare module '@deepseek-ai/dsh-llm' {
@@ -44,6 +46,8 @@ export interface Config {
   waitMs: number
   /** Milliseconds between engine reads while a fiscalcfdi_estado call waits. */
   waitPollMs: number
+  /** Claude Code executable for the `claude-code` route; empty finds the official install. */
+  claudeCode: string
 }
 
 export const Config: Schema<Config> = Schema.object({
@@ -52,6 +56,7 @@ export const Config: Schema<Config> = Schema.object({
   timeoutMs: Schema.number().default(120000),
   waitMs: Schema.number().default(600000),
   waitPollMs: Schema.number().default(10000),
+  claudeCode: Schema.string().default(''),
 })
 
 type BridgeResult = { ok: boolean; error?: string } & Record<string, unknown>
@@ -352,12 +357,14 @@ function monthDetail(raw: BridgeResult): FiscalcfdiMonthDetail {
  * through the `fiscalcfdi` Remote namespace.
  */
 export class Fiscalcfdi extends TypertRemoteService {
-  static inject = ['tools', 'agents', 'agentDefaultModel', 'sessionTitle', 'workspaceRegistry']
+  static inject = ['tools', 'agents', 'agentDefaultModel', 'sessionTitle', 'workspaceRegistry', 'llm']
   static Config = Config
 
   private readonly bindings: SessionBindings
   private readonly uploads: string
   private readonly runner: AccountingRunner
+  private login: ClaudeLogin | undefined
+  private readonly home: string
 
   /**
    * @param ctx - Host context owning the tool registry and agent steps.
@@ -366,10 +373,18 @@ export class Fiscalcfdi extends TypertRemoteService {
   constructor(ctx: Context, private readonly config: Config) {
     super(ctx, 'fiscalcfdi')
     const home = process.env.DSH_HOME ?? join(homedir(), '.fiscalcfdi-ai')
+    this.home = home
     this.bindings = new SessionBindings(home)
     this.uploads = join(home, 'fiscalcfdi', 'uploads')
     this.runner = new AccountingRunner(ctx, { python: config.python, home, environment: this.environment })
     registerTools(ctx, config, this.bindings, this.call, this.runner)
+    // Chat models on the user's Claude subscription, through their own Claude Code.
+    const claude = new ClaudeCodeAdapter({ executable: config.claudeCode, home })
+    ctx.llm.registerAdapter([CLAUDE_CODE_PROVIDER], claude)
+    ctx.effect(() => () => {
+      this.login?.cancel()
+      void claude.dispose()
+    }, 'fiscalcfdi claude-code')
     // Each turn's first request carries the month the user selected, so the agent never asks for it again.
     ctx.on('agent/pre-step', async ({ agent, step }: { agent: Agent; step: number }, next: () => Promise<PreStepDecision>) => {
       const decision = await next()
@@ -612,6 +627,92 @@ export class Fiscalcfdi extends TypertRemoteService {
   async importable(request: FiscalcfdiMonthRequest, signal?: AbortSignal): Promise<FiscalcfdiImportable> {
     const result = await this.bridge('importable', { rfc: request.rfc, periodo: request.periodo }, signal)
     return { nombre: String(result.nombre), data: (await readFile(String(result.ruta))).toString('base64') }
+  }
+
+  /**
+   * The user's Claude Code installation and sign-in.
+   * @returns whether it is installed and signed in, and with which plan.
+   */
+  @Remote('claudeStatus')
+  async claudeStatus(): Promise<ClaudeCodeStatus> {
+    const selection = this.ctx.agentDefaultModel.currentSelection()
+    return { ...await claudeStatus(this.config.claudeCode), active: selection.provider === CLAUDE_CODE_PROVIDER ? selection.model : null }
+  }
+
+  /**
+   * Make a Claude model the chats' default, or go back to the model used before.
+   * @param request - the Claude model, or null to restore the previous default.
+   * @returns the state afterwards.
+   */
+  @Remote('claudeUse')
+  async claudeUse(request: { model: string | null }): Promise<ClaudeCodeStatus> {
+    const current = this.ctx.agentDefaultModel.currentSelection()
+    const previous = join(this.home, 'fiscalcfdi', 'modelo-anterior.json')
+    if (request.model === null) {
+      const saved = JSON.parse(await readFile(previous, 'utf8').catch(() => 'null')) as typeof current | null
+      if (saved !== null) await this.ctx.agentDefaultModel.saveSelection(saved)
+    } else {
+      if (current.provider !== CLAUDE_CODE_PROVIDER) {
+        await mkdir(join(this.home, 'fiscalcfdi'), { recursive: true })
+        await writeFile(previous, JSON.stringify(current))
+      }
+      await this.ctx.agentDefaultModel.saveSelection({ provider: CLAUDE_CODE_PROVIDER, model: request.model })
+    }
+    return this.claudeStatus()
+  }
+
+  /**
+   * Install Claude Code with Anthropic's official installer.
+   * @returns the installation and sign-in state afterwards.
+   */
+  @Remote('claudeInstall')
+  async claudeInstall(): Promise<ClaudeCodeStatus> {
+    try {
+      await installClaude()
+    } catch (error) {
+      throw new RemoteError('gateway/internal', error instanceof Error ? error.message : String(error), {})
+    }
+    return this.claudeStatus()
+  }
+
+  /**
+   * Start Claude Code's own sign-in, which opens the Claude sign-in page in the browser.
+   * @returns the sign-in page, also for opening it again by hand.
+   */
+  @Remote('claudeLogin')
+  async claudeLogin(): Promise<ClaudeCodeLogin> {
+    const executable = locateClaude(this.config.claudeCode)
+    if (executable === undefined) throw new RemoteError('gateway/internal', 'Claude Code no está instalado.', {})
+    this.login?.cancel()
+    const login = new ClaudeLogin(executable)
+    this.login = login
+    void login.done.then(() => { if (this.login === login) this.login = undefined })
+    return { url: await login.url }
+  }
+
+  /**
+   * Hand the code the Claude sign-in page showed to the waiting sign-in.
+   * @param request - the code.
+   * @returns the sign-in state once Claude Code has checked the code.
+   */
+  @Remote('claudeLoginCode')
+  async claudeLoginCode(request: { code: string }): Promise<ClaudeCodeStatus> {
+    const login = this.login
+    if (login === undefined) throw new RemoteError('gateway/internal', 'No hay un inicio de sesión de Claude en curso.', {})
+    login.submit(request.code)
+    await Promise.race([login.done, new Promise((resolve) => { setTimeout(resolve, 20000) })])
+    return this.claudeStatus()
+  }
+
+  /**
+   * Sign Claude Code out of the Claude account.
+   * @returns the sign-in state afterwards.
+   */
+  @Remote('claudeLogout')
+  async claudeLogout(): Promise<ClaudeCodeStatus> {
+    const executable = locateClaude(this.config.claudeCode)
+    if (executable !== undefined) await claudeLogout(executable)
+    return this.claudeStatus()
   }
 }
 

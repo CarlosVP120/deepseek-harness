@@ -224,3 +224,29 @@ export interface FiscalcfdiCompanyRefresh {
   /** Company databases the login could not read. */
   unavailable: number
 }
+
+/** The user's Claude Code installation and its sign-in. */
+export interface ClaudeCodeStatus {
+  /** Whether Claude Code is installed on this computer. */
+  installed: boolean
+  /** Its executable. */
+  path: string | null
+  /** Its version. */
+  version: string | null
+  /** Whether it is signed in. */
+  loggedIn: boolean
+  /** How it is signed in: `claude.ai` for a subscription. */
+  method: string | null
+  /** The signed-in account. */
+  email: string | null
+  /** The subscription plan, such as `pro` or `max`. */
+  plan: string | null
+  /** The Claude model chats use by default, or null when chats use another provider. */
+  active: string | null
+}
+
+/** A Claude Code sign-in that started. */
+export interface ClaudeCodeLogin {
+  /** The sign-in page Claude Code opened in the browser. */
+  url: string | null
+}

@@ -14,6 +14,7 @@ Registers the `fiscalcfdi_*` tools: list CONTPAQi companies, open a company mont
 | `timeoutMs` | `120000` | Milliseconds one bridge call may run; the accounting run itself is detached |
 | `waitMs` | `600000` | Longest a `fiscalcfdi_estado` call with `esperar: true` follows a running month before it returns |
 | `waitPollMs` | `10000` | Milliseconds between engine reads while such a call waits |
+| `claudeCode` | `''` | Claude Code executable for the `claude-code` route; empty finds the official install |
 
 ## Native accounting runs
 
@@ -32,3 +33,9 @@ The Remote `sqlConnection`, `checkSql` and `refreshCompanies` methods serve the 
 Every bridge call runs with `FISCALCFDI_AGENT_HOST=app`, so the engine makes no model calls of its own: the app's model and key (the Models settings page) do all of the reasoning, and the engine needs no API key.
 
 The `@deepseek-ai/dsh-fiscalcfdi-app` bundle mounts it with `FISCALCFDI_ENGINE_PYTHON` and `FISCALCFDI_ENGINE_BRIDGE`.
+
+## Claude subscription
+
+The service also registers the `claude-code` model route (`src/claude-code/`), so a chat can run on the user's own Claude plan instead of an API key, the way other desktop apps do: through the official Claude Code program installed on this computer, signed in with Anthropic's own flow (`claude auth login`). The app never handles the account's credentials. The Remote `claudeStatus`, `claudeInstall`, `claudeLogin`, `claudeLoginCode`, `claudeLogout` and `claudeUse` methods serve the Settings page «Claude»: install Claude Code with Anthropic's installer, start and finish the sign-in, and make a Claude model (`opus`, `sonnet`, `haiku`) the chats' default or restore the previous one.
+
+The harness keeps its agent loop. Each chat Session has one live `claude -p` process in stream-json mode with Claude Code's own tools disabled and the harness system prompt in place of its own; every model request is one stretch of Claude Code's turn, from the new input to its next tool calls or the end of the turn. The request's tools reach Claude Code as MCP tools through a loopback endpoint (`ToolGateway`) that announces tool changes with `list_changed`; a call stays open, as an event stream with keep-alive comments, until the next request carries the harness result, so approvals and questions to the user can take as long as they need. The process is told to drop its MCP time limits (`CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT=0`). A live process continues from the request's last assistant message when it matches its own last reply, so harness compaction never restarts it; a changed model, effort or system prompt, a restart of the app, or 20 idle minutes start a new process from a text transcript. The route declares a 1,000,000-token window because Claude Code compacts its own context. Titles and summaries run a one-shot `claude -p` without tools. Variables that would make Claude Code bill an API key or another provider are removed from its environment.

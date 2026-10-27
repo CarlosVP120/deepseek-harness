@@ -27,6 +27,7 @@ import { MonthPanel, type MonthPanelInjected } from './MonthPanel.tsx'
 import { GuidedStart, type GuidedStartInjected } from './GuidedStart.tsx'
 import { PlainBackdrop } from './PlainBackdrop.tsx'
 import { SqlSection, type SqlSectionInjected } from './SqlSection.tsx'
+import { ClaudeSection, type ClaudeSectionInjected } from './ClaudeSection.tsx'
 import { TurnCards } from './TurnCards.tsx'
 import { en, es, NS, zh, type FiscalcfdiKey } from './locales.ts'
 
@@ -150,6 +151,19 @@ function registerUi(ctx: Context): void {
   ctx.slots.inject('settings.section', () => ctx.slots.register({
     name: 'settings.section', id: 'fiscalcfdi-sql', order: 15, label: () => t('sql.nav'), locale: NS, inject: () => sql,
   }, SqlSection))
+
+  // Settings: the user's Claude subscription, through their own Claude Code.
+  const claude: ClaudeSectionInjected = {
+    claudeStatus: () => unwrap(ctx.remote.fiscalcfdi.claudeStatus()),
+    claudeInstall: () => unwrap(ctx.remote.fiscalcfdi.claudeInstall()),
+    claudeLogin: () => unwrap(ctx.remote.fiscalcfdi.claudeLogin()),
+    claudeLoginCode: code => unwrap(ctx.remote.fiscalcfdi.claudeLoginCode({ code })),
+    claudeLogout: () => unwrap(ctx.remote.fiscalcfdi.claudeLogout()),
+    claudeUse: model => unwrap(ctx.remote.fiscalcfdi.claudeUse({ model })),
+  }
+  ctx.slots.inject('settings.section', () => ctx.slots.register({
+    name: 'settings.section', id: 'fiscalcfdi-claude', order: 14, label: () => t('claude.nav'), locale: NS, inject: () => claude,
+  }, ClaudeSection))
 
   // A plain start page: blank space above the headline instead of the landscape.
   ctx.slots.inject('conversation.home.backdrop', () => ctx.slots.register({ name: 'conversation.home.backdrop' }, PlainBackdrop))
