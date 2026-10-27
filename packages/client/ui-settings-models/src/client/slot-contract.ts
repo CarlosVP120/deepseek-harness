@@ -34,6 +34,13 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     /** Optional account login choice before the credential editor. */
     'settings.models.sign-in': { kind: 'single'; scope: 'root'; owner: { complete: () => void; useApiKey: () => void } }
     /**
+     * Ordered provider cards a plugin draws itself, listed after the configured
+     * provider rows: a model route whose sign-in is not an API key (an account
+     * connected through its own program, for example). Each occupant renders one
+     * `<li>` with the section's card classes so it reads as a row of the list.
+     */
+    'settings.models.cards': { kind: 'list'; scope: 'root'; owner: ModelsCardsOwnerProps }
+    /**
      * Ordered extension area after the provider rows and the add controls.
      * Without a registrant the area renders nothing.
      */
@@ -49,6 +56,39 @@ export interface ProviderCardExtrasOwnerProps {
   configured: boolean
   /** Whether the row's referenced api-key credential is confirmed configured (the page's credential join). */
   keyConfigured: boolean
+}
+
+/** The section's provider-card class names, so a plugin card matches the rows beside it. */
+export interface ModelsCardClasses {
+  /** The `<li>` card. */
+  card: string
+  /** The name, tag and status line with the actions at its end. */
+  head: string
+  /** Name, tag and status dot. */
+  identity: string
+  name: string
+  tag: string
+  /** Status dot, plus `dotConfigured` (ready) or `dotMissing` (needs action). */
+  dot: string
+  dotConfigured: string
+  dotMissing: string
+  /** The compact action buttons at the end of `head`. */
+  actions: string
+  primaryButton: string
+  secondaryButton: string
+  dangerButton: string
+  /** A filled panel under the head, as the provider editor uses. */
+  editor: string
+  /** Secondary text inside a card. */
+  hint: string
+  /** Error text inside a card. */
+  error: string
+}
+
+/** Owner share of one plugin-drawn provider card. */
+export interface ModelsCardsOwnerProps {
+  /** Class names of the section's provider cards. */
+  classes: ModelsCardClasses
 }
 
 /** Owner share of the footer area (the section supplies nothing). */

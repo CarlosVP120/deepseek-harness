@@ -364,6 +364,7 @@ export class Fiscalcfdi extends TypertRemoteService {
   private readonly uploads: string
   private readonly runner: AccountingRunner
   private login: ClaudeLogin | undefined
+  private readonly claude: ClaudeCodeAdapter
   private readonly home: string
 
   /**
@@ -380,6 +381,7 @@ export class Fiscalcfdi extends TypertRemoteService {
     registerTools(ctx, config, this.bindings, this.call, this.runner)
     // Chat models on the user's Claude subscription, through their own Claude Code.
     const claude = new ClaudeCodeAdapter({ executable: config.claudeCode, home })
+    this.claude = claude
     ctx.llm.registerAdapter([CLAUDE_CODE_PROVIDER], claude)
     ctx.effect(() => () => {
       this.login?.cancel()
@@ -635,6 +637,7 @@ export class Fiscalcfdi extends TypertRemoteService {
    */
   @Remote('claudeStatus')
   async claudeStatus(): Promise<ClaudeCodeStatus> {
+    this.claude.forgetStatus()
     const selection = this.ctx.agentDefaultModel.currentSelection()
     return { ...await claudeStatus(this.config.claudeCode), active: selection.provider === CLAUDE_CODE_PROVIDER ? selection.model : null }
   }

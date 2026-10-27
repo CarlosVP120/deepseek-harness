@@ -11,7 +11,7 @@ import {
   LlmAdapter, ReasoningEffortId, type GenerateOptions, type LlmModelInfo, type LlmProviderInfo, type LlmResolvedModelInfo,
   type RequestMessage, type StreamChunk,
 } from '@deepseek-ai/dsh-llm'
-import { claudeEnvironment, locateClaude } from './cli.ts'
+import { claudeEnvironment, claudeStatus, locateClaude } from './cli.ts'
 import { ClaudeConversation, contentText, transcript } from './conversation.ts'
 import { ToolGateway } from './gateway.ts'
 
@@ -31,6 +31,9 @@ const EFFORT_NAMES: Record<(typeof EFFORTS)[number], string> = { low: 'Baja', me
 /** A Session's process is stopped after this long without requests; the next request starts it again. */
 const IDLE_MS = 20 * 60 * 1000
 
+/** How long a sign-in check answers the model catalog before Claude Code is asked again. */
+const STATUS_MS = 30 * 1000
+
 /** What the adapter needs from its plugin. */
 export interface ClaudeCodeAdapterOptions {
   /** Configured executable; empty finds the official install. */
@@ -43,6 +46,7 @@ export interface ClaudeCodeAdapterOptions {
 export class ClaudeCodeAdapter extends LlmAdapter {
   private readonly gateway = new ToolGateway()
   private readonly conversations = new Map<string, { conversation: ClaudeConversation; idle?: NodeJS.Timeout }>()
+  private signedIn: { at: number; value: Promise<boolean> } | undefined
 
   /** @param options - executable and data home. */
   constructor(private readonly options: ClaudeCodeAdapterOptions) {
@@ -53,10 +57,27 @@ export class ClaudeCodeAdapter extends LlmAdapter {
     return { id: provider, name: 'Claude (tu suscripción)' }
   }
 
-  override listModels(provider: string): Promise<readonly LlmModelInfo[]> {
-    return Promise.resolve(MODELS.map(model => ({
+  /** The models, offered only while Claude Code is signed in with a Claude subscription, as a configured provider's are. */
+  override async listModels(provider: string): Promise<readonly LlmModelInfo[]> {
+    if (!await this.subscribed()) return []
+    return MODELS.map(model => ({
       provider, id: model.id, name: model.name, description: 'Con tu suscripción de Claude, mediante Claude Code', inputModalities: ['text'] as const,
-    })))
+    }))
+  }
+
+  /** Forget the cached sign-in state, after the user connected or disconnected. */
+  forgetStatus(): void {
+    this.signedIn = undefined
+  }
+
+  private subscribed(): Promise<boolean> {
+    if (this.signedIn === undefined || Date.now() - this.signedIn.at > STATUS_MS) {
+      this.signedIn = {
+        at: Date.now(),
+        value: claudeStatus(this.options.executable).then(status => status.loggedIn && status.method === 'claude.ai', () => false),
+      }
+    }
+    return this.signedIn.value
   }
 
   override resolveModel(provider: string, model: string): Promise<LlmResolvedModelInfo> {
@@ -84,7 +105,7 @@ export class ClaudeCodeAdapter extends LlmAdapter {
     if (executable === undefined) {
       yield {
         type: 'finish',
-        reason: { kind: 'error', failure: { code: 'MISSING_CREDENTIAL', message: 'Claude Code no está instalado. Instálalo y conéctalo en Ajustes → Claude.' } },
+        reason: { kind: 'error', failure: { code: 'MISSING_CREDENTIAL', message: 'Claude Code no está instalado. Instálalo y conéctalo en Ajustes → Modelos → Claude.' } },
       }
       return
     }

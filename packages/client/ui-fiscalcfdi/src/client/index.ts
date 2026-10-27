@@ -15,6 +15,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-tool/client'
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
+import type {} from '@deepseek-ai/dsh-client-ui-settings-models/client'
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { CoverageCard } from './CoverageCard.tsx'
@@ -27,7 +28,7 @@ import { MonthPanel, type MonthPanelInjected } from './MonthPanel.tsx'
 import { GuidedStart, type GuidedStartInjected } from './GuidedStart.tsx'
 import { PlainBackdrop } from './PlainBackdrop.tsx'
 import { SqlSection, type SqlSectionInjected } from './SqlSection.tsx'
-import { ClaudeSection, type ClaudeSectionInjected } from './ClaudeSection.tsx'
+import { ClaudeCard, type ClaudeCardInjected } from './ClaudeCard.tsx'
 import { TurnCards } from './TurnCards.tsx'
 import { en, es, NS, zh, type FiscalcfdiKey } from './locales.ts'
 
@@ -152,8 +153,8 @@ function registerUi(ctx: Context): void {
     name: 'settings.section', id: 'fiscalcfdi-sql', order: 15, label: () => t('sql.nav'), locale: NS, inject: () => sql,
   }, SqlSection))
 
-  // Settings: the user's Claude subscription, through their own Claude Code.
-  const claude: ClaudeSectionInjected = {
+  // Models page: the user's Claude subscription, through their own Claude Code, as one more provider card.
+  const claude: ClaudeCardInjected = {
     claudeStatus: () => unwrap(ctx.remote.fiscalcfdi.claudeStatus()),
     claudeInstall: () => unwrap(ctx.remote.fiscalcfdi.claudeInstall()),
     claudeLogin: () => unwrap(ctx.remote.fiscalcfdi.claudeLogin()),
@@ -161,9 +162,9 @@ function registerUi(ctx: Context): void {
     claudeLogout: () => unwrap(ctx.remote.fiscalcfdi.claudeLogout()),
     claudeUse: model => unwrap(ctx.remote.fiscalcfdi.claudeUse({ model })),
   }
-  ctx.slots.inject('settings.section', () => ctx.slots.register({
-    name: 'settings.section', id: 'fiscalcfdi-claude', order: 14, label: () => t('claude.nav'), locale: NS, inject: () => claude,
-  }, ClaudeSection))
+  ctx.slots.inject('settings.models.cards', () => ctx.slots.register({
+    name: 'settings.models.cards', id: 'fiscalcfdi-claude', order: 0, locale: NS, inject: () => claude,
+  }, ClaudeCard))
 
   // A plain start page: blank space above the headline instead of the landscape.
   ctx.slots.inject('conversation.home.backdrop', () => ctx.slots.register({ name: 'conversation.home.backdrop' }, PlainBackdrop))

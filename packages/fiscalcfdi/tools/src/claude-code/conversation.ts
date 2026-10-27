@@ -374,7 +374,7 @@ export class ClaudeConversation {
     const text = `${detail}\n${this.stderr}`.trim()
     if (/usage limit|rate limit|límite/i.test(text)) return { code: 'QUOTA', message: `Se alcanzó el límite de uso de tu plan de Claude. ${detail}`.trim() }
     if (/login|log in|auth|401|invalid api key/i.test(text)) {
-      return { code: 'AUTH', message: 'Claude Code no tiene una sesión iniciada. Conéctalo en Ajustes → Claude.' }
+      return { code: 'AUTH', message: 'Claude Code no tiene una sesión iniciada. Conéctalo en Ajustes → Modelos → Claude.' }
     }
     return { code: 'PROVIDER_ERROR', message: `Claude Code: ${text.slice(-800)}` }
   }

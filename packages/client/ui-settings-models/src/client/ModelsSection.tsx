@@ -27,7 +27,7 @@ import { Button, IconPlusOutlineRegular, Modal, SegmentedControl } from '@deepse
 import type { InjectFace, PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SettingsNamespaceView } from '@deepseek-ai/dsh-api-remotes/client'
 // Type-only: pulls this package's SlotMap merge (the two Models child slots).
-import type {} from './slot-contract.ts'
+import type { ModelsCardClasses } from './slot-contract.ts'
 import { CustomProviderCard } from './CustomProviderCard.tsx'
 import { deriveKeyRef, protocolChoices, providerUsable } from './store.ts'
 import type { ModelsSettingsStore, ProviderRow } from './store.ts'
@@ -60,10 +60,19 @@ export interface ModelsSectionInjected {
 type AddMode = 'catalog' | 'custom'
 
 /** The child slots this section declares and dispatches (see ./slot-contract.ts). */
-type ModelsChildSlots = 'settings.models.provider-card' | 'settings.models.footer'
+type ModelsChildSlots = 'settings.models.provider-card' | 'settings.models.cards' | 'settings.models.footer'
 
 /** The child-slot dispatch function the renderer binds for the section. */
 type ModelsRenderSlot = PropsRenderSlots<ModelsChildSlots>['renderSlot']
+
+/** Card class names handed to plugin-drawn provider cards. */
+const CARD_CLASSES: ModelsCardClasses = {
+  card: styles['rowCard'] ?? '', head: styles['rowHead'] ?? '', identity: styles['rowIdentity'] ?? '', name: styles['rowName'] ?? '',
+  tag: styles['rowTag'] ?? '', dot: styles['credentialDot'] ?? '', dotConfigured: styles['credentialDotConfigured'] ?? '',
+  dotMissing: styles['credentialDotMissing'] ?? '', actions: styles['rowActions'] ?? '', primaryButton: styles['primaryButton'] ?? '',
+  secondaryButton: styles['secondaryButton'] ?? '', dangerButton: styles['dangerButton'] ?? '', editor: styles['editor'] ?? '',
+  hint: styles['intro'] ?? '', error: styles['error'] ?? '',
+}
 
 /**
  * Props delivered by the slot outlet: the inject face spread flat (the
@@ -517,6 +526,7 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
             </li>
           )
         })}
+        {renderSlot('settings.models.cards', { classes: CARD_CLASSES })}
       </ul>
       <div className={styles['addBlock']}>
         {addOpen
