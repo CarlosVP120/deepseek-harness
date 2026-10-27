@@ -13,7 +13,6 @@ import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import Schema from '@deepseek-ai/schemastery'
-import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import type { Agent, PreStepDecision } from '@deepseek-ai/dsh-agent'
 import { createUserMessage, type ContextFormed } from '@deepseek-ai/dsh-llm'
 import { defineTool, type ToolExecution } from '@deepseek-ai/dsh-tools'
@@ -45,8 +44,6 @@ export interface Config {
   waitMs: number
   /** Milliseconds between engine reads while a fiscalcfdi_estado call waits. */
   waitPollMs: number
-  /** Credential holding the OpenRouter key that the Models settings page stores; the engine runs on the same key. */
-  apiKeyRef: string
 }
 
 export const Config: Schema<Config> = Schema.object({
@@ -55,12 +52,11 @@ export const Config: Schema<Config> = Schema.object({
   timeoutMs: Schema.number().default(120000),
   waitMs: Schema.number().default(600000),
   waitPollMs: Schema.number().default(10000),
-  apiKeyRef: Schema.string().default('OPENROUTER_API_KEY'),
 })
 
 type BridgeResult = { ok: boolean; error?: string } & Record<string, unknown>
 
-/** Environment of one bridge call; `OPENROUTER_API_KEY` there overrides the engine's own `.env`. */
+/** Environment of one bridge call. */
 type EngineEnvironment = () => Promise<NodeJS.ProcessEnv>
 
 /**
@@ -394,13 +390,10 @@ export class Fiscalcfdi extends TypertRemoteService {
   }
 
   /**
-   * The engine's environment: this process's, with the OpenRouter key stored in the Models settings when
-   * there is one, and `FISCALCFDI_AGENT_HOST=app` so months it claims run their planning agent in this app.
+   * The engine's environment: this process's, with `FISCALCFDI_AGENT_HOST=app` so months it claims run
+   * their planning agent in this app, on the model and key of the Models settings.
    */
-  private readonly environment: EngineEnvironment = async () => {
-    const stored = await this.ctx.get('credentials')?.resolve(credentialRef(this.config.apiKeyRef))
-    return { ...process.env, FISCALCFDI_AGENT_HOST: 'app', ...stored === undefined ? {} : { OPENROUTER_API_KEY: stored.value } }
-  }
+  private readonly environment: EngineEnvironment = () => Promise.resolve({ ...process.env, FISCALCFDI_AGENT_HOST: 'app' })
 
   private readonly call: EngineCall = async (command, payload, signal, agent) => {
     let result = await callBridge(this.config, command, payload, signal, await this.environment())

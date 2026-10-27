@@ -54,7 +54,7 @@ export interface RunnerOptions {
   python: string
   /** Data home; runs are attached to a «contabilidad» project inside it. */
   home: string
-  /** The engine environment with the app's OpenRouter key. */
+  /** The engine environment of a worker. */
   environment: () => Promise<NodeJS.ProcessEnv>
 }
 

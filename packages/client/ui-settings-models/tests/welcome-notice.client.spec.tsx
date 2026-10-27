@@ -107,7 +107,7 @@ describe('WelcomeNotice', () => {
   it('uses the exact owner copy in both GUI locales', () => {
     expect(WELCOME_NOTICE_COPY.en).toEqual({
       title: 'Welcome to FiscalCFDI AI',
-      body: 'FiscalCFDI AI is in a preliminary version. It reads your CONTPAQi history and the month’s files, reconciles every bank movement and prepares audited journals, and it asks you only what the history cannot decide. Review each month’s journals before importing them into CONTPAQi.\n\nTo start, enter your OpenRouter key in Settings → Models, choose the company and month on the start page, drop each Excel file in its section, and press Contabilizar. Your feedback helps us improve it.',
+      body: 'FiscalCFDI AI is in a preliminary version. It reads your CONTPAQi history and the month’s files, reconciles every bank movement and prepares audited journals, and it asks you only what the history cannot decide. Review each month’s journals before importing them into CONTPAQi.\n\nTo start, enter your model provider’s key in Settings → Models (OpenRouter, Anthropic, DeepSeek…), choose the company and month on the start page, drop each Excel file in its section, and press Contabilizar. Your feedback helps us improve it.',
       continueLabel: 'Continue',
     })
     expect(en.welcomeBody).toBe(WELCOME_NOTICE_COPY.en.body)

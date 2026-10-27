@@ -27,9 +27,6 @@
       "path": "../../llm/llm"
     },
     {
-      "path": "../../credentials/credentials"
-    },
-    {
       "path": "../../core/agent-default-model"
     },
     {
