@@ -217,6 +217,54 @@ export interface FiscalcfdiSqlCheck {
   changed: boolean
 }
 
+/** A SQL Server instance found on this computer, the local network or the user's Tailscale network. */
+export interface FiscalcfdiSqlServer {
+  /** Address to connect to. */
+  server: string
+  /** TCP port, or null when the instance does not accept TCP/IP connections. */
+  port: number | null
+  /** Computer name. */
+  name: string
+  /** Instance name; CONTPAQi installs COMPAC. */
+  instance: string
+  /** SQL Server version, when SQL Server Browser reported it. */
+  version: string | null
+  /** Where it was found. */
+  origin: 'equipo' | 'red' | 'tailscale'
+  /** Whether its TCP port answered from this computer. */
+  reachable: boolean
+}
+
+/** The script that creates the read-only login by hand in SQL Server Management Studio. */
+export interface FiscalcfdiSqlScript {
+  /** Login the script creates. */
+  user: string
+  /** New password the script sets. */
+  password: string
+  /** The T-SQL to run as an administrator. */
+  script: string
+}
+
+/** An administrator login used once to create the read-only login; it is never saved. */
+export interface FiscalcfdiSqlReaderRequest {
+  /** Server IP or host name. */
+  server: string
+  /** SQL Server TCP port. */
+  port: number
+  /** Administrator login, usually sa. */
+  adminUser: string
+  /** Administrator password. */
+  adminPassword: string
+}
+
+/** The read-only login after it was created, tested and saved. */
+export interface FiscalcfdiSqlReader extends FiscalcfdiSqlCheck {
+  /** Login created. */
+  user: string
+  /** CONTPAQi databases it can read. */
+  databases: number
+}
+
 /** Result of re-reading the companies from the saved server. */
 export interface FiscalcfdiCompanyRefresh {
   /** Companies available now. */

@@ -152,6 +152,9 @@ function registerUi(ctx: Context): void {
       months.forgetCompanies()
       return result
     },
+    findSqlServers: () => unwrap(ctx.remote.fiscalcfdi.findSqlServers()),
+    sqlReaderScript: () => unwrap(ctx.remote.fiscalcfdi.sqlReaderScript()),
+    createSqlReader: request => unwrap(ctx.remote.fiscalcfdi.createSqlReader(request)),
   }
   ctx.slots.inject('settings.section', () => ctx.slots.register({
     name: 'settings.section', id: 'fiscalcfdi-sql', order: 15, label: () => t('sql.nav'), locale: NS, inject: () => sql,

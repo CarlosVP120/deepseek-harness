@@ -25,7 +25,8 @@ import { AccountingRunner, type EngineLaunch } from './runner.ts'
 import type {
   FiscalcfdiAnswerRequest, FiscalcfdiBindRequest, FiscalcfdiBinding, FiscalcfdiCompany, FiscalcfdiImportable, FiscalcfdiMonth,
   FiscalcfdiMonthDetail, FiscalcfdiMonthRequest, FiscalcfdiSessionRequest, FiscalcfdiUploadRequest,
-  FiscalcfdiCompanyRefresh, FiscalcfdiSqlCheck, FiscalcfdiSqlConnection, FiscalcfdiSqlRequest, ClaudeCodeLogin, ClaudeCodeStatus,
+  FiscalcfdiCompanyRefresh, FiscalcfdiSqlCheck, FiscalcfdiSqlConnection, FiscalcfdiSqlReader, FiscalcfdiSqlReaderRequest,
+  FiscalcfdiSqlRequest, FiscalcfdiSqlScript, FiscalcfdiSqlServer, ClaudeCodeLogin, ClaudeCodeStatus,
 } from './types.ts'
 
 declare module '@deepseek-ai/dsh-llm' {
@@ -315,6 +316,14 @@ function sqlConnection(raw: unknown): FiscalcfdiSqlConnection {
     server: typeof conf.server === 'string' ? conf.server : '', port: Number(conf.port ?? 1433),
     user: typeof conf.user === 'string' ? conf.user : '',
     database: typeof conf.database === 'string' ? conf.database : 'master', passwordConfigured: conf.password_configured === true,
+  }
+}
+
+/** Project the engine's connection test onto the settings page's result. */
+function sqlCheck(result: BridgeResult): FiscalcfdiSqlCheck {
+  return {
+    connection: sqlConnection(result.conexion), version: nullableString(result.version),
+    saved: result.guardada === true, changed: result.cambio_servidor === true,
   }
 }
 
@@ -620,11 +629,46 @@ export class Fiscalcfdi extends TypertRemoteService {
   @Remote('checkSql')
   async checkSql(request: FiscalcfdiSqlRequest & { save: boolean }, signal?: AbortSignal): Promise<FiscalcfdiSqlCheck> {
     const { save, ...connection } = request
-    const result = await this.bridge(save ? 'sql_guardar' : 'sql_probar', connection, signal)
-    return {
-      connection: sqlConnection(result.conexion), version: nullableString(result.version),
-      saved: result.guardada === true, changed: result.cambio_servidor === true,
-    }
+    return sqlCheck(await this.bridge(save ? 'sql_guardar' : 'sql_probar', connection, signal))
+  }
+
+  /**
+   * Look for SQL Server instances on this computer, the local network and the user's Tailscale network.
+   * @param signal - Remote caller cancellation.
+   * @returns the instances found, reachable CONTPAQi (COMPAC) ones first.
+   */
+  @Remote('findSqlServers')
+  async findSqlServers(signal?: AbortSignal): Promise<FiscalcfdiSqlServer[]> {
+    const result = await this.bridge('sql_buscar', {}, signal)
+    return list<Record<string, unknown>>(result.servidores).map(server => ({
+      server: String(server.servidor), port: nullableNumber(server.puerto), name: String(server.nombre), instance: String(server.instancia),
+      version: nullableString(server.version), origin: server.origen as FiscalcfdiSqlServer['origin'], reachable: server.abierto === true,
+    }))
+  }
+
+  /**
+   * A script that creates the read-only login by hand, with a new password.
+   * @param signal - Remote caller cancellation.
+   * @returns the login, its password and the T-SQL.
+   */
+  @Remote('sqlReaderScript')
+  async sqlReaderScript(signal?: AbortSignal): Promise<FiscalcfdiSqlScript> {
+    const result = await this.bridge('sql_guion', {}, signal)
+    return { user: String(result.usuario), password: String(result.password), script: String(result.guion) }
+  }
+
+  /**
+   * Create the read-only login with an administrator login, then test it and save it as the connection.
+   * The administrator login is used once and never saved.
+   * @param request - server, port and the administrator login.
+   * @param signal - Remote caller cancellation.
+   * @returns the saved connection and how many CONTPAQi databases the login reads.
+   */
+  @Remote('createSqlReader')
+  async createSqlReader(request: FiscalcfdiSqlReaderRequest, signal?: AbortSignal): Promise<FiscalcfdiSqlReader> {
+    const payload = { server: request.server, port: request.port, admin_user: request.adminUser, admin_password: request.adminPassword }
+    const result = await this.bridge('sql_crear_usuario', payload, signal)
+    return { ...sqlCheck(result), user: String(result.usuario), databases: Number(result.bases ?? 0) }
   }
 
   /**
