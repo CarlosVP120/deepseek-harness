@@ -71,7 +71,7 @@ function run(
 export async function claudeStatus(explicit?: string): Promise<ClaudeCodeStatus> {
   const path = locateClaude(explicit)
   const none: ClaudeCodeStatus = {
-    installed: false, path: null, version: null, loggedIn: false, method: null, email: null, plan: null, active: null,
+    installed: false, path: null, version: null, loggedIn: false, connected: false, method: null, email: null, plan: null, active: null,
   }
   if (path === undefined) return none
   const [version, auth] = await Promise.all([run(path, ['--version']), run(path, ['auth', 'status', '--json'])])
@@ -128,15 +128,6 @@ export class ClaudeLogin {
   cancel(): void {
     this.child.kill()
   }
-}
-
-/**
- * Sign Claude Code out of the Claude account.
- * @param executable - the Claude Code executable.
- */
-export async function claudeLogout(executable: string): Promise<void> {
-  const result = await run(executable, ['auth', 'logout'])
-  if (result.code !== 0) throw new Error(result.stderr.trim() || 'No se pudo cerrar la sesión de Claude Code')
 }
 
 /**

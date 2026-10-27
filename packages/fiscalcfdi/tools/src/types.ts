@@ -233,8 +233,10 @@ export interface ClaudeCodeStatus {
   path: string | null
   /** Its version. */
   version: string | null
-  /** Whether it is signed in. */
+  /** Whether Claude Code itself is signed in, for this app or any other. */
   loggedIn: boolean
+  /** Whether the user connected Claude in this app (Connect, authorized on Claude's page) and it is still signed in with a subscription. */
+  connected: boolean
   /** How it is signed in: `claude.ai` for a subscription. */
   method: string | null
   /** The signed-in account. */

@@ -159,7 +159,7 @@ function registerUi(ctx: Context): void {
     claudeInstall: () => unwrap(ctx.remote.fiscalcfdi.claudeInstall()),
     claudeLogin: () => unwrap(ctx.remote.fiscalcfdi.claudeLogin()),
     claudeLoginCode: code => unwrap(ctx.remote.fiscalcfdi.claudeLoginCode({ code })),
-    claudeLogout: () => unwrap(ctx.remote.fiscalcfdi.claudeLogout()),
+    claudeDisconnect: () => unwrap(ctx.remote.fiscalcfdi.claudeDisconnect()),
     claudeUse: model => unwrap(ctx.remote.fiscalcfdi.claudeUse({ model })),
   }
   ctx.slots.inject('settings.models.cards', () => ctx.slots.register({

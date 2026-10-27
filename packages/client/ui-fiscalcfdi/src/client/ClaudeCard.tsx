@@ -15,8 +15,8 @@ export interface ClaudeCardInjected {
   claudeLogin: () => Promise<ClaudeCodeLogin>
   /** Hand the sign-in page's code to the waiting sign-in. */
   claudeLoginCode: (code: string) => Promise<ClaudeCodeStatus>
-  /** Sign Claude Code out. */
-  claudeLogout: () => Promise<ClaudeCodeStatus>
+  /** Disconnect Claude from this app; Claude Code stays signed in for other programs. */
+  claudeDisconnect: () => Promise<ClaudeCodeStatus>
   /** Make a Claude model the chats' default, or null to go back to the previous model. */
   claudeUse: (model: string | null) => Promise<ClaudeCodeStatus>
 }
@@ -37,11 +37,14 @@ const FIRST_MODEL = 'opus'
 
 /**
  * The Claude subscription as one more provider card on the Models page: install Claude Code, connect the
- * Claude account through Claude Code's own sign-in, and disconnect. Its models are chosen in the chat's
+ * Claude account by authorizing this app on Claude's page (Claude Code's own sign-in, opened even when Claude Code
+ * is already signed in), and disconnect this app only. Its models are chosen in the chat's
  * model picker like every provider's; connecting makes Claude the default for new chats, as an account
  * sign-in does, and disconnecting restores the model used before.
  */
-export function ClaudeCard({ classes: c, claudeStatus, claudeInstall, claudeLogin, claudeLoginCode, claudeLogout, claudeUse, t }: Props) {
+export function ClaudeCard(
+  { classes: c, claudeStatus, claudeInstall, claudeLogin, claudeLoginCode, claudeDisconnect, claudeUse, t }: Props,
+) {
   const [status, setStatus] = useState<ClaudeCodeStatus | undefined>()
   const [busy, setBusy] = useState<Busy>('check')
   const [error, setError] = useState<string | undefined>()
@@ -60,29 +63,29 @@ export function ClaudeCard({ classes: c, claudeStatus, claudeInstall, claudeLogi
     }
   }, [])
   useEffect(() => { void act('check', claudeStatus) }, [act, claudeStatus])
-  /** A sign-in that just finished: Claude becomes the chats' default unless it already is. */
+  /** A connection that just finished: Claude becomes the chats' default unless it already is. */
   const connected = useCallback(async (next: ClaudeCodeStatus) => {
     setLogin(undefined)
-    return next.method === 'claude.ai' && next.active === null ? claudeUse(FIRST_MODEL) : next
+    return next.active === null ? claudeUse(FIRST_MODEL) : next
   }, [claudeUse])
   // The sign-in usually finishes in the browser; the status says when.
   useEffect(() => {
     if (login === undefined) return
     const timer = setInterval(() => {
       claudeStatus().then((next) => {
-        if (next.loggedIn) void act('login', () => connected(next))
+        if (next.connected) void act('login', () => connected(next))
       }, () => undefined)
     }, POLL_MS)
     return () => { clearInterval(timer) }
   }, [login, claudeStatus, act, connected])
 
-  const subscription = status?.loggedIn === true && status.method === 'claude.ai'
+  const subscription = status?.connected === true
   const plan = status?.plan === null || status?.plan === undefined ? '' : status.plan.charAt(0).toUpperCase() + status.plan.slice(1)
   const disabled = busy !== undefined
   const hint = status === undefined ? t('claude.checking')
     : !status.installed ? (busy === 'install' ? t('claude.installing') : t('claude.missing'))
-      : !status.loggedIn ? (login === undefined ? t('claude.signedOut') : t('claude.waiting'))
-        : !subscription ? t('claude.apiKey')
+      : login !== undefined ? t('claude.waiting')
+        : !subscription ? t('claude.signedOut')
           : [
             t('claude.connected', { email: status.email ?? '' }) + (plan === '' ? '' : ` · ${t('claude.plan', { plan })}`),
             status.active === null ? t('claude.inactive') : t('claude.active', { model: t(`claude.model.${status.active}` as 'claude.model.opus') }),
@@ -99,25 +102,25 @@ export function ClaudeCard({ classes: c, claudeStatus, claudeInstall, claudeLogi
       <span className={c.actions}>
         {status?.installed === false && <button type="button" className={c.secondaryButton} disabled={disabled}
           onClick={() => { void act('install', claudeInstall) }}>{t('claude.install')}</button>}
-        {status?.installed === true && !status.loggedIn && login === undefined && <button type="button" className={c.secondaryButton} disabled={disabled}
+        {status?.installed === true && !subscription && login === undefined && <button type="button" className={c.secondaryButton} disabled={disabled}
           onClick={() => { void act('login', async () => { setCode(''); setLogin(await claudeLogin()); return undefined }) }}>
           {busy === 'login' ? t('claude.opening') : t('claude.connect')}</button>}
-        {status?.loggedIn === true && <button type="button" className={c.dangerButton} disabled={disabled}
+        {subscription && <button type="button" className={c.dangerButton} disabled={disabled}
           onClick={() => {
             void act('logout', async () => {
-              const out = await claudeLogout()
+              const out = await claudeDisconnect()
               return out.active === null ? out : claudeUse(null)
             })
           }}>{t('claude.disconnect')}</button>}
       </span>
     </div>
     <p className={c.hint}>{hint}</p>
-    {status?.installed === true && !status.loggedIn && login !== undefined && <form className={c.editor} onSubmit={(event) => {
+    {status?.installed === true && !subscription && login !== undefined && <form className={c.editor} onSubmit={(event) => {
       event.preventDefault()
       if (code.trim() === '' || disabled) return
       void act('code', async () => {
         const next = await claudeLoginCode(code)
-        return next.loggedIn ? connected(next) : next
+        return next.connected ? connected(next) : next
       })
     }}>
       {login.url !== null && <a className={css.link} href={login.url} target="_blank" rel="noreferrer">{t('claude.reopen')}</a>}

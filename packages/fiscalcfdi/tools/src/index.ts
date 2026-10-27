@@ -8,7 +8,8 @@
  * files, answers and audited importables. No accounting logic lives here.
  */
 import { spawn } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { readFileSync } from 'node:fs'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
@@ -19,7 +20,7 @@ import { defineTool, type ToolExecution } from '@deepseek-ai/dsh-tools'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { SessionBindings } from './bindings.ts'
 import { CLAUDE_CODE_PROVIDER, ClaudeCodeAdapter } from './claude-code/adapter.ts'
-import { ClaudeLogin, claudeLogout, claudeStatus, installClaude, locateClaude } from './claude-code/cli.ts'
+import { ClaudeLogin, claudeStatus, installClaude, locateClaude } from './claude-code/cli.ts'
 import { AccountingRunner, type EngineLaunch } from './runner.ts'
 import type {
   FiscalcfdiAnswerRequest, FiscalcfdiBindRequest, FiscalcfdiBinding, FiscalcfdiCompany, FiscalcfdiImportable, FiscalcfdiMonth,
@@ -350,6 +351,16 @@ function monthDetail(raw: BridgeResult): FiscalcfdiMonthDetail {
   }
 }
 
+/** Whether the user connected Claude in this app, as recorded in the data home. */
+function linkedClaude(home: string): boolean {
+  try {
+    return (JSON.parse(readFileSync(join(home, 'fiscalcfdi', 'claude.json'), 'utf8')) as { conectado?: unknown }).conectado === true
+  } catch {
+    // No record: Claude has not been connected in this app.
+    return false
+  }
+}
+
 /**
  * The FiscalCFDI AI Host service: registers the accounting tools, remembers
  * which company month each chat works on (the composer selector and the month
@@ -365,6 +376,8 @@ export class Fiscalcfdi extends TypertRemoteService {
   private readonly runner: AccountingRunner
   private login: ClaudeLogin | undefined
   private readonly claude: ClaudeCodeAdapter
+  /** Whether the user connected Claude in this app; Claude Code's own sign-in may be older or shared. */
+  private claudeLinked: boolean
   private readonly home: string
 
   /**
@@ -380,7 +393,8 @@ export class Fiscalcfdi extends TypertRemoteService {
     this.runner = new AccountingRunner(ctx, { python: config.python, home, environment: this.environment })
     registerTools(ctx, config, this.bindings, this.call, this.runner)
     // Chat models on the user's Claude subscription, through their own Claude Code.
-    const claude = new ClaudeCodeAdapter({ executable: config.claudeCode, home })
+    this.claudeLinked = linkedClaude(home)
+    const claude = new ClaudeCodeAdapter({ executable: config.claudeCode, home, linked: () => this.claudeLinked })
     this.claude = claude
     ctx.llm.registerAdapter([CLAUDE_CODE_PROVIDER], claude)
     ctx.effect(() => () => {
@@ -639,7 +653,21 @@ export class Fiscalcfdi extends TypertRemoteService {
   async claudeStatus(): Promise<ClaudeCodeStatus> {
     this.claude.forgetStatus()
     const selection = this.ctx.agentDefaultModel.currentSelection()
-    return { ...await claudeStatus(this.config.claudeCode), active: selection.provider === CLAUDE_CODE_PROVIDER ? selection.model : null }
+    const status = await claudeStatus(this.config.claudeCode)
+    return {
+      ...status, connected: this.claudeLinked && status.loggedIn && status.method === 'claude.ai',
+      active: selection.provider === CLAUDE_CODE_PROVIDER ? selection.model : null,
+    }
+  }
+
+  /** Remember whether the user connected Claude in this app. */
+  private async linkClaude(linked: boolean): Promise<void> {
+    this.claudeLinked = linked
+    this.claude.forgetStatus()
+    const file = join(this.home, 'fiscalcfdi', 'claude.json')
+    if (!linked) return rm(file, { force: true })
+    await mkdir(join(this.home, 'fiscalcfdi'), { recursive: true })
+    await writeFile(file, JSON.stringify({ conectado: true, fecha: new Date().toISOString() }))
   }
 
   /**
@@ -679,7 +707,9 @@ export class Fiscalcfdi extends TypertRemoteService {
   }
 
   /**
-   * Start Claude Code's own sign-in, which opens the Claude sign-in page in the browser.
+   * Connect Claude in this app: Claude Code's own sign-in opens Claude's authorization page in the browser,
+   * even when Claude Code is already signed in, so the user authorizes this app explicitly. A sign-in that
+   * completes connects the app.
    * @returns the sign-in page, also for opening it again by hand.
    */
   @Remote('claudeLogin')
@@ -689,7 +719,10 @@ export class Fiscalcfdi extends TypertRemoteService {
     this.login?.cancel()
     const login = new ClaudeLogin(executable)
     this.login = login
-    void login.done.then(() => { if (this.login === login) this.login = undefined })
+    void login.done.then(async (code) => {
+      if (this.login === login) this.login = undefined
+      if (code === 0) await this.linkClaude(true)
+    })
     return { url: await login.url }
   }
 
@@ -708,13 +741,13 @@ export class Fiscalcfdi extends TypertRemoteService {
   }
 
   /**
-   * Sign Claude Code out of the Claude account.
-   * @returns the sign-in state afterwards.
+   * Disconnect Claude from this app. Claude Code stays signed in for the user's other programs.
+   * @returns the state afterwards.
    */
-  @Remote('claudeLogout')
-  async claudeLogout(): Promise<ClaudeCodeStatus> {
-    const executable = locateClaude(this.config.claudeCode)
-    if (executable !== undefined) await claudeLogout(executable)
+  @Remote('claudeDisconnect')
+  async claudeDisconnect(): Promise<ClaudeCodeStatus> {
+    this.login?.cancel()
+    await this.linkClaude(false)
     return this.claudeStatus()
   }
 }

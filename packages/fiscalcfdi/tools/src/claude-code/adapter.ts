@@ -40,6 +40,8 @@ export interface ClaudeCodeAdapterOptions {
   executable: string
   /** Data home; Claude Code runs in a private folder inside it. */
   home: string
+  /** Whether the user connected Claude in this app. */
+  linked: () => boolean
 }
 
 /** The `claude-code` adapter. */
@@ -57,9 +59,9 @@ export class ClaudeCodeAdapter extends LlmAdapter {
     return { id: provider, name: 'Claude (tu suscripción)' }
   }
 
-  /** The models, offered only while Claude Code is signed in with a Claude subscription, as a configured provider's are. */
+  /** The models, offered only while Claude is connected in this app with a Claude subscription, as a configured provider's are. */
   override async listModels(provider: string): Promise<readonly LlmModelInfo[]> {
-    if (!await this.subscribed()) return []
+    if (!this.options.linked() || !await this.subscribed()) return []
     return MODELS.map(model => ({
       provider, id: model.id, name: model.name, description: 'Con tu suscripción de Claude, mediante Claude Code', inputModalities: ['text'] as const,
     }))
@@ -106,6 +108,13 @@ export class ClaudeCodeAdapter extends LlmAdapter {
       yield {
         type: 'finish',
         reason: { kind: 'error', failure: { code: 'MISSING_CREDENTIAL', message: 'Claude Code no está instalado. Instálalo y conéctalo en Ajustes → Modelos → Claude.' } },
+      }
+      return
+    }
+    if (!this.options.linked()) {
+      yield {
+        type: 'finish',
+        reason: { kind: 'error', failure: { code: 'AUTH', message: 'Claude no está conectado en FiscalCFDI AI. Conéctalo en Ajustes → Modelos → Claude.' } },
       }
       return
     }
