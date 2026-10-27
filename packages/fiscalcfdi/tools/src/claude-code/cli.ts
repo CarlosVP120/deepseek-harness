@@ -48,9 +48,11 @@ export function claudeEnvironment(): NodeJS.ProcessEnv {
 }
 
 /** Run one short Claude Code command; resolves with its exit code and output. */
-function run(executable: string, args: string[], timeoutMs = 30000): Promise<{ code: number | null; stdout: string; stderr: string }> {
+function run(
+  executable: string, args: string[], timeoutMs = 30000, env: NodeJS.ProcessEnv = claudeEnvironment(),
+): Promise<{ code: number | null; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
-    const child = spawn(executable, args, { env: claudeEnvironment(), stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
+    const child = spawn(executable, args, { env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
     let stdout = ''
     let stderr = ''
     child.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString('utf8') })
@@ -142,8 +144,11 @@ export async function claudeLogout(executable: string): Promise<void> {
  * @returns the installed executable.
  */
 export async function installClaude(): Promise<string> {
+  // Windows PowerShell rebuilds its module path when PSModulePath is unset; one inherited from PowerShell 7
+  // hides its built-in commands, which the installer uses.
+  const { PSModulePath: _modules, ...windowsEnv } = claudeEnvironment()
   const result = WINDOWS
-    ? await run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'irm https://claude.ai/install.ps1 | iex'], 600000)
+    ? await run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'irm https://claude.ai/install.ps1 | iex'], 600000, windowsEnv)
     : await run('/bin/bash', ['-c', 'curl -fsSL https://claude.ai/install.sh | bash'], 600000)
   const path = locateClaude()
   if (path === undefined) throw new Error(`No se pudo instalar Claude Code: ${(result.stderr || result.stdout).trim().slice(-400)}`)
