@@ -6,6 +6,7 @@
  * the shared Remote assembly stays free of product packages.
  */
 import type { Context } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-client-ui-model-selection/client'
 import fiscalcfdiRemote from '@deepseek-ai/dsh-fiscalcfdi-tools/remote'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
@@ -128,7 +129,10 @@ function registerUi(ctx: Context): void {
       session !== undefined && session.blank && session.subagent === null && !session.awaitingFirstTurn
         && session.pendingSubmissions.length === 0 ? {} : null,
     locale: NS,
-    inject: (): GuidedStartInjected => ({ months }),
+    inject: (): GuidedStartInjected => ({
+      months,
+      model: sessionId => ctx.get('modelDirectories')?.picker(sessionId) ?? null,
+    }),
   }, GuidedStart))
   ctx.slots.inject('conversation.input.left', () => ctx.slots.register({
     name: 'conversation.input.left', id: 'fiscalcfdi-month', order: 0, locale: NS,

@@ -376,6 +376,8 @@ export class Fiscalcfdi extends TypertRemoteService {
   private readonly runner: AccountingRunner
   private login: ClaudeLogin | undefined
   private readonly claude: ClaudeCodeAdapter
+  /** Re-announcing the route makes model pickers read Claude's models again. */
+  private readonly claudeRoute: () => void
   /** Whether the user connected Claude in this app; Claude Code's own sign-in may be older or shared. */
   private claudeLinked: boolean
   private readonly home: string
@@ -396,7 +398,10 @@ export class Fiscalcfdi extends TypertRemoteService {
     this.claudeLinked = linkedClaude(home)
     const claude = new ClaudeCodeAdapter({ executable: config.claudeCode, home, linked: () => this.claudeLinked })
     this.claude = claude
-    ctx.llm.registerAdapter([CLAUDE_CODE_PROVIDER], claude)
+    const route = ctx.llm.registerAdapter([CLAUDE_CODE_PROVIDER], claude)
+    this.claudeRoute = () => { route.replace([CLAUDE_CODE_PROVIDER]) }
+    // Claude disconnected while it was the chats' default (or never connected in this app): go back to the model before it.
+    if (!this.claudeLinked && ctx.agentDefaultModel.currentSelection().provider === CLAUDE_CODE_PROVIDER) void this.restoreModel()
     ctx.effect(() => () => {
       this.login?.cancel()
       void claude.dispose()
@@ -660,10 +665,18 @@ export class Fiscalcfdi extends TypertRemoteService {
     }
   }
 
+  /** Make the model used before Claude the chats' default again, when one was recorded. */
+  private async restoreModel(): Promise<void> {
+    const previous = join(this.home, 'fiscalcfdi', 'modelo-anterior.json')
+    const saved = JSON.parse(await readFile(previous, 'utf8').catch(() => 'null')) as ReturnType<typeof this.ctx.agentDefaultModel.currentSelection> | null
+    if (saved !== null) await this.ctx.agentDefaultModel.saveSelection(saved)
+  }
+
   /** Remember whether the user connected Claude in this app. */
   private async linkClaude(linked: boolean): Promise<void> {
     this.claudeLinked = linked
     this.claude.forgetStatus()
+    this.claudeRoute()
     const file = join(this.home, 'fiscalcfdi', 'claude.json')
     if (!linked) return rm(file, { force: true })
     await mkdir(join(this.home, 'fiscalcfdi'), { recursive: true })
@@ -680,8 +693,7 @@ export class Fiscalcfdi extends TypertRemoteService {
     const current = this.ctx.agentDefaultModel.currentSelection()
     const previous = join(this.home, 'fiscalcfdi', 'modelo-anterior.json')
     if (request.model === null) {
-      const saved = JSON.parse(await readFile(previous, 'utf8').catch(() => 'null')) as typeof current | null
-      if (saved !== null) await this.ctx.agentDefaultModel.saveSelection(saved)
+      await this.restoreModel()
     } else {
       if (current.provider !== CLAUDE_CODE_PROVIDER) {
         await mkdir(join(this.home, 'fiscalcfdi'), { recursive: true })

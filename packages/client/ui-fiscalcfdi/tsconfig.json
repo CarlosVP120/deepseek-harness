@@ -57,6 +57,9 @@
       "path": "../ui-settings-models"
     },
     {
+      "path": "../ui-model-selection"
+    },
+    {
       "path": "../ui-workspace"
     }
   ]

@@ -127,3 +127,4 @@
 @media (max-width: 760px) {
   .steps, .metrics { grid-template-columns: minmax(0, 1fr); }
 }
+.model { margin-left: auto; display: inline-flex; align-items: center; }

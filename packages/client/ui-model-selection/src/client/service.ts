@@ -18,8 +18,11 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { SessionBinding } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { WeakMapWithValues } from '@deepseek-ai/dsh-util-values'
+import { createElement, type ReactElement } from 'react'
+import type {} from '@deepseek-ai/dsh-client-locale/client'
 import { ModelCatalogDirectory } from './catalog.ts'
 import { ModelDirectory } from './directory.ts'
+import { ModelSelect } from './ModelSelect.tsx'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -35,7 +38,7 @@ interface LiveState {
 
 /** The `ctx.modelDirectories` session model-selection service. */
 export class ModelDirectoryResolver extends Service {
-  static inject = ['sessions', 'remote', 'remote.session']
+  static inject = ['sessions', 'remote', 'remote.session', 'locale']
 
   private readonly live: LiveState = { directories: new WeakMapWithValues() }
   private readonly catalog: ModelCatalogDirectory
@@ -64,6 +67,26 @@ export class ModelDirectoryResolver extends Service {
    * @returns the resident directory both entries share.
    */
   directoryFor(sessionId: SessionId): ModelDirectory {
+    return this.resolve(sessionId)
+  }
+
+  /**
+   * The composer's model picker for one session, for another surface that starts the same chat (a start
+   * page that replaces the composer). It reads and changes the session's shared directory.
+   * @param sessionId - the owning session.
+   * @returns the picker element.
+   */
+  picker(sessionId: SessionId): ReactElement {
+    const directory = this.resolve(sessionId)
+    const available = this.ctx.sessions.subagentAddress(sessionId) === undefined
+    return createElement(ModelSelect, {
+      locked: false, available, directory: directory.store, t: this.ctx.locale.bind('model'),
+      load: () => { if (available) directory.load().catch(() => { /* surfaced on the store */ }) },
+      select: selection => available ? directory.select(selection) : Promise.resolve(undefined),
+    })
+  }
+
+  private resolve(sessionId: SessionId): ModelDirectory {
     const { live } = this
     const sessions = this.ctx.sessions
     const actx = sessions.scope(sessionId)

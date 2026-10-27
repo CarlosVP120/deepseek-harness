@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { FiscalcfdiCompany, FiscalcfdiMonthFile } from '@deepseek-ai/dsh-fiscalcfdi-tools/types'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { FiscalcfdiMark } from './brand-mark.tsx'
 import { monthLabel } from './format.ts'
 import { MonthRun } from './MonthRun.tsx'
@@ -12,6 +13,8 @@ import css from './guided.module.css'
 /** What the guided start receives from the plugin. */
 export interface GuidedStartInjected {
   readonly months: MonthRegistry
+  /** The chat's model picker for this chat, when the model selection plugin is loaded. */
+  readonly model: (sessionId: SessionId) => ReactNode
 }
 
 type Props = PropsRuntime<'conversation.composer'> & PropsLocale<typeof NS> & InjectFace<GuidedStartInjected>
@@ -174,7 +177,7 @@ function DropZone({ zone, files, ready, disabled, onFiles, t }: {
  * in the conversation. A month already started shows its state, with the next
  * step handed to the chat as well.
  */
-export function GuidedStart({ sessionId, inputActions, months, t }: Props) {
+export function GuidedStart({ sessionId, inputActions, months, model, t }: Props) {
   const month = months.for(sessionId)
   const state = useSyncExternalStore(month.subscribe, month.getSnapshot)
   const locale = t('time.locale')
@@ -250,6 +253,7 @@ export function GuidedStart({ sessionId, inputActions, months, t }: Props) {
         <div className={css.footer}>
           <span className={css.muted}>{!bound ? t('guided.firstChoose') : missing.length > 0
             ? t('guided.missing', { items: missing.join(', ') }) : engineAsks ? t('guided.answerFirst') : t('guided.readyHint')}</span>
+          <span className={css.model}>{model(sessionId)}</span>
           <button type="button" className={`${css.primary} ${css.start}`} disabled={!canStart} onClick={() => { ask('guided.startPrompt') }}>
             {t('guided.start')}
           </button>
