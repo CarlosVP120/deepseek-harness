@@ -32,6 +32,8 @@ export interface TypertRemoteEventFrame {
   readonly event: string
   /** Original event argument list after the owner validates it for JSON transport. */
   readonly args: readonly unknown[]
+  /** Session the notification is about; only Clients whose Peer may see it receive the frame. */
+  readonly sessionId?: string
 }
 
 /** Live Host values used to project one scoped Remote Event. */

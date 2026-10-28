@@ -43,6 +43,52 @@ function changedWorkspaceView(workspaceId: string, value: unknown): WorkspaceVie
   }
 }
 
+/** Which Workspaces and Sessions one follow generation may show. */
+export interface WorkspaceAudience {
+  /** @returns whether the follower may see the Workspace rooted at `path`. */
+  readonly workspace: (path: string) => boolean
+  /** @returns whether the follower may see the Session. */
+  readonly session: (sessionId: string) => boolean
+}
+
+/** One frame as an audience may see it; `undefined` when it shows nothing the audience may see. */
+function frameFor(
+  frame: WorkspaceFollowFrame,
+  audience: WorkspaceAudience,
+  pathOf: (workspaceId: string) => string | undefined,
+): WorkspaceFollowFrame | undefined {
+  switch (frame.type) {
+    case 'baseline':
+      return {
+        type: 'baseline',
+        value: {
+          items: frame.value.items.filter(item => audience.workspace(item.path)),
+          archivedSessionIds: frame.value.archivedSessionIds.filter(id => audience.session(id)),
+          pinnedSessionIds: frame.value.pinnedSessionIds.filter(id => audience.session(id)),
+        },
+      }
+    case 'upsert':
+      return audience.workspace(frame.workspace.path) ? frame : undefined
+    case 'remove':
+      return frame
+    case 'order':
+      return { type: 'order', workspaceIds: frame.workspaceIds.filter((id) => {
+        const path = pathOf(id)
+        return path !== undefined && audience.workspace(path)
+      }) }
+    case 'archived':
+      return { type: 'archived', archivedSessionIds: frame.archivedSessionIds.filter(id => audience.session(id)) }
+    case 'pinned':
+      return { type: 'pinned', pinnedSessionIds: frame.pinnedSessionIds.filter(id => audience.session(id)) }
+    default:
+      return assertNever(frame)
+  }
+}
+
+function assertNever(value: never): never {
+  throw new Error(`unexpected Workspace follow frame ${JSON.stringify(value)}`)
+}
+
 /** Owns Workspace domain observation and all active follow generations. */
 export class WorkspaceFeed {
   private readonly followers = new Set<WorkspaceFollower>()
@@ -80,15 +126,23 @@ export class WorkspaceFeed {
   /**
    * Open one generation beginning with a complete baseline.
    * @param signal - generation cancellation.
+   * @param audience - which Workspaces and Sessions this generation may show; everything when omitted.
    * @returns baseline followed by ordered Workspace increments.
    */
-  async *follow(signal: AbortSignal): AsyncIterable<WorkspaceFollowFrame> {
+  async *follow(signal: AbortSignal, audience?: WorkspaceAudience): AsyncIterable<WorkspaceFollowFrame> {
     signal.throwIfAborted()
     const follower = new WorkspaceFollower()
     this.followers.add(follower)
+    const pathOf = (id: string): string | undefined => this.ctx.workspaceRegistry.get(WorkspaceId(id))?.path
+    const shown = (frame: WorkspaceFollowFrame): WorkspaceFollowFrame | undefined =>
+      audience === undefined ? frame : frameFor(frame, audience, pathOf)
     try {
-      yield { type: 'baseline', value: this.baseline() }
-      yield* follower.read(signal)
+      const baseline = shown({ type: 'baseline', value: this.baseline() })
+      if (baseline !== undefined) yield baseline
+      for await (const frame of follower.read(signal)) {
+        const visible = shown(frame)
+        if (visible !== undefined) yield visible
+      }
     } finally {
       this.followers.delete(follower)
       follower.close()

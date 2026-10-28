@@ -12,11 +12,13 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
 import type {} from '@deepseek-ai/dsh-client-ui-tool/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { fileAddressFor } from '@deepseek-ai/dsh-util-workspace-path'
 import { IconChecklistOutlineRegular, IconFolderOpenRegular } from '@deepseek-ai/dsh-client-ui-primitives'
+import { AccountMenu } from './AccountMenu.tsx'
 import { FilesPanel, type FilesPanelInjected } from './FilesPanel.tsx'
 import { PendingsPanel, type PendingsPanelInjected } from './PendingsPanel.tsx'
 import { IntakePanel, type IntakeInjected, type IntakeProject } from './IntakePanel.tsx'
@@ -200,6 +202,11 @@ export function apply(ctx: Context): void {
     name: 'conversation.chat.turnTail', id: 'eqidis-workpapers', order: 10, locale: NS,
     inject: (sessionId: SessionId) => ({ follow: followUp(sessionId) }),
   }, TurnCards))
+
+  // On a server shared through accounts, the signed-in person and their menu sit at the sidebar foot.
+  ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
+    name: 'sidebar.footer.action', id: 'eqidis-account', order: 100, locale: NS,
+  }, AccountMenu))
 
   // Every new conversation starts from the intake: workpapers, period, balanza and auxiliares.
   ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({

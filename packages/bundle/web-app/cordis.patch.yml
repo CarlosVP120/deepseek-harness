@@ -253,6 +253,18 @@
         # its literals, for example: ['app.internal', ...ctx.webRuntime.trustedHosts].
         trustedHosts: !!js ctx.webRuntime.trustedHosts
 
+    # EQIDIS AI accounts for a server shared by several people (EQIDIS_CUENTAS=1):
+    # username and password sign-in replace the launch-token link, each person
+    # works in their own folder under EQIDIS_CARPETAS, and sees only their own
+    # projects and conversations. Off by default, so a personal install is unchanged.
+    - id: eqidis-accounts
+      name: '@deepseek-ai/dsh-eqidis-accounts'
+      disabled: !!js process.env.EQIDIS_CUENTAS !== '1'
+      config:
+        accountsFile: !!js dshHomePath('eqidis-cuentas', 'cuentas.json')
+        homesRoot: !!js process.env.EQIDIS_CARPETAS ?? dshHomePath('usuarios')
+        secureCookies: !!js process.env.EQIDIS_COOKIES_SEGURAS === '1'
+
     # Raw Blob and ReadableStream uploads run independently of Connection's
     # RPC and generation service.
     - id: file-upload

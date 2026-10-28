@@ -1,5 +1,7 @@
 /** Host Workspace Remote owner: explicit commands and reconnect-safe state. */
 
+import { mkdir } from 'node:fs/promises'
+import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
@@ -14,6 +16,7 @@ import { WorkspaceCommands } from './commands.ts'
 import { DirectoryPickerController } from './directory-picker.ts'
 import { WorkspaceFeed, workspaceView } from './feed.ts'
 import { defaultWorkspaceDirectory, validateDocumentsDirectory } from './default-directory.ts'
+import { DEFAULT_WORKSPACE_DIRECTORY } from './default-workspace.ts'
 import type {
   WorkspaceArchiveSessionRequest,
   WorkspaceArchiveValue,
@@ -228,6 +231,14 @@ export class WorkspaceController extends TypertRemoteService {
    */
   @Remote('initializeDefault')
   async initializeDefault(signal: AbortSignal): Promise<WorkspaceValue | undefined> {
+    const peer = this.ctx.invocation?.peer
+    const home = peer === undefined ? undefined : this.ctx.get('peerAccess')?.home(peer)
+    if (home !== undefined) {
+      // On a shared Host each person's first project lives in their own folder.
+      const directory = join(home, DEFAULT_WORKSPACE_DIRECTORY)
+      await mkdir(directory, { recursive: true })
+      return { workspace: (await this.commands.create({ path: directory })).workspace }
+    }
     const workspace = await this.ctx.workspaceRegistry.initializeDefault(async () => {
       const timeout = AbortSignal.timeout(this.config.documentsLookupTimeoutMs)
       return await defaultWorkspaceDirectory(
@@ -324,7 +335,12 @@ export class WorkspaceController extends TypertRemoteService {
    */
   @Remote({ mode: 'stream' })
   follow(signal: AbortSignal): AsyncIterable<WorkspaceFollowFrame> {
-    return this.feed.follow(signal)
+    const access = this.ctx.get('peerAccess')
+    const peer = this.ctx.invocation?.peer
+    return this.feed.follow(signal, access === undefined || peer === undefined ? undefined : {
+      workspace: path => access.visible(peer, path),
+      session: sessionId => access.visibleSession(peer, sessionId),
+    })
   }
 }
 

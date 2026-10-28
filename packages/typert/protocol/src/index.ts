@@ -29,6 +29,8 @@ export type {
   InvocationParameterDescriptor,
   InvocationSourceLocation,
   PeerId,
+  PeerAccess,
+  PeerAccessCall,
   PeerScope,
   RemoteErrorCode,
   RemoteErrorDetailsMap,

@@ -11,6 +11,7 @@
     { "path": "../../../vendor/cordis" },
     { "path": "../ui-slots" },
     { "path": "../ui-renderer" },
+    { "path": "../ui-sidebar" },
     { "path": "../ui-sidebar-right" },
     { "path": "../locale/tsconfig.client.json" },
     { "path": "../ui-tool" },
@@ -21,6 +22,7 @@
     { "path": "../ui-primitives" },
     { "path": "../../api/remotes/tsconfig.client.json" },
     { "path": "../../api/workspace-controller/tsconfig.client.json" },
+    { "path": "../../eqidis/accounts" },
     { "path": "../../eqidis/workpapers" },
     { "path": "../../core/session" }
   ]

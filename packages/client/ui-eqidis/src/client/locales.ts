@@ -6,6 +6,12 @@ export const NS = 'eqidis'
 /** Spanish dictionary, the product's working language. */
 export const es = {
   'time.locale': 'es-MX',
+  'account.menu': 'Cuenta de {name}',
+  'account.myAccount': 'Mi cuenta',
+  'account.users': 'Usuarios',
+  'account.signOut': 'Cerrar sesión',
+  'account.admin': 'Administrador',
+  'account.user': 'Contador',
   'card.eyebrow': 'Papel de trabajo · {period}',
   'card.working': 'Recalculando el papel de trabajo…',
   'card.error': 'No se pudo cerrar el papel de trabajo.',
@@ -113,6 +119,12 @@ export type EqidisKey = keyof typeof es
 /** English dictionary. */
 export const en: Record<EqidisKey, string> = {
   'time.locale': 'en-US',
+  'account.menu': '{name}’s account',
+  'account.myAccount': 'My account',
+  'account.users': 'Users',
+  'account.signOut': 'Sign out',
+  'account.admin': 'Administrator',
+  'account.user': 'Accountant',
   'card.eyebrow': 'Workpaper · {period}',
   'card.working': 'Recalculating the workpaper…',
   'card.error': 'The workpaper could not be closed.',
@@ -218,6 +230,12 @@ export const en: Record<EqidisKey, string> = {
 export const zh: Record<EqidisKey, string> = {
   ...en,
   'time.locale': 'zh-CN',
+  'account.menu': '{name} 的账户',
+  'account.myAccount': '我的账户',
+  'account.users': '用户',
+  'account.signOut': '退出登录',
+  'account.admin': '管理员',
+  'account.user': '会计',
   'card.eyebrow': '工作底稿 · {period}',
   'card.working': '正在重新计算工作底稿…',
   'card.error': '无法完成工作底稿。',

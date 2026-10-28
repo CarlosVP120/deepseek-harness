@@ -117,6 +117,7 @@ interface RegisteredRemoteEventSource {
 
 interface RemoteEventClient {
   readonly id: RemoteEventClientId
+  readonly peer: PeerScope
   readonly queue: RemoteEventQueue
   readonly signal: AbortSignal
   readonly deliveries: Map<RemoteEventId, PendingRemoteEvent>
@@ -454,7 +455,7 @@ export class TypertGatewayService extends Service implements TypertGateway {
     if (endpoint === REMOTE_EVENT_STREAM_ENDPOINT) {
       // A Gateway-owned stream reads no uplink: releasing it now keeps its items out of the bounded inbox.
       releaseUplink(uplink)
-      return this.openRemoteEvents(payload, signal)
+      return this.openRemoteEvents(payload, signal, peer ?? this.operatorPeer())
     }
     return this.openStream({ ...remoteRequest(endpoint, payload, signal, peer), uplink }, control)
   }
@@ -475,6 +476,7 @@ export class TypertGatewayService extends Service implements TypertGateway {
   private async *openRemoteEvents(
     payload: unknown,
     signal: AbortSignal,
+    peer: PeerScope,
   ): AsyncGenerator<
     RemoteEventEmitFrame | RemoteEventInvocationFrame | RemoteEventCancellationFrame
     | RemoteEventReadyFrame
@@ -505,6 +507,7 @@ export class TypertGatewayService extends Service implements TypertGateway {
     while (this.remoteEventClients.has(clientId)) clientId = randomUUID() as RemoteEventClientId
     const client: RemoteEventClient = {
       id: clientId,
+      peer,
       queue: new RemoteEventQueue(),
       signal: lifetime,
       deliveries: new Map(),
@@ -543,7 +546,15 @@ export class TypertGatewayService extends Service implements TypertGateway {
       event: frame.event,
       args: frame.args,
     }
-    for (const client of this.remoteEventClients.values()) client.queue.push(wire)
+    for (const client of this.remoteEventClients.values()) {
+      if (frame.sessionId === undefined || this.mayReceive(client, frame.sessionId)) client.queue.push(wire)
+    }
+  }
+
+  /** Whether the Host's access policy lets this Client's Peer see a Session; always true without one. */
+  private mayReceive(client: RemoteEventClient, sessionId: string): boolean {
+    const access = this.ctx.get('peerAccess')
+    return access === undefined || access.visibleSession(client.peer, sessionId)
   }
 
   private startRemoteEvent(source: TypertRemoteEventInvocation): void {
@@ -606,6 +617,7 @@ export class TypertGatewayService extends Service implements TypertGateway {
   }
 
   private deliverRemoteEvent(pending: PendingRemoteEvent, client: RemoteEventClient): void {
+    if (!this.mayReceive(client, pending.frame.agentId)) return
     pending.deliveries.add(client)
     client.deliveries.set(pending.id, pending)
     client.queue.push(pending.frame)
@@ -703,6 +715,10 @@ export class TypertGatewayService extends Service implements TypertGateway {
     const endpoint = endpointOf(request.namespace, request.method)
     const descriptor = this.resolveDescriptor(request.namespace, request.method, endpoint)
     assertExactArguments(request.args, descriptor, endpoint)
+    const peer = request.peer ?? this.operatorPeer()
+    await this.ctx.get('peerAccess')?.authorize({
+      namespace: request.namespace, method: request.method, args: request.args, peer,
+    })
     const receiverContext = await this.resolveReceiverContext(descriptor, request.args, endpoint)
     const receiver: unknown = receiverContext.get(descriptor.service)
     if (!isObject(receiver)) {
@@ -719,7 +735,7 @@ export class TypertGatewayService extends Service implements TypertGateway {
     const invocation = new GatewayInvocation(
       { namespace: request.namespace, method: request.method, args: request.args },
       descriptor.service,
-      request.peer ?? this.operatorPeer(),
+      peer,
       signal,
       {
         source: request.uplink ?? EMPTY_ASYNC_ITERABLE,

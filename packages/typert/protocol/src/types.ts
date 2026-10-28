@@ -53,6 +53,8 @@ export interface RemoteErrorDetailsMap {
   'gateway/cancelled': {}
   /** Carrier, dispatch, or unclassified Host failure. */
   'gateway/internal': {}
+  /** The Host's {@link PeerAccess} policy refused this Peer the call. */
+  'access/forbidden': {}
 }
 
 /** Every declared Remote failure code. */
@@ -420,6 +422,59 @@ export interface RemoteInvocation {
   uplink<In = unknown>(): AsyncIterable<In>
 }
 
+/** One Remote call as {@link PeerAccess.authorize} sees it, before any argument resolves. */
+export interface PeerAccessCall {
+  readonly namespace: string
+  readonly method: string
+  /** Decoded wire arguments keyed by wire name (`sessionId`, `agentId`, `workspaceId`, ...). */
+  readonly args: Readonly<Record<string, unknown>>
+  readonly peer: PeerScope
+}
+
+/**
+ * Per-Peer access policy of a Host shared by several people. Without a provider every
+ * admitted Peer reaches everything, as on a single-operator Host. With one, the Gateway
+ * asks {@link PeerAccess.authorize} before every Remote call, Connection asks
+ * {@link PeerAccess.authorizeFetch} before every authenticated Fetch route, and Host-wide
+ * lists, streams, and forwarded events show a Peer only the Sessions and Workspaces whose
+ * directory {@link PeerAccess.visible} admits. A Session's directory is its header `cwd`.
+ */
+export interface PeerAccess {
+  /**
+   * Admit or refuse one Remote call.
+   * @param call - endpoint, wire arguments, and the calling Peer.
+   * @returns settles when the call may proceed; rejects with `access/forbidden` otherwise.
+   */
+  authorize(call: PeerAccessCall): Promise<void>
+  /**
+   * Admit or refuse one authenticated Fetch route request.
+   * @param request - the route request; its query names the addressed Session or path.
+   * @param peer - the admitted Peer.
+   * @returns whether the route may serve the request.
+   */
+  authorizeFetch(request: Request, peer: PeerScope): Promise<boolean>
+  /**
+   * Whether a Peer may see a Session or Workspace rooted at a directory.
+   * @param peer - the Peer a list, stream, or event is delivered to.
+   * @param path - absolute directory; `undefined` for a Session without one.
+   * @returns true when the Peer may see it.
+   */
+  visible(peer: PeerScope, path: string | undefined): boolean
+  /**
+   * Whether a Peer may see a Session, judged by its directory.
+   * @param peer - the Peer a list entry, stream frame, or event is delivered to.
+   * @param sessionId - the Session's identity.
+   * @returns true when the Peer may see it; false for a Session this Host does not know.
+   */
+  visibleSession(peer: PeerScope, sessionId: string): boolean
+  /**
+   * The directory a Peer's browsing starts from and its new projects belong under.
+   * @param peer - the calling Peer.
+   * @returns an absolute directory, or `undefined` for a Peer without one.
+   */
+  home(peer: PeerScope): string | undefined
+}
+
 /** Generated Host contract selected explicitly by a Client assembly. */
 export interface TypertRemoteContribution {
   /** npm package that owns the Remote methods. */
@@ -698,5 +753,7 @@ declare module '@deepseek-ai/cordis' {
      * `this.ctx.invocation`.
      */
     readonly invocation: RemoteInvocation | undefined
+    /** Per-Peer access policy; absent on a single-operator Host. */
+    peerAccess: PeerAccess
   }
 }

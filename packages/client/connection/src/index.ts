@@ -14,6 +14,7 @@ import { HostConnectionService } from './rpc-host.ts'
 import { ConnectionRecoveryConfigSchema, resolveConnectionConfig, type ConnectionRecoveryConfig } from './recovery-config.ts'
 
 export type {
+  ConnectionAuthenticator,
   PeerAdmission,
   ConnectionFetchMethod,
   ConnectionFetchHandler,
@@ -152,7 +153,8 @@ export async function apply(ctx: Context, config?: ConnectionConfig): Promise<vo
           res.end(admission.rejection === 401 ? 'unauthorized' : 'forbidden')
           return
         }
-        await webCtx.waterfall('connection/request', req, res, () => bridge(req, res, fetchHandler, maxRequestBodyBytes))
+        await webCtx.waterfall('connection/request', req, res,
+          () => bridge(req, res, fetchHandler, maxRequestBodyBytes, admission.peer))
       },
     }
     webCtx.effect(() => webCtx.webServer.register(route), 'client-connection: /api route')

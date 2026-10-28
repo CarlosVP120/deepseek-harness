@@ -9,12 +9,13 @@ import {
   type RpcId as RpcIdType,
 } from './rpc.ts'
 import { clientRequestSchema } from './rpc-schema.ts'
-import { bridge } from './http-bridge.ts'
+import { bridge, bridgedPeer, DEFAULT_MAX_REQUEST_BODY_BYTES } from './http-bridge.ts'
 import { isTrustedApiRequest } from './api-request-trust.ts'
 import { API_PATH } from './api-path.ts'
 import type { BrowserAuth } from './browser-auth.ts'
 import { OperatorPeer } from './operator-peer.ts'
 import type {
+  ConnectionAuthenticator,
   PeerAdmission,
   ConnectionIndexRequest,
   ConnectionIndexResponse,
@@ -61,8 +62,9 @@ declare module '@deepseek-ai/cordis' {
 
 /** Host Connection service whose channel registrations belong to the caller fiber. */
 export class HostConnectionService extends Service implements HostConnectionHandle {
-  /** The operator Peer every admitted request speaks for. */
+  /** The operator Peer admitted requests speak for without an authenticator. */
   readonly operator: PeerScope
+  private authenticator: ConnectionAuthenticator | undefined
   private readonly interceptors = new Map<string, ConnectionRpcInterceptor>()
   private readonly fetchRoutes = new Map<string, RegisteredFetchRoute>()
 
@@ -100,26 +102,48 @@ export class HostConnectionService extends Service implements HostConnectionHand
     }
   }
 
-  /** Apply the configured Host/Origin fence, then browser authentication. */
+  /** Install the sign-in authenticator for the caller fiber's lifetime. */
+  registerAuthenticator(authenticator: ConnectionAuthenticator): () => Promise<void> {
+    return this.ctx.effect(() => {
+      if (this.authenticator !== undefined) throw new Error('connection: a sign-in authenticator is already registered')
+      this.authenticator = authenticator
+      return () => { if (this.authenticator === authenticator) this.authenticator = undefined }
+    }, 'client-connection: sign-in authenticator')
+  }
+
+  /** The Peer the bridge admitted a shared-channel request as, else the operator. */
+  peerOf(request: Request): PeerScope {
+    return bridgedPeer(request) ?? this.operator
+  }
+
+  /** Apply the configured Host/Origin fence, then sign-in or browser authentication. */
   requestRejection(request: ConnectionTrustRequest): ConnectionRequestRejection {
     if (!isTrustedApiRequest(request, this.trustedHosts)) return 403
+    if (this.authenticator !== undefined) return this.authenticator.peerOf(request) === undefined ? 401 : undefined
     return this.browserAuth.isAuthenticated(request) ? undefined : 401
   }
 
-  /** A request that passes the fence and authentication speaks for the operator. */
+  /** A request that passes the fence and authentication speaks for its signed-in Peer, else the operator. */
   admit(request: ConnectionTrustRequest): PeerAdmission {
-    const rejection = this.requestRejection(request)
-    return rejection === undefined ? { peer: this.operator } : { rejection }
+    if (!isTrustedApiRequest(request, this.trustedHosts)) return { rejection: 403 }
+    if (this.authenticator !== undefined) {
+      const peer = this.authenticator.peerOf(request)
+      return peer === undefined ? { rejection: 401 } : { peer }
+    }
+    return this.browserAuth.isAuthenticated(request) ? { peer: this.operator } : { rejection: 401 }
   }
 
-  /** Authenticate an index request through the process-token exchange or cookie. */
+  /** Authenticate an index request through the sign-in authenticator, else the process-token exchange or cookie. */
   authorizeIndex(request: ConnectionIndexRequest, response: ConnectionIndexResponse): boolean {
-    return this.browserAuth.authorizeIndex(request, response)
+    if (this.authenticator === undefined) return this.browserAuth.authorizeIndex(request, response)
+    if (this.authenticator.peerOf(request) !== undefined) return true
+    this.authenticator.rejectIndex(request, response)
+    return false
   }
 
-  /** Add this process's launch token to the clean application URL. */
+  /** The sign-in URL, else this process's launch token added to the clean application URL. */
   authenticatedUrl(baseUrl: string): string {
-    return this.browserAuth.authenticatedUrl(baseUrl)
+    return this.authenticator?.launchUrl(baseUrl) ?? this.browserAuth.authenticatedUrl(baseUrl)
   }
 
   /**
@@ -135,14 +159,20 @@ export class HostConnectionService extends Service implements HostConnectionHand
         const route = this.fetchRoutes.get(url.pathname)
         return route?.methods.has(method) === true ? route.requestBody : 'buffered'
       },
-      fetch: (request) => {
+      fetch: async (request) => {
         const pathname = new URL(request.url).pathname
         const route = this.fetchRoutes.get(pathname)
-        if (route?.methods.has(request.method) === true) return route.fetch(request)
+        if (route?.methods.has(request.method) === true) {
+          const access = this.ctx.get('peerAccess')
+          if (access !== undefined && !await access.authorizeFetch(request, this.peerOf(request))) {
+            return new Response('forbidden', { status: 403 })
+          }
+          return route.fetch(request)
+        }
         const endpoint = endpointFromPath(channel, pathname)
         const interceptor = this.interceptors.get(channel)
         if (endpoint === undefined || interceptor === undefined || !interceptor.matches(endpoint)) {
-          return Promise.resolve(new Response('not found', { status: 404 }))
+          return new Response('not found', { status: 404 })
         }
         return interceptor.fetchHandler.fetch(request)
       },
@@ -185,7 +215,7 @@ export class HostConnectionService extends Service implements HostConnectionHand
           res.end(admission.rejection === 401 ? 'unauthorized' : 'forbidden')
           return
         }
-        await bridge(req, res, fetchHandler)
+        await bridge(req, res, fetchHandler, DEFAULT_MAX_REQUEST_BODY_BYTES, admission.peer)
       },
     }
     return owner.effect(
@@ -219,6 +249,7 @@ export class HostConnectionService extends Service implements HostConnectionHand
   }
 }
 
+/** `peer` answers requests the bridge did not admit, such as in-process Fetch carriers. */
 function rpcFetchHandler(
   channel: string,
   handler: ConnectionRpcHandler,
@@ -258,7 +289,7 @@ function rpcFetchHandler(
       }
 
       try {
-        const result = await handler(endpoint, message.payload, request.signal, peer)
+        const result = await handler(endpoint, message.payload, request.signal, bridgedPeer(request) ?? peer)
         return fullResponse(message.rpcId, result)
       } catch (error) {
         return new Response(`handler failure: ${String(error)}`, { status: 500 })

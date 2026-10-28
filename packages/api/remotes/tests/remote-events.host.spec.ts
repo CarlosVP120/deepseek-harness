@@ -113,6 +113,7 @@ describe('Remote event Host source', () => {
       value: {
         event: 'goal/activation-changed',
         args: [{ sessionId: 'session-1', goal: { id: 'goal-1', revision: 1, activation: 'disarmed' } }],
+        sessionId: 'session-1',
       },
     })
     await expect(second.next()).resolves.toEqual({
@@ -120,6 +121,7 @@ describe('Remote event Host source', () => {
       value: {
         event: 'goal/activation-changed',
         args: [{ sessionId: 'session-1', goal: { id: 'goal-1', revision: 1, activation: 'disarmed' } }],
+        sessionId: 'session-1',
       },
     })
 

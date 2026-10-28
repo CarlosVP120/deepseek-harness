@@ -405,6 +405,8 @@
       "@deepseek-ai/dsh-message-feedback": ["./packages/feedback/message-feedback/src"],
       "@deepseek-ai/dsh-native-command": ["./packages/util/native-command/src"],
       "@deepseek-ai/dsh-office-to-pdf": ["./packages/document/office-to-pdf/src"],
+      "@deepseek-ai/dsh-eqidis-accounts": ["./packages/eqidis/accounts/src"],
+      "@deepseek-ai/dsh-eqidis-accounts/types": ["./packages/eqidis/accounts/src/types.ts"],
       "@deepseek-ai/dsh-eqidis-workpapers": ["./packages/eqidis/workpapers/src"],
       "@deepseek-ai/dsh-eqidis-workpapers/types": ["./packages/eqidis/workpapers/src/types.ts"],
       "@deepseek-ai/dsh-output-retention": ["./packages/util/output-retention/src"],

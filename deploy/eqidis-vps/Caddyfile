@@ -1,0 +1,11 @@
+# HTTPS in front of EQIDIS AI. Replace eqidis.tuempresa.com with the real domain.
+eqidis.tuempresa.com {
+	encode zstd gzip
+	# Caddy keeps the browser's Host header and forwards WebSocket upgrades by default.
+	reverse_proxy 127.0.0.1:3080
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+	}
+}

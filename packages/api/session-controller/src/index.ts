@@ -257,7 +257,8 @@ export class SessionController extends TypertRemoteService {
    */
   @Remote('list')
   async list(_request: SessionListRequest, signal: AbortSignal): Promise<SessionListValue> {
-    return { items: await this.listState.list(signal) }
+    const visible = this.visibleToCaller()
+    return { items: (await this.listState.list(signal)).filter(item => visible(item.cwd)) }
   }
 
   /**
@@ -268,7 +269,7 @@ export class SessionController extends TypertRemoteService {
    */
   @Remote('search')
   search(request: SessionSearchRequest, signal: AbortSignal): Promise<SessionSearchValue> {
-    return this.listState.search(request.query, signal)
+    return this.listState.search(request.query, signal, this.visibleToCaller())
   }
 
   /**
@@ -525,7 +526,17 @@ export class SessionController extends TypertRemoteService {
    */
   @Remote({ mode: 'stream' })
   control(signal: AbortSignal): AsyncIterable<SessionControlFrame> {
-    return this.controlState.control(signal)
+    const access = this.ctx.get('peerAccess')
+    const peer = this.ctx.invocation?.peer
+    return this.controlState.control(signal,
+      access === undefined || peer === undefined ? undefined : sessionId => access.visibleSession(peer, sessionId))
+  }
+
+  /** Which Session directories the calling Peer may see under the Host's access policy; every one without a policy. */
+  private visibleToCaller(): (cwd: string | undefined) => boolean {
+    const access = this.ctx.get('peerAccess')
+    const peer = this.ctx.invocation?.peer
+    return access === undefined || peer === undefined ? () => true : cwd => access.visible(peer, cwd)
   }
 
 

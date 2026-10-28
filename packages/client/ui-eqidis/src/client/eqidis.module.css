@@ -1,5 +1,5 @@
 /* EQIDIS violet carries the workpaper views; states keep the theme's semantic colors. */
-.card, .popover, .trigger, .panel {
+.card, .popover, .trigger, .panel, .account {
   --eq-accent: light-dark(#664899, #a68bd6);
   --eq-accent-soft: color-mix(in srgb, var(--eq-accent) 14%, transparent);
 }
@@ -154,3 +154,29 @@
 .fileAction:disabled { opacity: 0.5; cursor: default; }
 
 .resultsBlock { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 12px; background: var(--eq-accent-soft); }
+
+/* ── signed-in account at the sidebar foot ─────────────────────────────── */
+.account { position: relative; }
+.accountTrigger {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: 10px;
+  background: transparent; color: var(--dsw-alias-label-primary); font: inherit; font-size: 13px; text-align: start; cursor: pointer;
+}
+.accountTrigger[data-wide='false'] { justify-content: center; padding: 6px 0; }
+.accountTrigger:hover { background: var(--dsw-alias-interactive-bg-hover-solid); }
+.accountAvatar {
+  display: inline-flex; flex: none; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--eq-accent); color: #fff; font-size: 11px; font-weight: 600;
+}
+.accountName { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 500; }
+.accountMenu {
+  position: absolute; z-index: 20; bottom: calc(100% + 6px); left: 0; display: flex; flex-direction: column; min-width: 220px; padding: 6px;
+  border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-base);
+  box-shadow: var(--dsw-elevation-prominent, 0 6px 24px rgb(0 0 0 / 0.12));
+}
+.accountWho { display: flex; flex-direction: column; gap: 2px; padding: 6px 10px 8px; border-bottom: 0.5px solid var(--dsw-alias-border-l1); margin-bottom: 4px; }
+.accountForm { margin: 0; }
+.accountItem {
+  display: block; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--dsw-alias-label-primary); font: inherit; font-size: 13px; text-align: start; text-decoration: none; cursor: pointer;
+}
+.accountItem:hover { background: var(--dsw-alias-interactive-bg-hover-solid); }

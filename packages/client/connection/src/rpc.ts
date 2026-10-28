@@ -115,14 +115,40 @@ export interface ConnectionIndexResponse {
   end(body?: string): unknown
 }
 
-/** Outcome of admitting one request: the operator Peer it speaks for, or the status refusing it. */
+/**
+ * Sign-in that replaces the launch-token cookie, for a Host whose Peers are
+ * distinct people. Connection still applies its Host/Origin check first.
+ */
+export interface ConnectionAuthenticator {
+  /**
+   * The Peer a request's sign-in speaks for.
+   * @param request - request headers carrying the sign-in cookie.
+   * @returns the signed-in Peer, or undefined for a request without a valid sign-in.
+   */
+  peerOf(request: ConnectionTrustRequest): PeerScope | undefined
+  /**
+   * Answer an index request that carries no valid sign-in, typically by redirecting to the sign-in page.
+   * @param request - root or configured-index request.
+   * @param response - response the authenticator owns and ends.
+   */
+  rejectIndex(request: ConnectionIndexRequest, response: ConnectionIndexResponse): void
+  /**
+   * The URL a launcher prints for this Host.
+   * @param baseUrl - clean application URL whose authority and mount are preserved.
+   * @returns the URL people open to sign in.
+   */
+  launchUrl(baseUrl: string): string
+}
+
+/** Outcome of admitting one request: the Peer it speaks for, or the status refusing it. */
 export type PeerAdmission =
   | { readonly peer: PeerScope }
   | { readonly rejection: 401 | 403 }
 
 /**
  * Handler invoked after Connection has decoded the transport envelope.
- * `peer` is the Peer the request was admitted as: the operator.
+ * `peer` is the Peer the request was admitted as: the operator, or the
+ * signed-in Peer when a {@link ConnectionAuthenticator} is registered.
  */
 export type ConnectionRpcHandler = (
   endpoint: string,
@@ -195,8 +221,22 @@ export interface HostConnectionHandle {
   readonly rpc: HostConnectionRpc
   /** Exact Fetch routes for streaming or browser-native responses. */
   readonly fetch: HostConnectionFetch
-  /** The operator Peer every admitted request speaks for; its scope lives as long as Connection. */
+  /** The operator Peer admitted requests speak for without an authenticator; its scope lives as long as Connection. */
   readonly operator: PeerScope
+
+  /**
+   * Replace launch-token browser authentication with a sign-in authenticator.
+   * @param authenticator - sign-in owner; at most one is registered at a time.
+   * @returns disposer restoring launch-token authentication.
+   */
+  registerAuthenticator(authenticator: ConnectionAuthenticator): () => Promise<void>
+
+  /**
+   * The Peer an admitted shared-channel Fetch request speaks for.
+   * @param request - request a shared-channel Fetch route received.
+   * @returns the admitted Peer; the operator for a request no carrier admitted.
+   */
+  peerOf(request: Request): PeerScope
 
   /**
    * Compose exact Fetch routes and the shared-channel RPC interceptor.
@@ -215,7 +255,7 @@ export interface HostConnectionHandle {
 
   /**
    * Admit one request: it passes {@link requestRejection} and speaks for the
-   * operator, or it is refused with that status.
+   * operator or its signed-in Peer, or it is refused with that status.
    * @param request - request headers from the HTTP or upgrade request.
    * @returns the operator Peer, or the rejection status.
    */

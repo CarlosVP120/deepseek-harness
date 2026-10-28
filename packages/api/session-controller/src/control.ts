@@ -37,14 +37,15 @@ export class SessionControlController {
   /**
    * Open one generation of Host-wide live control state.
    * @param signal - Remote stream cancellation.
+   * @param visible - which Sessions the stream may show; every one when omitted.
    * @returns one complete baseline followed by live replacement frames.
    */
-  async *control(signal: AbortSignal): AsyncIterable<SessionControlFrame> {
+  async *control(signal: AbortSignal, visible?: (sessionId: SessionId) => boolean): AsyncIterable<SessionControlFrame> {
     signal.throwIfAborted()
-    const queue = new ControlQueue()
+    const queue = new ControlQueue(visible)
     this.streams.add(queue)
     try {
-      yield { type: 'baseline', value: this.baseline() }
+      yield { type: 'baseline', value: this.baseline(visible) }
       yield* queue.iterate(signal)
     } finally {
       this.streams.delete(queue)
@@ -52,8 +53,8 @@ export class SessionControlController {
     }
   }
 
-  private baseline(): SessionControlBaseline {
-    const sessions = this.ctx.sessions.list()
+  private baseline(visible?: (sessionId: SessionId) => boolean): SessionControlBaseline {
+    const sessions = this.ctx.sessions.list().filter(session => visible?.(session.id) ?? true)
     return {
       projections: this.projectionBaseline(sessions),
     }
@@ -84,8 +85,11 @@ class ControlQueue {
   private wake: (() => void) | undefined
   private done = false
 
+  constructor(private readonly visible?: (sessionId: SessionId) => boolean) {}
+
   push(frame: SessionControlFrame): void {
     if (this.done) return
+    if (frame.type === 'projection' && this.visible?.(frame.sessionId) === false) return
     this.buffer.pushBack(frame)
     const wake = this.wake
     this.wake = undefined

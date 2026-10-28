@@ -45,13 +45,32 @@ export function apply(ctx: Context): void {
 }
 
 /** Create the sole queue and listener set consumed by the registered Gateway. */
+/** Forwarded notifications about one Session, delivered only to Clients whose Peer may see it. */
+const SESSION_EVENTS: ReadonlySet<string> = new Set([
+  'agent-preset/selected',
+  'api-session/activity',
+  'api-session/added',
+  'api-session/error',
+  'api-session/removed',
+  'api-session/status',
+  'goal/activation-changed',
+])
+
+/** The Session a session event's first argument names: the identity itself or an object carrying `sessionId`. */
+function sessionOf(first: unknown): string | undefined {
+  if (typeof first === 'string') return first
+  const id = (first as { readonly sessionId?: unknown } | null | undefined)?.sessionId
+  return typeof id === 'string' ? id : undefined
+}
+
 function remoteEventSource(ctx: Context): TypertRemoteEventSource {
   return (signal) => {
     const queue = new RemoteEventQueue()
     const disposers = API_REMOTE_FORWARDED_EVENTS.map(({ event, mode }) => {
       if (mode === 'emit') {
         return ctx.on(event as never, ((...args: unknown[]) => {
-          queue.push({ event, args: assertJsonArgs(event, args) })
+          const sessionId = SESSION_EVENTS.has(event) ? sessionOf(args[0]) : undefined
+          queue.push({ event, args: assertJsonArgs(event, args), ...sessionId === undefined ? {} : { sessionId } })
         }) as never)
       }
       return ctx.on(event as never, (function (

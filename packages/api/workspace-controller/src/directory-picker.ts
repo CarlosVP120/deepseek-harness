@@ -63,7 +63,8 @@ export class DirectoryPickerController extends TypertRemoteService {
 
   /**
    * List one directory level for a Remote caller's in-app browser.
-   * @param path - absolute directory to list; absent lists the home directory.
+   * @param path - absolute directory to list; absent lists the caller's own folder under the Host's
+   *   access policy, else the home directory.
    * @param signal - caller lifetime; abort stops the backend's scan instead of
    *   letting it outlive a disconnected caller.
    * @returns the level's listing with its ancestry.
@@ -71,8 +72,10 @@ export class DirectoryPickerController extends TypertRemoteService {
   @Remote('list')
   async list(path: string | undefined, signal: AbortSignal): Promise<DirectoryListing> {
     const capability = this.requireCapability('browse', 'list')
+    const peer = this.ctx.invocation?.peer
+    const start = path ?? (peer === undefined ? undefined : this.ctx.get('peerAccess')?.home(peer))
     try {
-      return await capability.list(path, signal)
+      return await capability.list(start, signal)
     } catch (error: unknown) {
       throw cancellableFailure(error, signal, 'directory listing was aborted')
     }
