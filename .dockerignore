@@ -1,0 +1,10 @@
+**/node_modules
+**/lib
+**/dist
+**/.desktop-build
+**/.desktop-signing
+**/*.tsbuildinfo
+.git
+.env
+.env.*
+apps/desktop/.env*

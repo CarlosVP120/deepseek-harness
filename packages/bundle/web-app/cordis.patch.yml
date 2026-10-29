@@ -197,7 +197,9 @@
       name: '@deepseek-ai/dsh-host-webserver'
       inject: [webStartup]
       config:
-        host: !!js ctx.webStartup.host ?? '127.0.0.1'
+        # A container behind a proxy (Dokploy, Docker) listens on every interface only
+        # when sign-in accounts are on and EQIDIS_ESCUCHAR_RED=1 asks for it.
+        host: !!js "ctx.webStartup.host ?? (process.env.EQIDIS_CUENTAS === '1' && process.env.EQIDIS_ESCUCHAR_RED === '1' ? '0.0.0.0' : '127.0.0.1')"
         port: !!js ctx.webStartup.port ?? 3080
         compression: gzip
         compressionLevel: 1

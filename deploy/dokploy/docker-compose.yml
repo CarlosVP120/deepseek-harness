@@ -1,0 +1,27 @@
+# EQIDIS AI for Dokploy (Docker Compose service). In Dokploy set the compose path to
+# deploy/dokploy/docker-compose.yml, define EQIDIS_DOMINIO in Environment, and add the
+# domain to the `eqidis` service on port 3080 with HTTPS.
+services:
+  eqidis:
+    build:
+      context: ../..
+      dockerfile: deploy/dokploy/Dockerfile
+      args:
+        EQIDIS_COMMIT: ${EQIDIS_COMMIT:-0000000}
+    restart: unless-stopped
+    environment:
+      EQIDIS_DOMINIO: ${EQIDIS_DOMINIO:?define EQIDIS_DOMINIO, the public domain}
+      # Optional: model keys can also be set later from Ajustes → Modelos by the administrator.
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+    expose:
+      - "3080"
+    volumes:
+      # Accounts, conversations, settings and credentials.
+      - eqidis-datos:/data
+      # One folder per person with their projects and workpapers.
+      - eqidis-usuarios:/usuarios
+
+volumes:
+  eqidis-datos:
+  eqidis-usuarios:
