@@ -300,3 +300,61 @@ export interface ClaudeCodeLogin {
   /** The sign-in page Claude Code opened in the browser. */
   url: string | null
 }
+
+/** This computer's license as the settings page shows it and the engine gate applies it. */
+export interface FiscalcfdiLicense {
+  /** This computer's equipment code, which the owner signs a license for. */
+  machine: string
+  /** `sin_licencia` and `invalida` have no usable code; `por_vencer` and `gracia` still work with a warning. */
+  state: 'sin_licencia' | 'invalida' | 'activa' | 'por_vencer' | 'gracia' | 'vencida'
+  /** Whether new accounting work is allowed. */
+  allowed: boolean
+  /** Whether this installation requires a license. */
+  required: boolean
+  /** Customer the license was issued to. */
+  customer: string | null
+  /** Last paid day, YYYY-MM-DD. */
+  until: string | null
+  /** Last day of the grace period, YYYY-MM-DD. */
+  graceUntil: string | null
+  /** Days from today to the last paid day; negative after it. */
+  daysLeft: number | null
+  /** Whether this computer holds the owner's signing key, so the admin panel is offered. */
+  admin: boolean
+}
+
+/** A license for one computer, to sign on the owner's computer. */
+export interface FiscalcfdiLicenseIssue {
+  /** Customer name. */
+  customer: string
+  /** Equipment code the customer sent. */
+  machine: string
+  /** Name of the computer, for the owner's list. */
+  device: string
+  /** Last paid day, YYYY-MM-DD. */
+  until: string
+  /** Days after `until` during which the app still works with a warning. */
+  graceDays: number
+}
+
+/** A license signed on the owner's computer. */
+export interface FiscalcfdiIssuedLicense {
+  /** Serial of the code. */
+  id: string
+  /** Customer name. */
+  customer: string
+  /** Equipment code it is valid on. */
+  machine: string
+  /** Name of the computer. */
+  device: string
+  /** Last paid day, YYYY-MM-DD. */
+  until: string
+  /** Grace days after `until`. */
+  graceDays: number
+  /** When it was issued, ISO time. */
+  issued: string
+  /** The code to send to the customer. */
+  code: string
+  /** Whether the computer was taken off the customer's list. */
+  retired: boolean
+}

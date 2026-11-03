@@ -29,6 +29,7 @@ import { MonthPanel, type MonthPanelInjected } from './MonthPanel.tsx'
 import { GuidedStart, type GuidedStartInjected } from './GuidedStart.tsx'
 import { PlainBackdrop } from './PlainBackdrop.tsx'
 import { SqlSection, type SqlSectionInjected } from './SqlSection.tsx'
+import { LicenseSection, type LicenseSectionInjected } from './LicenseSection.tsx'
 import { ClaudeCard, type ClaudeCardInjected } from './ClaudeCard.tsx'
 import { TurnCards } from './TurnCards.tsx'
 import { en, es, NS, zh, type FiscalcfdiKey } from './locales.ts'
@@ -121,6 +122,14 @@ function registerUi(ctx: Context): void {
   ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register({
     name: 'sidebar.right.pane.tab', key: MONTH_TAB_ID, locale: NS, inject: (): MonthPanelInjected => ({ months }),
   }, MonthPanel))
+  const licensing: LicenseSectionInjected = {
+    license: () => unwrap(ctx.remote.fiscalcfdi.license()),
+    activateLicense: code => unwrap(ctx.remote.fiscalcfdi.activateLicense({ code })),
+    issuedLicenses: () => unwrap(ctx.remote.fiscalcfdi.issuedLicenses()),
+    issueLicense: request => unwrap(ctx.remote.fiscalcfdi.issueLicense(request)),
+    retireLicense: id => unwrap(ctx.remote.fiscalcfdi.retireLicense({ id })),
+  }
+
   // A blank chat opens on the guided start instead of the open composer; the run itself needs no chat turn.
   ctx.slots.inject('conversation.composer', () => ctx.slots.register({
     name: 'conversation.composer',
@@ -132,6 +141,7 @@ function registerUi(ctx: Context): void {
     inject: (): GuidedStartInjected => ({
       months,
       model: sessionId => ctx.get('modelDirectories')?.picker(sessionId) ?? null,
+      license: licensing.license,
     }),
   }, GuidedStart))
   ctx.slots.inject('conversation.input.left', () => ctx.slots.register({
@@ -142,6 +152,11 @@ function registerUi(ctx: Context): void {
   ctx.slots.inject('conversation.home.panels', () => ctx.slots.register({
     name: 'conversation.home.panels', id: 'fiscalcfdi-months', order: 0, locale: NS, inject: () => panel,
   }, MonthsPanel))
+
+  // Settings: this computer's license, and the owner's panel that issues licenses.
+  ctx.slots.inject('settings.section', () => ctx.slots.register({
+    name: 'settings.section', id: 'fiscalcfdi-license', order: 14, label: () => t('license.nav'), locale: NS, inject: () => licensing,
+  }, LicenseSection))
 
   // Settings: the CONTPAQi SQL Server the engine reads.
   const sql: SqlSectionInjected = {

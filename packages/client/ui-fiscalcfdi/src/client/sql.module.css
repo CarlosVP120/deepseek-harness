@@ -39,6 +39,19 @@
 .muted { color: var(--dsw-alias-label-tertiary); }
 .ok { color: var(--dsw-alias-state-success-primary); }
 .error { color: var(--dsw-alias-state-error-primary); }
+.code { font-family: var(--ds-font-family-code); font-size: 14px; letter-spacing: 0.04em; }
+.codeBlock {
+  display: block; padding: 10px 12px; border-radius: 10px; background: var(--dsw-alias-bg-base); border: 0.5px solid var(--dsw-alias-border-l2);
+  font-family: var(--ds-font-family-code); font-size: 12px; line-height: 18px; word-break: break-all; user-select: all;
+}
+.field textarea {
+  box-sizing: border-box; width: 100%; padding: 8px 10px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 10px; resize: vertical;
+  background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-family: var(--ds-font-family-code); font-size: 12px;
+}
+.field textarea:focus-visible { outline: 2px solid #ed7b46; outline-offset: 1px; }
+.made { display: flex; flex-direction: column; gap: 8px; }
+.customer { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
+.rowActions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 @media (max-width: 560px) {
   .form, .pair { grid-template-columns: minmax(0, 1fr); }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
-import type { FiscalcfdiCompany, FiscalcfdiMonthFile } from '@deepseek-ai/dsh-fiscalcfdi-tools/types'
+import type { FiscalcfdiCompany, FiscalcfdiLicense, FiscalcfdiMonthFile } from '@deepseek-ai/dsh-fiscalcfdi-tools/types'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { FiscalcfdiMark } from './brand-mark.tsx'
 import { monthLabel } from './format.ts'
@@ -15,6 +15,8 @@ export interface GuidedStartInjected {
   readonly months: MonthRegistry
   /** The chat's model picker for this chat, when the model selection plugin is loaded. */
   readonly model: (sessionId: SessionId) => ReactNode
+  /** This computer's license; without a current one the run cannot start. */
+  readonly license: () => Promise<FiscalcfdiLicense>
 }
 
 type Props = PropsRuntime<'conversation.composer'> & PropsLocale<typeof NS> & InjectFace<GuidedStartInjected>
@@ -177,13 +179,28 @@ function DropZone({ zone, files, ready, disabled, onFiles, t }: {
  * in the conversation. A month already started shows its state, with the next
  * step handed to the chat as well.
  */
-export function GuidedStart({ sessionId, inputActions, months, model, t }: Props) {
+/** The license warning above the month card, or nothing while the license is active. */
+function licenseNotice(license: FiscalcfdiLicense | undefined, t: T): { blocked: boolean; text: string } | undefined {
+  if (license === undefined) return undefined
+  if (!license.allowed) return { blocked: true, text: t('license.guided.blocked') }
+  if (license.state === 'gracia') return { blocked: false, text: t('license.guided.grace', { until: license.until ?? '', grace: license.graceUntil ?? '' }) }
+  if (license.state === 'por_vencer') return { blocked: false, text: t('license.guided.soon', { until: license.until ?? '' }) }
+  return undefined
+}
+
+export function GuidedStart({ sessionId, inputActions, months, model, license, t }: Props) {
   const month = months.for(sessionId)
   const state = useSyncExternalStore(month.subscribe, month.getSnapshot)
   const locale = t('time.locale')
   const [notice, setNotice] = useState<string | undefined>()
   const [question, setQuestion] = useState('')
   const [reply, setReply] = useState('')
+  const [licensed, setLicensed] = useState<FiscalcfdiLicense | undefined>()
+  useEffect(() => {
+    // A failed read leaves the start as it is; the engine refuses unlicensed work with its own message.
+    license().then(setLicensed, () => undefined)
+  }, [license])
+  const warning = licenseNotice(licensed, t)
   const detail = state.binding === null ? undefined : state.detail
   const byZone = useMemo(() => {
     const groups: Record<Zone, FiscalcfdiMonthFile[]> = { documents: [], bank: [], extra: [] }
@@ -231,6 +248,7 @@ export function GuidedStart({ sessionId, inputActions, months, model, t }: Props
 
   return <div className={css.root} data-fiscalcfdi-guided="">
     <h1 className={css.headline}><FiscalcfdiMark size={34} /><span>{t('guided.headline')} <em>{t('guided.headlineAccent')}</em></span></h1>
+    {warning !== undefined && <p className={warning.blocked ? css.error : css.notice} role="status">{warning.text}</p>}
     <div className={css.card}>
       <CompanyMonth month={month} months={months} t={t} />
       {started ? <MonthRun detail={detail} state={state} month={month} t={t} onChat={ask} /> : <>
@@ -254,7 +272,7 @@ export function GuidedStart({ sessionId, inputActions, months, model, t }: Props
           <span className={css.muted}>{!bound ? t('guided.firstChoose') : missing.length > 0
             ? t('guided.missing', { items: missing.join(', ') }) : engineAsks ? t('guided.answerFirst') : t('guided.readyHint')}</span>
           <span className={css.model}>{model(sessionId)}</span>
-          <button type="button" className={`${css.primary} ${css.start}`} disabled={!canStart} onClick={() => { ask('guided.startPrompt') }}>
+          <button type="button" className={`${css.primary} ${css.start}`} disabled={!canStart || warning?.blocked === true} onClick={() => { ask('guided.startPrompt') }}>
             {t('guided.start')}
           </button>
         </div>

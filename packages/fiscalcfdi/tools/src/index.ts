@@ -19,6 +19,7 @@ import { createUserMessage, type ContextFormed } from '@deepseek-ai/dsh-llm'
 import { defineTool, type ToolExecution } from '@deepseek-ai/dsh-tools'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { SessionBindings } from './bindings.ts'
+import { LicenseStore, machineCode } from './license.ts'
 import { CLAUDE_CODE_PROVIDER, ClaudeCodeAdapter } from './claude-code/adapter.ts'
 import { ClaudeLogin, claudeStatus, installClaude, locateClaude } from './claude-code/cli.ts'
 import { AccountingRunner, type EngineLaunch } from './runner.ts'
@@ -27,6 +28,7 @@ import type {
   FiscalcfdiMonthDetail, FiscalcfdiMonthRequest, FiscalcfdiSessionRequest, FiscalcfdiUploadRequest,
   FiscalcfdiCompanyRefresh, FiscalcfdiSqlCheck, FiscalcfdiSqlConnection, FiscalcfdiSqlReader, FiscalcfdiSqlReaderRequest,
   FiscalcfdiSqlRequest, FiscalcfdiSqlScript, FiscalcfdiSqlServer, ClaudeCodeLogin, ClaudeCodeStatus,
+  FiscalcfdiIssuedLicense, FiscalcfdiLicense, FiscalcfdiLicenseIssue,
 } from './types.ts'
 
 declare module '@deepseek-ai/dsh-llm' {
@@ -50,6 +52,8 @@ export interface Config {
   waitPollMs: number
   /** Claude Code executable for the `claude-code` route; empty finds the official install. */
   claudeCode: string
+  /** Whether new accounting work needs this computer's license; off for development and tests. */
+  requireLicense: boolean
 }
 
 export const Config: Schema<Config> = Schema.object({
@@ -59,6 +63,7 @@ export const Config: Schema<Config> = Schema.object({
   waitMs: Schema.number().default(600000),
   waitPollMs: Schema.number().default(10000),
   claudeCode: Schema.string().default(''),
+  requireLicense: Schema.boolean().default(true),
 })
 
 type BridgeResult = { ok: boolean; error?: string } & Record<string, unknown>
@@ -74,6 +79,22 @@ type EngineCall = (command: string, payload: object, signal: AbortSignal, agent?
 
 /** Commands whose launch the calling chat agent hosts. */
 const HOSTING = new Set(['procesar', 'responder'])
+
+/** Commands that start or change accounting work; without a valid license only reading and finished importables remain. */
+const LICENSED = new Set(['abrir_mes', 'subir', 'responder', 'procesar'])
+
+/** Why accounting work is refused, for the model and the user. */
+function licenseRefusal(license: FiscalcfdiLicense): string {
+  const action = 'Puedes consultar tus meses y descargar los importables ya terminados; para contabilizar, '
+  switch (license.state) {
+    case 'vencida':
+      return `La licencia de este equipo venció (pagado hasta ${license.until}, gracia hasta ${license.graceUntil}). ${action}renueva la licencia en Ajustes → Licencia.`
+    case 'invalida':
+      return `La licencia guardada no corresponde a este equipo. ${action}activa una licencia en Ajustes → Licencia.`
+    default:
+      return `Este equipo no tiene licencia de FiscalCFDI AI. ${action}actívala en Ajustes → Licencia con el código que te envió tu proveedor.`
+  }
+}
 
 function callBridge(config: Config, command: string, payload: object, signal: AbortSignal, env: NodeJS.ProcessEnv): Promise<BridgeResult> {
   return new Promise((resolve, reject) => {
@@ -390,6 +411,8 @@ export class Fiscalcfdi extends TypertRemoteService {
   /** Whether the user connected Claude in this app; Claude Code's own sign-in may be older or shared. */
   private claudeLinked: boolean
   private readonly home: string
+  private readonly licenses: LicenseStore
+  private machine: Promise<string> | undefined
 
   /**
    * @param ctx - Host context owning the tool registry and agent steps.
@@ -399,6 +422,7 @@ export class Fiscalcfdi extends TypertRemoteService {
     super(ctx, 'fiscalcfdi')
     const home = process.env.DSH_HOME ?? join(homedir(), '.fiscalcfdi-ai')
     this.home = home
+    this.licenses = new LicenseStore(home)
     this.bindings = new SessionBindings(home)
     this.uploads = join(home, 'fiscalcfdi', 'uploads')
     this.runner = new AccountingRunner(ctx, { python: config.python, home, environment: this.environment })
@@ -441,6 +465,10 @@ export class Fiscalcfdi extends TypertRemoteService {
   private readonly environment: EngineEnvironment = () => Promise.resolve({ ...process.env, FISCALCFDI_AGENT_HOST: 'app' })
 
   private readonly call: EngineCall = async (command, payload, signal, agent) => {
+    if (LICENSED.has(command)) {
+      const license = await this.license()
+      if (!license.allowed) return { ok: false, error: licenseRefusal(license) }
+    }
     let result = await callBridge(this.config, command, payload, signal, await this.environment())
     for (const launch of list<EngineLaunch>(result.lanzar)) {
       if (agent === undefined) {
@@ -692,6 +720,53 @@ export class Fiscalcfdi extends TypertRemoteService {
   async importable(request: FiscalcfdiMonthRequest, signal?: AbortSignal): Promise<FiscalcfdiImportable> {
     const result = await this.bridge('importable', { rfc: request.rfc, periodo: request.periodo }, signal)
     return { nombre: String(result.nombre), data: (await readFile(String(result.ruta))).toString('base64') }
+  }
+
+  /**
+   * This computer's license.
+   * @returns its equipment code, state and paid-until date.
+   */
+  @Remote('license')
+  async license(): Promise<FiscalcfdiLicense> {
+    return this.licenses.state(await (this.machine ??= machineCode(this.home)), this.config.requireLicense)
+  }
+
+  /**
+   * Save the license code the owner sent for this computer.
+   * @param request - the code.
+   * @returns the license after saving it.
+   */
+  @Remote('activateLicense')
+  async activateLicense(request: { code: string }): Promise<FiscalcfdiLicense> {
+    return this.licenses.activate(request.code, await (this.machine ??= machineCode(this.home)), this.config.requireLicense)
+  }
+
+  /**
+   * Licenses issued from this computer; only the owner's computer, which holds the signing key, has them.
+   * @returns the issued licenses, newest first.
+   */
+  @Remote('issuedLicenses')
+  issuedLicenses(): Promise<FiscalcfdiIssuedLicense[]> {
+    return this.licenses.issued()
+  }
+
+  /**
+   * Sign a license for a customer's computer.
+   * @param request - customer, equipment code, computer name, paid-until date and grace days.
+   * @returns the issued license with the code to send.
+   */
+  @Remote('issueLicense')
+  issueLicense(request: FiscalcfdiLicenseIssue): Promise<FiscalcfdiIssuedLicense> {
+    return this.licenses.issue(request)
+  }
+
+  /**
+   * Take a computer off its customer's list.
+   * @param request - the issued license.
+   */
+  @Remote('retireLicense')
+  async retireLicense(request: { id: string }): Promise<void> {
+    await this.licenses.retire(request.id)
   }
 
   /**
