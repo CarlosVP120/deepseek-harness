@@ -191,7 +191,7 @@ ${notice(state.error)}${notice(state.message, 'ok')}
 <label>Contraseña inicial<input name="password" type="password" autocomplete="new-password" required minlength="${String(MIN_PASSWORD_LENGTH)}"></label>
 <label>Rol<select name="role"><option value="user">Contador</option><option value="admin">Administrador</option></select></label>
 </div>
-<p class="muted">${PASSWORD_HINT} Cada persona ve solo sus proyectos y conversaciones; el administrador ve todo y administra los usuarios y los ajustes.</p>
+<p class="muted">${PASSWORD_HINT} Cada persona, incluidos los administradores, ve solo sus propios proyectos, archivos y conversaciones. Los administradores además dan de alta usuarios y cambian los ajustes.</p>
 <button type="submit">Crear usuario</button></form></div>
 <div class="card table-wrap"><h2>Personas</h2><table><thead><tr><th>Persona</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
 <tbody>${rows}</tbody></table></div>`, 'wide')

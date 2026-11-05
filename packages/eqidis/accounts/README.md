@@ -7,7 +7,7 @@ kind: "package-reference"
 
 ## Summary
 
-Turns one EQIDIS AI Web Host into a shared service. Each person signs in with a username and password, works in their own folder under `homesRoot`, and sees only the projects and conversations inside it. Administrators see everything, manage accounts, and keep Host-wide administration (settings changes, credentials, plugins, terminals). Without this plugin the Web Host keeps its launch-token sign-in for a single operator.
+Turns one EQIDIS AI Web Host into a shared service. Each person signs in with a username and password, works in their own folder under `homesRoot`, and sees only the projects and conversations inside it. Administrators are isolated the same way; they also see projects outside every person's folder (such as those from before accounts), manage accounts, and keep Host-wide administration (settings changes, credentials, plugins, terminals). Without this plugin the Web Host keeps its launch-token sign-in for a single operator.
 
 ## Use this package
 

@@ -1,11 +1,13 @@
 /**
- * The `peerAccess` policy of a shared Host: a person sees and reaches only the
- * Sessions and Workspaces inside their own folder; administrators and the
- * in-process operator reach everything. Host-wide administration (settings
- * changes, credentials, plugins, terminals, native opening) is administrators'.
+ * The `peerAccess` policy of a shared Host: every signed-in person, administrators
+ * included, sees and reaches only the Sessions and Workspaces inside their own
+ * folder; administrators also see what lies outside every person's folder, such
+ * as projects from before accounts. The in-process operator reaches everything.
+ * Host-wide administration (settings changes, credentials, plugins, terminals,
+ * native opening) is administrators'.
  */
 
-import { resolve, sep } from 'node:path'
+import { dirname, resolve, sep } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-query'
@@ -81,18 +83,25 @@ export class AccountAccess implements PeerAccess {
   constructor(private readonly ctx: Context) {}
 
   /** The account a Peer speaks for; undefined for the operator, who reaches everything. */
+  private accountOf(peer: PeerScope): AccountPeer | undefined {
+    return peer instanceof AccountPeer ? peer : undefined
+  }
+
+  /** The account of a Peer that may not administer the Host. */
   private restricted(peer: PeerScope): AccountPeer | undefined {
-    return peer instanceof AccountPeer && peer.account.role !== 'admin' ? peer : undefined
+    const account = this.accountOf(peer)
+    return account?.account.role === 'admin' ? undefined : account
   }
 
   async authorize(call: PeerAccessCall): Promise<void> {
-    const peer = this.restricted(call.peer)
-    if (peer === undefined) return
+    const account = this.accountOf(call.peer)
+    if (account === undefined) return
     const endpoint = `${call.namespace}/${call.method}`
-    if (ADMIN_NAMESPACES.has(call.namespace) || ADMIN_ENDPOINTS.has(endpoint)) {
+    const peer = this.restricted(call.peer)
+    if (peer !== undefined && (ADMIN_NAMESPACES.has(call.namespace) || ADMIN_ENDPOINTS.has(endpoint))) {
       throw forbidden(`${endpoint} is reserved to administrators`)
     }
-    if (PATH_ENDPOINTS.has(endpoint)) {
+    if (peer !== undefined && PATH_ENDPOINTS.has(endpoint)) {
       for (const path of collect(call.args, new Set(['path', 'cwd']), [])) {
         if (!inside(path, peer.home)) throw forbidden(`${path} is outside your folder`)
       }
@@ -101,12 +110,12 @@ export class AccountAccess implements PeerAccess {
       }
     }
     for (const workspaceId of collect(call.args, new Set(['workspaceId']), [])) {
-      if (!this.visible(peer, this.ctx.get('workspaceRegistry')?.get(workspaceId as never)?.path)) {
+      if (!this.visible(account, this.ctx.get('workspaceRegistry')?.get(workspaceId as never)?.path)) {
         throw forbidden(`project ${workspaceId} is not yours`)
       }
     }
     for (const sessionId of collect(call.args, SESSION_KEYS, [])) {
-      if (await this.sessionVisible(peer, sessionId)) continue
+      if (await this.sessionVisible(account, sessionId)) continue
       // Creation may name the identity of a Session that does not exist yet.
       if (endpoint === 'session/create' && !this.sessionDirectories.has(sessionId)) continue
       throw forbidden(`conversation ${sessionId} is not yours`)
@@ -114,24 +123,28 @@ export class AccountAccess implements PeerAccess {
   }
 
   async authorizeFetch(request: Request, peer: PeerScope): Promise<boolean> {
-    const account = this.restricted(peer)
+    const account = this.accountOf(peer)
     if (account === undefined) return true
     const url = new URL(request.url)
-    if (ADMIN_FETCH_PATHS.has(url.pathname)) return false
-    const path = url.searchParams.get('path')
-    if (url.pathname === '/api/file' && (path === null || !inside(path, account.home))) return false
+    if (this.restricted(peer) !== undefined) {
+      if (ADMIN_FETCH_PATHS.has(url.pathname)) return false
+      const path = url.searchParams.get('path')
+      if (url.pathname === '/api/file' && (path === null || !inside(path, account.home))) return false
+    }
     const sessionId = url.searchParams.get('sessionId')
     return sessionId === null || await this.sessionVisible(account, sessionId)
   }
 
   visible(peer: PeerScope, path: string | undefined): boolean {
-    const account = this.restricted(peer)
-    return account === undefined || (path !== undefined && inside(path, account.home))
+    const account = this.accountOf(peer)
+    if (account === undefined) return true
+    if (path !== undefined && inside(path, account.home)) return true
+    // Administrators also keep what belongs to nobody's folder.
+    return account.account.role === 'admin' && (path === undefined || !inside(path, dirname(account.home)))
   }
 
   visibleSession(peer: PeerScope, sessionId: string): boolean {
-    const account = this.restricted(peer)
-    return account === undefined || this.visible(account, this.directoryOf(sessionId))
+    return this.accountOf(peer) === undefined || this.visible(peer, this.directoryOf(sessionId))
   }
 
   home(peer: PeerScope): string | undefined {

@@ -1,6 +1,6 @@
 # EQIDIS AI en un servidor (VPS) para varios usuarios
 
-Esta guía publica la versión web de EQIDIS AI en un servidor Linux para que el equipo entre desde el navegador con su usuario y contraseña. Cada persona trabaja en su propia carpeta del servidor y solo ve sus proyectos y conversaciones; el administrador ve todo y da de alta a los usuarios.
+Esta guía publica la versión web de EQIDIS AI en un servidor Linux para que el equipo entre desde el navegador con su usuario y contraseña. Cada persona trabaja en su propia carpeta del servidor y solo ve sus proyectos y conversaciones, también el administrador, que además da de alta a los usuarios.
 
 ## Cómo funciona
 

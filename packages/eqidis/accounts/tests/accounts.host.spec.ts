@@ -84,6 +84,7 @@ describe('account access', () => {
       ['mine', { header: { id: 'mine', cwd: '/srv/usuarios/juan/Cliente A' } }],
       ['child', { header: { id: 'child', parentSession: 'mine' } }],
       ['theirs', { header: { id: 'theirs', cwd: '/srv/usuarios/ana/Cliente B' } }],
+      ['before-accounts', { header: { id: 'before-accounts', cwd: '/srv/proyectos/Cliente C' } }],
     ])
     const workspaces = [
       { id: 'w-mine', path: '/srv/usuarios/juan/Cliente A', sessionIds: ['cold-mine'] },
@@ -99,7 +100,7 @@ describe('account access', () => {
     return { access, user, admin, operator }
   }
 
-  it('shows a person only their own folder, Sessions, and Workspaces', () => {
+  it('shows every person, administrators included, only their own folder, Sessions, and Workspaces', () => {
     const { access, user, admin, operator } = setup()
     expect(access.visible(user, '/srv/usuarios/juan/Cliente A')).toBe(true)
     expect(access.visible(user, '/srv/usuarios/juan-otro')).toBe(false)
@@ -109,7 +110,11 @@ describe('account access', () => {
     expect(access.visibleSession(user, 'cold-mine')).toBe(true)
     expect(access.visibleSession(user, 'theirs')).toBe(false)
     expect(access.visibleSession(user, 'unknown')).toBe(false)
-    expect(access.visibleSession(admin, 'theirs')).toBe(true)
+    expect(access.visibleSession(admin, 'theirs')).toBe(false)
+    expect(access.visible(admin, '/srv/usuarios/juan/Cliente A')).toBe(false)
+    expect(access.visible(admin, '/srv/usuarios/admin/Mio')).toBe(true)
+    expect(access.visibleSession(admin, 'before-accounts')).toBe(true)
+    expect(access.visibleSession(user, 'before-accounts')).toBe(false)
     expect(access.visibleSession(operator, 'theirs')).toBe(true)
     expect(access.home(user)).toBe('/srv/usuarios/juan')
     expect(access.home(operator)).toBeUndefined()
@@ -131,6 +136,8 @@ describe('account access', () => {
     await expect(call('credentials', 'set', {})).rejects.toMatchObject({ code: 'access/forbidden' })
     await expect(call('settings', 'describe', {})).resolves.toBeUndefined()
     await expect(call('terminal', 'create', {}, admin)).resolves.toBeUndefined()
+    await expect(call('session', 'follow', { address: { sessionId: 'theirs' } }, admin)).rejects.toMatchObject({ code: 'access/forbidden' })
+    await expect(call('workspace', 'getProjectContext', { request: { workspaceId: 'w-mine' } }, admin)).rejects.toMatchObject({ code: 'access/forbidden' })
   })
 
   it('refuses Fetch routes addressing other people\'s files or conversations', async () => {
