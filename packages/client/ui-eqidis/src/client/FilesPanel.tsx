@@ -16,6 +16,8 @@ export interface FilesPanelInjected extends FileActions {
   readonly add: (sessionId: string, section: 'ledgers' | 'others', files: readonly File[]) => Promise<readonly string[]>
   /** Put a message in the conversation's composer, without sending it. */
   readonly prepare: (sessionId: string, text: string) => void
+  /** Delete a project file by its project-relative path. */
+  readonly remove: (sessionId: string, file: string) => Promise<void>
 }
 
 type Props = PropsRuntime<'sidebar.right.pane.tab'> & PropsLocale<typeof NS> & InjectFace<FilesPanelInjected>
@@ -28,7 +30,7 @@ const SPREADSHEET = '.xlsx,.xlsm,.xls,.ods,.csv'
  * the filled ones, the balanza, the auxiliares and other documents, each one to preview, open,
  * show in Finder or download; and below, every file of the project by period.
  */
-export function FilesPanel({ sessionId, list, preview, open, download, add, prepare, t }: Props) {
+export function FilesPanel({ sessionId, list, preview, open, download, add, prepare, remove, t }: Props) {
   const locale = t('time.locale')
   const [view, setView] = useState<ProjectFilesView | null | 'error' | undefined>()
   const [busy, setBusy] = useState<string>()
@@ -63,7 +65,8 @@ export function FilesPanel({ sessionId, list, preview, open, download, add, prep
   }
   const actions: FileActions = { preview, open, download }
   const row = (file: ProjectFileEntry) => <FileRow key={file.path} file={file} root={view.root} sessionId={sessionId} actions={actions}
-    disabled={busy !== undefined} act={(label, run) => { void act(label, run) }} t={t} />
+    disabled={busy !== undefined} act={(label, run) => { void act(label, run) }}
+    onDelete={async () => { await remove(sessionId, file.path); setTick(value => value + 1) }} t={t} />
   const section = (title: string, files: readonly ProjectFileEntry[], empty: string, extra?: ReactNode) =>
     <section className={css.fileSection}>
       <h4 className={css.label}>{title}</h4>

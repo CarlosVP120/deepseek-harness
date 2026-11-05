@@ -4,7 +4,7 @@ import * as HostPlugin from '../src/index.ts'
 import { liveConfig, omitsGeneratedPage } from '../../../settings/settings/tests/live-config.ts'
 import { plainConfig } from '../../../settings/settings/src/schema.ts'
 import {
-  Config, apply,
+  Config, apply, LOCALE_DEFAULT_GLOBAL,
 } from '@deepseek-ai/dsh-client-locale'
 
 
@@ -22,6 +22,19 @@ describe('locale host', () => {
     await expect(configuration.update({ preference: '123' })).rejects.toThrow()
     await fiber.dispose()
   })
+})
+
+it('publishes a configured default locale to the page', async () => {
+  const ctx = new Context()
+  const fiber = ctx.plugin({ Config, apply }, { defaultLocale: 'es' })
+  await fiber.await()
+  const rows: unknown[] = []
+  ctx.emit('webserver/index-inject', rows as never)
+  expect(rows).toEqual([{ kind: 'global', name: LOCALE_DEFAULT_GLOBAL, value: 'es' }])
+  await fiber.dispose()
+  const none: unknown[] = []
+  ctx.emit('webserver/index-inject', none as never)
+  expect(none).toEqual([])
 })
 
 it('keeps its own instance off the generated Settings pages', () => omitsGeneratedPage(ctx => ctx.plugin(HostPlugin)))

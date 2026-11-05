@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import {
-  IconCheckOutlineRegular, IconChecklistOutlineRegular, IconPaperclipOutlineRegular, IconPlusOutlineRegular,
+  IconCheckOutlineRegular, IconChecklistOutlineRegular, IconPaperclipOutlineRegular, IconPlusOutlineRegular, IconTrashOutlineRegular,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
@@ -31,6 +31,8 @@ export interface IntakeInjected {
   readonly project: () => IntakeProject | null
   /** Official workpapers of a project and the largest file it accepts. */
   readonly workpapers: (workspaceId: string) => Promise<{ names: readonly string[]; maxBytes: number }>
+  /** Delete an official workpaper from the project; returns the updated list. */
+  readonly deleteWorkpaper: (workspaceId: string, name: string) => Promise<readonly string[]>
   /** Add an official workpaper to the project; returns the updated list. */
   readonly addWorkpaper: (workspaceId: string, name: string, base64: string) => Promise<readonly string[]>
   /** Keep an input in the project's period folder; returns its project path. */
@@ -93,6 +95,7 @@ export function IntakePanel(props: Props) {
   const [summary, setSummary] = useState(true)
   const [busy, setBusy] = useState<string>()
   const [error, setError] = useState<string>()
+  const [deleting, setDeleting] = useState<string>()
   const pickWorkpaper = useRef<HTMLInputElement>(null)
   const pickBalance = useRef<HTMLInputElement>(null)
   const pickLedgers = useRef<HTMLInputElement>(null)
@@ -150,6 +153,20 @@ export function IntakePanel(props: Props) {
       for (const file of picked) names = await props.addWorkpaper(workspaceId, file.name, await base64Of(file))
       setTemplates(names)
       setChosen(previous => [...new Set([...previous, ...picked.map(file => file.name)])])
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason))
+    } finally {
+      setBusy(undefined)
+    }
+  }
+
+  const deleteWorkpaper = async (name: string) => {
+    if (workspaceId === undefined) return
+    setBusy(t('intake.busy.workpaper'))
+    try {
+      setTemplates(await props.deleteWorkpaper(workspaceId, name))
+      setChosen(previous => previous.filter(item => item !== name))
+      setDeleting(undefined)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason))
     } finally {
@@ -223,14 +240,24 @@ export function IntakePanel(props: Props) {
       {templates === 'error' && <p className={css.errorText}>{t('intake.loadError')}</p>}
       {typeof templates === 'object' && list.length === 0 && <p className={css.muted}>{t('intake.noWorkpapers')}</p>}
       {list.length > 0 && <div className={css.options}>
-        {list.map(name => <label key={name} className={css.option} data-checked={chosen.includes(name)}>
-          <input type="checkbox" checked={chosen.includes(name)} disabled={busy !== undefined}
-            onChange={(event) => {
-              const on = event.target.checked
-              setChosen(previous => on ? [...previous, name] : previous.filter(item => item !== name))
-            }} />
-          <IconChecklistOutlineRegular size={14} /><span className={css.optionName}>{stem(name)}</span>
-        </label>)}
+        {list.map(name => deleting === name
+          ? <div key={name} className={css.confirmRow} role="group" aria-label={t('intake.deleteWorkpaper', { name: stem(name) })}>
+            <span className={css.optionName}>{t('intake.confirmDeleteWorkpaper')} <strong>{stem(name)}</strong></span>
+            <button type="button" className={css.quiet} disabled={busy !== undefined} onClick={() => { setDeleting(undefined) }}>{t('files.cancel')}</button>
+            <button type="button" className={css.danger} disabled={busy !== undefined} onClick={() => { void deleteWorkpaper(name) }}>{t('files.delete')}</button>
+          </div>
+          : <div key={name} className={css.optionRow}>
+            <label className={css.option} data-checked={chosen.includes(name)}>
+              <input type="checkbox" checked={chosen.includes(name)} disabled={busy !== undefined}
+                onChange={(event) => {
+                  const on = event.target.checked
+                  setChosen(previous => on ? [...previous, name] : previous.filter(item => item !== name))
+                }} />
+              <IconChecklistOutlineRegular size={14} /><span className={css.optionName}>{stem(name)}</span>
+            </label>
+            <button type="button" className={css.trash} disabled={busy !== undefined} aria-label={t('intake.deleteWorkpaper', { name: stem(name) })}
+              title={t('files.delete')} onClick={() => { setDeleting(name) }}><IconTrashOutlineRegular size={14} /></button>
+          </div>)}
       </div>}
       <button type="button" className={css.link} disabled={busy !== undefined} onClick={() => pickWorkpaper.current?.click()}>
         <IconPlusOutlineRegular size={14} />{t('intake.addWorkpaper')}

@@ -17,7 +17,7 @@ import { parseLocaleBootstrap, type LocaleBootstrap, type LocaleBridge } from '.
 // Type-only: pulls the SlotRegistry service merge (ctx.slots).
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import {
-  LOCALE_ID_PATTERN, LOCALE_IDS, LOCALE_PREFERENCE_FIELD, LOCALE_SETTINGS_NAMESPACE,
+  LOCALE_DEFAULT_GLOBAL, LOCALE_ID_PATTERN, LOCALE_IDS, LOCALE_PREFERENCE_FIELD, LOCALE_SETTINGS_NAMESPACE,
   type BuiltInLocaleId, type LocaleId, type LocaleSettings,
 } from '../locale-settings.ts'
 import { en, es, zh, type CommonKey } from '../locales/index.ts'
@@ -183,13 +183,15 @@ export class LocaleRuntime {
    * @param host - durable preference scope owned by the providing plugin;
    * absent compositions (standalone dictionary registries) stay process-local.
    * @param bootstrap - native initialization; absent in ordinary browsers.
+   * @param deploymentDefault - the Host's default locale, used before the browser's language.
    */
-  constructor(ctx: ClientContext, host?: ConfigForm<LocaleSettings>, private readonly bootstrap?: LocaleBootstrap) {
+  constructor(ctx: ClientContext, host?: ConfigForm<LocaleSettings>, private readonly bootstrap?: LocaleBootstrap,
+    private readonly deploymentDefault?: string) {
     this.ctx = ctx
     this.host = host
     for (const locale of BUILT_IN_LOCALES) this.catalog.set(localeKey(locale.id), locale)
     const locales = this.localeList()
-    this.provisional = resolveInitialLocale(locales, bootstrap?.languages)
+    this.provisional = resolveInitialLocale(locales, bootstrap?.languages, deploymentDefault)
     this.preference = bootstrap?.preference ?? undefined
     this.snapshot = Object.freeze({ active: this.resolveActive(), locales, revision: 0 })
     if (host !== undefined) {
@@ -315,7 +317,7 @@ export class LocaleRuntime {
   private publishCatalog(): void {
     this.fallbackChains.clear()
     const locales = this.localeList()
-    this.provisional = resolveInitialLocale(locales, this.bootstrap?.languages)
+    this.provisional = resolveInitialLocale(locales, this.bootstrap?.languages, this.deploymentDefault)
     const active = this.resolveActive()
     this.publish(active, active !== this.snapshot.active, locales)
   }
@@ -514,11 +516,17 @@ export class LocaleRuntime {
 }
 
 /**
- * The browser's own language wins over {@link FALLBACK_LOCALE}; an explicit
- * Host preference may replace this provisional value after plugin activation.
+ * A registered deployment default wins over the browser's own language, which
+ * wins over {@link FALLBACK_LOCALE}; an explicit Host preference may replace
+ * this provisional value after plugin activation.
  */
-function resolveInitialLocale(locales: readonly LocaleDefinition[], languages?: readonly string[]): LocaleId {
-  return detectBrowserLocale(locales, languages) ?? FALLBACK_LOCALE
+function resolveInitialLocale(
+  locales: readonly LocaleDefinition[], languages?: readonly string[], deploymentDefault?: string,
+): LocaleId {
+  const configured = deploymentDefault === undefined
+    ? undefined
+    : locales.find(locale => localeKey(locale.id) === localeKey(deploymentDefault))
+  return configured?.id ?? detectBrowserLocale(locales, languages) ?? FALLBACK_LOCALE
 }
 
 /**
@@ -576,7 +584,8 @@ export async function apply(ctx: ClientContext): Promise<void> {
     bootstrap = parseLocaleBootstrap(value)
   }
   const host = ctx.configForms.get<LocaleSettings>(LOCALE_SETTINGS_NAMESPACE)
-  const locale = new LocaleRuntime(ctx, host, bootstrap)
+  const configured = (globalThis as Partial<Record<typeof LOCALE_DEFAULT_GLOBAL, unknown>>)[LOCALE_DEFAULT_GLOBAL]
+  const locale = new LocaleRuntime(ctx, host, bootstrap, typeof configured === 'string' ? configured : undefined)
   locale.register(COMMON_NS, { zh, en, es })
   locale.register(SETTINGS_NS, { zh: settingsZh, en: settingsEn , es: settingsEs })
   ctx.provide('locale', locale)

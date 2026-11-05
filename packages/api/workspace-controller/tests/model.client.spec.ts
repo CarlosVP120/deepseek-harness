@@ -82,6 +82,7 @@ class FakeWorkspaceRemote implements WorkspaceRemote {
   })
   listProjectFiles: WorkspaceRemote['listProjectFiles'] = async () => remoteOk({ calculation: null, root: '', workpapers: [], periods: [] })
   readProjectFile: WorkspaceRemote['readProjectFile'] = async request => remoteOk({ name: request.file, base64: '' })
+  deleteProjectFile: WorkspaceRemote['deleteProjectFile'] = async () => remoteOk(undefined)
   readonly initializeDefault = vi.fn<WorkspaceRemote['initializeDefault']>(async () => remoteOk({ workspace: workspace('default') }))
   readonly calls: Array<{ readonly method: string; readonly request: unknown }> = []
   onCreate: (request: WorkspaceCreateRequest) => Promise<RemoteResult<WorkspaceCreateValue>> = request =>

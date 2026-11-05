@@ -11,6 +11,9 @@ export const LOCALE_PREFERENCE_FIELD = 'preference'
 /** Accepted BCP 47-style language ids. */
 export const LOCALE_ID_PATTERN = /^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$/u
 
+/** Page global carrying the deployment's default locale, used before the browser's language. */
+export const LOCALE_DEFAULT_GLOBAL = '__DSH_LOCALE_DEFAULT__'
+
 /** Locale identifiers shipped by the browser client. */
 export const LOCALE_IDS = ['zh', 'en', 'es'] as const
 

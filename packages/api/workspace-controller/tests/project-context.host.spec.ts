@@ -106,3 +106,21 @@ it('records what a calculation used and lists it with the filled workpaper and e
   await expect(files.copyOf(root, '../outside.txt')).rejects.toThrow('inside the project')
   await expect(files.files(root, '../x')).rejects.toThrow('conversation id')
 })
+
+it('deletes workpapers, inputs and filled workpapers but nothing else in the project', async () => {
+  await files.upload(root, 'Tracker.xlsx', 'YQ==', 'workpaper')
+  const input = (await files.storeInput(root, '2026-09', 'Balanza.xlsx', 'YQ==')).path
+  await mkdir(join(root, 'Papeles de trabajo', '2026-09'), { recursive: true })
+  await writeFile(join(root, 'Papeles de trabajo', '2026-09', 'Tracker - 2026-09.xlsx'), 'x')
+  expect(await readFile(join(root, 'AGENTS.local.md'), 'utf8')).toContain('Tracker.xlsx')
+  await files.delete(root, '.eqidis-workpapers/plantillas/Tracker.xlsx')
+  expect((await files.read(root)).workpapers).toEqual([])
+  expect(await readFile(join(root, 'AGENTS.local.md'), 'utf8')).not.toContain('Tracker.xlsx')
+  await files.delete(root, input)
+  await files.delete(root, 'Papeles de trabajo/2026-09/Tracker - 2026-09.xlsx')
+  expect((await files.files(root, 'session-1')).periods.flatMap(period => [...period.inputs, ...period.filled])).toEqual([])
+  await expect(files.delete(root, 'AGENTS.md')).rejects.toThrow(/Only workpapers/)
+  await expect(files.delete(root, '.eqidis-workpapers/calculos/x.json')).rejects.toThrow(/Only workpapers/)
+  await expect(files.delete(root, '../outside.xlsx')).rejects.toThrow(/inside the project/)
+  await expect(files.delete(root, 'Insumos/2026-09/missing.xlsx')).rejects.toThrow(/does not exist/)
+})

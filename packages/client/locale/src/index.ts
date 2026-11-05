@@ -1,15 +1,16 @@
 /** Host registration for the browser locale preference. */
 import type {} from '@deepseek-ai/dsh-settings'
+import type {} from '@deepseek-ai/dsh-host-webserver'
 
 import type { Volatile, Context } from '@deepseek-ai/cordis'
 
 import z from '@deepseek-ai/schemastery'
-import { LOCALE_PREFERENCE_FIELD } from './locale-settings.ts'
+import { LOCALE_DEFAULT_GLOBAL, LOCALE_ID_PATTERN, LOCALE_PREFERENCE_FIELD } from './locale-settings.ts'
 
 import { LocaleSettingsFields } from './locale-settings.ts'
 
 export {
-  LOCALE_IDS, LOCALE_PREFERENCE_FIELD, LOCALE_SETTINGS_NAMESPACE,
+  LOCALE_DEFAULT_GLOBAL, LOCALE_IDS, LOCALE_PREFERENCE_FIELD, LOCALE_SETTINGS_NAMESPACE,
   type BuiltInLocaleId, type LocaleId, type LocaleSettings,
 } from './locale-settings.ts'
 
@@ -17,16 +18,25 @@ export {
 export interface Config {
   /** Explicit locale; omission follows the browser. */
   preference: Volatile<string | undefined>
+  /** Deployment default used before the browser's language when no locale was chosen; omission follows the browser. */
+  defaultLocale?: string | undefined
 }
 
 /** Live preferences projected to the browser. */
 export const Config = z.object({
   [LOCALE_PREFERENCE_FIELD]: LocaleSettingsFields[LOCALE_PREFERENCE_FIELD].volatile(),
+  defaultLocale: z.string().pattern(LOCALE_ID_PATTERN).required(false),
 })
 
-/** Host preferences are consumed through the configuration form projection.
+/** Host preferences are consumed through the configuration form projection;
+ * a configured default locale reaches the page before browser plugins activate.
  * @param ctx Plugin context used for optional settings presentation.
+ * @param config Plugin options.
  */
-export function apply(ctx: Context): void {
+export function apply(ctx: Context, config?: Partial<Config>): void {
   ctx.inject(['settings'], (child) => { child.effect(() => child.settings.configure({ auto: false }, ctx.fiber)) })
+  const defaultLocale = config?.defaultLocale
+  if (defaultLocale !== undefined) {
+    ctx.on('webserver/index-inject', (table) => { table.push({ kind: 'global', name: LOCALE_DEFAULT_GLOBAL, value: defaultLocale }) })
+  }
 }

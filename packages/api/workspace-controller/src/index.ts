@@ -191,6 +191,15 @@ export class WorkspaceController extends TypertRemoteService {
   }
 
   /**
+   * Delete an official workpaper, an input, or a filled workpaper of the project.
+   * @param request - project and the file's project-relative path.
+   */
+  @Remote('deleteProjectFile')
+  deleteProjectFile(request: ProjectFileRequest): Promise<void> {
+    return this.projectFiles.delete(this.projectPath(request), request.file)
+  }
+
+  /**
    * Keep a calculation input (balanza, auxiliares, support) in the project's period folder.
    * @param request - project, period, filename and encoded file.
    * @returns the stored file's project-relative path.

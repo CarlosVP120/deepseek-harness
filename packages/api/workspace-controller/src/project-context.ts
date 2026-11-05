@@ -327,6 +327,29 @@ export class ProjectContextFiles {
   }
 
   /**
+   * Delete one file the files panel or the intake lists: an official workpaper,
+   * a calculation input under `Insumos/`, or a filled workpaper or deliverable
+   * under `Papeles de trabajo/`. Project instructions and records stay out of reach.
+   * @param root - registered project folder.
+   * @param file - project-relative path.
+   */
+  delete(root: string, file: string): Promise<void> {
+    return this.enqueue(async () => {
+      const { base, path } = await this.inside(root, file)
+      const area = relative(base, path).split(sep)
+      const listed = [WORKPAPER_DIRECTORY.split(sep), [INPUT_DIRECTORY], [OUTPUT_DIRECTORY]]
+        .some(prefix => area.length > prefix.length && prefix.every((part, index) => area[index] === part))
+      if (!listed || area.some(part => part.startsWith('.') && !WORKPAPER_DIRECTORY.split(sep).includes(part))) {
+        throw new Error('Only workpapers, inputs and filled workpapers can be deleted here.')
+      }
+      if (!await regular(path)) throw new Error('The file does not exist.')
+      await unlink(path)
+      // The project instructions list the official workpapers.
+      if (area[0] === WORKPAPER_DIRECTORY.split(sep)[0]) await this.refreshIndex(root)
+    })
+  }
+
+  /**
    * Keep a calculation input in `Insumos/<period>/`, adding « (2)» rather than replacing a same-named file.
    * @param root - registered project folder.
    * @param period - period label such as 2026-09.

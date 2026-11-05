@@ -160,6 +160,9 @@ export function apply(ctx: Context): void {
       return paths
     },
     prepare: (sessionId, text) => { prepare(sessionId as SessionId, text, false) },
+    remove: async (sessionId, file) => {
+      await unwrap(ctx.remote.workspace.deleteProjectFile({ workspaceId: id(projectOrFail(sessionId).workspaceId), file }))
+    },
   }
   ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register({
     name: 'sidebar.right.pane.tab', key: FILES_TAB_ID, locale: NS, inject: () => files,
@@ -217,6 +220,10 @@ export function apply(ctx: Context): void {
       workpapers: async (workspaceId) => {
         const context = await unwrap(ctx.remote.workspace.getProjectContext({ workspaceId: id(workspaceId) }))
         return { names: context.workpapers.map(file => file.name), maxBytes: context.maxDocumentBytes }
+      },
+      deleteWorkpaper: async (workspaceId, name) => {
+        const context = await unwrap(ctx.remote.workspace.removeProjectDocument({ workspaceId: id(workspaceId), name, kind: 'workpaper' }))
+        return context.workpapers.map(file => file.name)
       },
       addWorkpaper: async (workspaceId, name, base64) => {
         const context = await unwrap(ctx.remote.workspace.uploadProjectDocument({ workspaceId: id(workspaceId), name, base64, kind: 'workpaper' }))

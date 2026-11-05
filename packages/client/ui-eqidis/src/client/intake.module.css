@@ -34,6 +34,23 @@
 .option input { accent-color: var(--eq-accent); margin: 0; }
 .option svg { flex: none; color: var(--eq-accent); }
 .optionName { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.optionRow { display: flex; align-items: center; gap: 4px; }
+.optionRow .option { flex: 1; min-width: 0; }
+.trash {
+  display: inline-flex; flex: none; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; border-radius: 8px;
+  background: none; color: var(--dsw-alias-label-tertiary); cursor: pointer;
+}
+.trash:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover-solid); color: var(--dsw-alias-state-error-primary); }
+.confirmRow {
+  display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 10px; border-radius: 10px;
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);
+}
+.confirmRow .optionName { flex: 1; min-width: 0; white-space: normal; }
+.quiet, .danger { flex: none; padding: 4px 10px; border: 0; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; }
+.quiet { background: transparent; color: var(--dsw-alias-label-secondary); }
+.quiet:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover-solid); }
+.danger { background: var(--dsw-alias-state-error-primary); color: #fff; }
+.danger:hover:not(:disabled) { filter: brightness(1.08); }
 
 .stepper { display: inline-flex; align-items: center; gap: 8px; margin-inline-start: auto; font-weight: 600; }
 .stepper button { width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: inherit; font-size: 15px; cursor: pointer; }

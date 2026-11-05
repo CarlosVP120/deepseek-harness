@@ -50,6 +50,16 @@ describe('LocaleRuntime', () => {
     expect(t('missing.key')).toBe('missing.key')
   })
 
+  it('starts in the deployment default before the browser language, and an explicit choice still wins', () => {
+    stubLanguages('en-US')
+    const ctx = new Context()
+    const svc = new LocaleRuntime(ctx, undefined, undefined, 'es')
+    expect(svc.getLocale().active).toBe('es')
+    svc.setLocale('en')
+    expect(svc.getLocale().active).toBe('en')
+    expect(new LocaleRuntime(new Context(), undefined, undefined, 'xx').getLocale().active).toBe('en')
+  })
+
   it('falls through to the common vocabulary after the namespace misses (production keys)', () => {
     const { svc } = make()
     // The shipped common pair is registered by apply; the bench registers it
