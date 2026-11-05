@@ -336,8 +336,11 @@
     - id: ui-settings-general
       name: '@deepseek-ai/dsh-client-ui-settings-general'
 
+    # EQIDIS AI shows no DeepSeek Harness preview notice.
     - id: ui-settings-models
       name: '@deepseek-ai/dsh-client-ui-settings-models'
+      config:
+        welcomeNotice: false
 
     # Plugin management: the sidebar Plugins page installs, enables, disables,
     # and removes the profile's bundles through the `pluginManager` Remote.

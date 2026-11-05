@@ -24,6 +24,8 @@ const MISSING_EXPECTED = join(SNAPSHOT_DIR, 'missing.expected.md')
 const MODELS_EXPECTED = join(SNAPSHOT_DIR, 'models.expected.md')
 const DEFAULT_MODELS_EXPECTED = join(SNAPSHOT_DIR, 'default-models.expected.md')
 const MODE = webSnapshotMode()
+// The shipped Web surface turns the welcome notice off; this scenario restores it.
+const WELCOME_OVERLAY = fileURLToPath(new URL('./fixtures/welcome-notice/cordis.patch.yml', import.meta.url))
 
 describe.skipIf(MODE === 'record')('web e2e: first-run DeepSeek credential setup', () => {
   let scaffold: WebScaffold
@@ -34,7 +36,7 @@ describe.skipIf(MODE === 'record')('web e2e: first-run DeepSeek credential setup
 
   beforeAll(async () => {
     scaffold = await launchWebScaffold({
-      deepSeekMissingCredential: true, welcomeNoticePending: true,
+      deepSeekMissingCredential: true, welcomeNoticePending: true, extraOverlayPath: WELCOME_OVERLAY,
     })
     await scaffold.ctx.agentDefaultModel.saveSelection({ provider: 'deepseek-official', model: 'deepseek-flash' })
     browser = await chromium.launch()
