@@ -29,7 +29,8 @@
   "files": [
     "lib/index.js",
     "lib/types/**/*.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "assets/*"
   ],
   "dependencies": {
     "@deepseek-ai/dsh-atomic-write": "workspace:*",

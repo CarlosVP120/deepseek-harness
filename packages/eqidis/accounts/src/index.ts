@@ -17,6 +17,7 @@ import type {} from '@deepseek-ai/dsh-client-connection'
 import type { ConnectionAuthenticator, ConnectionTrustRequest } from '@deepseek-ai/dsh-client-connection'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import { AccountAccess } from './access.ts'
+import { assetRoutes } from './assets.ts'
 import { SignInCookies, signingKey } from './cookie.ts'
 import { accountsPage, ownAccountPage, setupClosedPage, setupPage, signInPage } from './pages.ts'
 import { AccountPeer } from './peer.ts'
@@ -92,7 +93,7 @@ function send(res: ServerResponse, status: number, html: string, headers: Record
   res.writeHead(status, {
     'content-type': 'text/html; charset=utf-8',
     'cache-control': 'no-store',
-    'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'",
+    'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'",
     'referrer-policy': 'same-origin',
     'x-content-type-options': 'nosniff',
     ...headers,
@@ -307,6 +308,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const routes: [string, (req: IncomingMessage, res: ServerResponse) => void | Promise<void>][] = [
     ['/login', signInRoute], ['/logout', signOutRoute], ['/cuentas', accountsRoute], ['/cuenta', ownAccountRoute],
   ]
+  for (const { path, handler } of await assetRoutes()) routes.push([path, handler])
   for (const [path, handler] of routes) {
     ctx.effect(() => ctx.webServer.register({ kind: 'exact', path, handler }), `eqidis-accounts: ${path}`)
   }

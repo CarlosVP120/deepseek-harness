@@ -24,6 +24,7 @@ The plugin contributes:
 
 - **Sign-in.** A `ConnectionAuthenticator` replaces Connection's launch-token cookie: an unauthenticated index request redirects to `login`, `/api` requests and WebSocket upgrades without a valid sign-in get 401, and each signed-in account speaks for its own `AccountPeer`. A password change or disabling bumps the account's session version and disposes its Peer, closing its open streams. While no account exists, the printed launch URL is a one-time `login?setup=` link that creates the first administrator.
 - **Pages.** `/login`, `/logout`, `/cuentas` (administrators), and `/cuenta` are server-rendered forms. Posts must be same-origin; five failed sign-ins for a username and address lock it for five minutes.
+- **Brand assets.** The pages carry the EQIDIS symbol and wordmark inline and load the lighthouse scenes (light and dark appearance) and Montserrat Regular and Medium from `assets/`, served without a sign-in under `/eqidis-recursos/`. Montserrat ships under the SIL Open Font License in `assets/Montserrat-OFL.txt`.
 - **Access policy.** The `peerAccess` service decides, per Peer, which Remote calls and Fetch routes proceed and which Sessions and Workspaces lists, streams, and forwarded events show. A Session's folder is its `cwd`, a child Session's folder its parent's.
 - **Who-am-I.** `GET /api/accounts/me` answers the signed-in account and folder; the Web client's account menu reads it.
 
