@@ -133,6 +133,12 @@ export interface ConnectionAuthenticator {
    */
   rejectIndex(request: ConnectionIndexRequest, response: ConnectionIndexResponse): void
   /**
+   * Whether a request's sign-in operates the Host, so its page keeps durable Host settings although it is not on loopback.
+   * @param request - index request carrying the sign-in cookie.
+   * @returns true only for a valid sign-in allowed to administer the Host.
+   */
+  operatesHost(request: ConnectionTrustRequest): boolean
+  /**
    * The URL a launcher prints for this Host.
    * @param baseUrl - clean application URL whose authority and mount are preserved.
    * @returns the URL people open to sign in.
@@ -268,6 +274,13 @@ export interface HostConnectionHandle {
    * @returns true only when the frontend may serve index.html.
    */
   authorizeIndex(request: ConnectionIndexRequest, response: ConnectionIndexResponse): boolean
+
+  /**
+   * Whether the registered authenticator vouches that an index request's sign-in operates the Host.
+   * @param request - index request already admitted by {@link authorizeIndex}.
+   * @returns false without an authenticator; the loopback page check then decides in the Client.
+   */
+  operatesHost(request: ConnectionTrustRequest): boolean
 
   /**
    * Add the fresh process token to an ordinary Web application URL.

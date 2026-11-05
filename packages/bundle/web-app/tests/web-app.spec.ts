@@ -98,6 +98,7 @@ function provideConnection(ctx: Context): void {
       return url.href
     },
     authorizeIndex: () => true,
+    operatesHost: () => false,
     requestRejection: () => undefined,
     rpc: {},
   } as never)

@@ -141,6 +141,11 @@ export class HostConnectionService extends Service implements HostConnectionHand
     return false
   }
 
+  /** Whether the authenticator vouches the request's sign-in operates the Host; false without one. */
+  operatesHost(request: ConnectionTrustRequest): boolean {
+    return this.authenticator?.operatesHost(request) ?? false
+  }
+
   /** The sign-in URL, else this process's launch token added to the clean application URL. */
   authenticatedUrl(baseUrl: string): string {
     return this.authenticator?.launchUrl(baseUrl) ?? this.browserAuth.authenticatedUrl(baseUrl)

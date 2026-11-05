@@ -9,6 +9,7 @@ import {
   type ConnectionState,
 } from './connection.ts'
 import { createWebConnectionRpc, type RpcFetch, type RpcStreamOpen } from './rpc.ts'
+import { HOST_OPERATOR_GLOBAL } from '../host-operator.ts'
 import { isLoopbackHostname } from '../loopback-hostname.ts'
 import type { ClientConnectionRpc } from '../rpc.ts'
 import { resolveConnectionConfig } from '../recovery-config.ts'
@@ -110,6 +111,7 @@ export interface ClientTransportHooks {
 interface ClientTransportGlobal {
   __DSH_TRANSPORT__?: ClientTransportHooks
   __DSH_CONNECTION_RECOVERY__?: unknown
+  [HOST_OPERATOR_GLOBAL]?: unknown
 }
 
 /** Browser location fields used to classify loopback authority. */
@@ -125,6 +127,8 @@ export interface ConnectionInstallOptions {
   readonly recovery?: ConnectionRecoveryConfig
   /** Page location; omit for a non-browser composition. */
   readonly location?: ConnectionLocation
+  /** The Host vouched that this page's sign-in operates it ({@link HOST_OPERATOR_GLOBAL}). */
+  readonly hostOperator?: boolean
 }
 
 /**
@@ -135,7 +139,8 @@ export interface ConnectionHandle {
   /**
    * Whether the privileged surface is reachable: the page authority is
    * loopback, the transport declares the page owns the Host
-   * ({@link ClientTransportHooks.ownsHost}), or the context is not a browser.
+   * ({@link ClientTransportHooks.ownsHost}), the Host vouched that the page's
+   * sign-in operates it, or the context is not a browser.
    */
   readonly isLoopback: boolean
   /** Current Remote event generation and the Host facts carried by its opening frame. */
@@ -245,7 +250,8 @@ export function installConnection(ctx: Context, options: ConnectionInstallOption
     publishState(undefined)
   }
   const handle: ConnectionHandle = {
-    isLoopback: transport?.ownsHost === true || pageLocation === undefined || isLoopbackHostname(pageLocation.hostname),
+    isLoopback: transport?.ownsHost === true || options.hostOperator === true || pageLocation === undefined
+      || isLoopbackHostname(pageLocation.hostname),
     generation: {
       getSnapshot: () => generation,
       subscribe: (listener) => {
@@ -322,5 +328,6 @@ export function apply(ctx: Context): void {
     ...(transport === undefined ? {} : { transport }),
     recovery: resolveConnectionConfig(globals.__DSH_CONNECTION_RECOVERY__),
     ...(pageLocation === undefined ? {} : { location: pageLocation }),
+    hostOperator: globals[HOST_OPERATOR_GLOBAL] === true,
   })
 }

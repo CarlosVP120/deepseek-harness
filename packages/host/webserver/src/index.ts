@@ -355,10 +355,11 @@ export class WebServer extends Service {
    * Render one index.html body: the structured injection table first, then
    * the raw `tapIndex` transforms over the result.
    * @param html - the raw index.html body.
+   * @param requestRows - rows for this one response, rendered after the shared table.
    * @returns the transformed body.
    */
-  renderIndex(html: string): string {
-    return this.applyIndexTaps(renderIndexInjections(html, this.collectIndexInjections()))
+  renderIndex(html: string, requestRows: readonly IndexInjection[] = []): string {
+    return this.applyIndexTaps(renderIndexInjections(html, [...this.collectIndexInjections(), ...requestRows]))
   }
 }
 

@@ -51,6 +51,7 @@ export {
 export { HostConnectionService } from './rpc-host.ts'
 
 export { API_PATH } from './api-path.ts'
+export { HOST_OPERATOR_GLOBAL } from './host-operator.ts'
 
 /** Stable Cordis plugin name. */
 export const name = 'client-connection'

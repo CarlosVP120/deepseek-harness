@@ -157,6 +157,10 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       response.writeHead(303, { 'cache-control': 'no-store', location: 'login' })
       response.end()
     },
+    operatesHost: (request) => {
+      const peer = signedIn(request)
+      return peer !== undefined && store.get(peer.account.id)?.role === 'admin'
+    },
     launchUrl: baseUrl => store.empty ? new URL(`login?setup=${setupToken}`, baseUrl).href : baseUrl,
   }
   ctx.effect(() => ctx.connection.registerAuthenticator(authenticator), 'eqidis-accounts: authenticator')

@@ -134,6 +134,14 @@ describe('connection client apply', () => {
     expect((await mount()).isLoopback).toBe(false)
   })
 
+  it('reports a non-loopback page as privileged only when the Host vouches for its sign-in', async () => {
+    ;(globalThis as Win).location = { hostname: '192.0.2.20' }
+    vi.stubGlobal('__DSH_HOST_OPERATOR__', 'true')
+    expect((await mount()).isLoopback).toBe(false)
+    vi.stubGlobal('__DSH_HOST_OPERATOR__', true)
+    expect((await mount()).isLoopback).toBe(true)
+  })
+
   it('requires one generation source and ignores a stale source disposer', async () => {
     ;(globalThis as Win).location = { hostname: 'localhost' }
     const handle = await mount()

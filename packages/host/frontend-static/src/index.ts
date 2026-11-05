@@ -12,12 +12,12 @@
  * @module @deepseek-ai/dsh-host-frontend-static
  */
 
-import type { ServerResponse } from 'node:http'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import { readFile } from 'node:fs/promises'
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
-import type {} from '@deepseek-ai/dsh-client-connection'
+import { HOST_OPERATOR_GLOBAL } from '@deepseek-ai/dsh-client-connection'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 
 /** Stable Cordis plugin name. */
@@ -114,8 +114,10 @@ export function apply(ctx: Context, config: Config): void {
   const distIndex = config.distIndex
   const distRoot = dirname(distIndex)
   // Insert after all index transforms so the base precedes every resource reference.
-  const renderIndex = async (): Promise<string> => {
-    const body = ctx.webServer.renderIndex(await readFile(distIndex, 'utf8'))
+  const renderIndex = async (req: IncomingMessage): Promise<string> => {
+    const operator = ctx.connection.operatesHost(req)
+    const body = ctx.webServer.renderIndex(await readFile(distIndex, 'utf8'),
+      operator ? [{ kind: 'global', name: HOST_OPERATOR_GLOBAL, value: true }] : [])
     return body.replace(/<head(?:\s[^>]*)?>/i, open => `${open}<base href="./">`)
   }
   ctx.effect(() => ctx.webServer.registerFallback(async (req, res) => {
@@ -134,7 +136,7 @@ export function apply(ctx: Context, config: Config): void {
       distRoot,
       distIndex,
       () => ctx.connection.authorizeIndex(req, res),
-      renderIndex,
+      () => renderIndex(req),
     )
   }), 'frontend-static: fallback seat')
 }
