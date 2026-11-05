@@ -47,6 +47,8 @@ export type LandlockEnforcement = 'full' | 'partial' | 'unusable'
 export interface LauncherGrants {
   /** Roots granted read + execute beneath (the launcher's `--ro`). */
   readonly readOnly?: readonly string[]
+  /** Roots whose files may be read by name but whose directories may not be listed (the launcher's `--rf`). */
+  readonly readFiles?: readonly string[]
   /** Roots granted full filesystem access beneath (the launcher's `--rw`). */
   readonly readWrite?: readonly string[]
 }
@@ -88,12 +90,13 @@ export function launcherPath(
  * `[launcherPath(), ...grantArgs(grants), '--', ...command]`; the flag
  * spellings stay private to this package.
  * @param grants - the read-only and read-write roots to allow.
- * @returns the `--ro <path>` / `--rw <path>` argument list, read-only roots
- *   first, in the caller's order.
+ * @returns the `--ro <path>` / `--rf <path>` / `--rw <path>` argument list,
+ *   read-only roots first, in the caller's order.
  */
 export function grantArgs(grants: LauncherGrants): string[] {
   return [
     ...(grants.readOnly ?? []).flatMap(root => ['--ro', root]),
+    ...(grants.readFiles ?? []).flatMap(root => ['--rf', root]),
     ...(grants.readWrite ?? []).flatMap(root => ['--rw', root]),
   ]
 }

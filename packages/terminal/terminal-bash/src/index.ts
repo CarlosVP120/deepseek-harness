@@ -10,7 +10,7 @@ import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
 import { TerminalBackendCleanupError } from '@deepseek-ai/dsh-terminal'
 import type { TerminalBackend, TerminalBackendSpawnSpec, TerminalSendOperation } from '@deepseek-ai/dsh-terminal'
 import type { SubprocessTerminalHandle, SubprocessTerminalSpawnSpec } from '@deepseek-ai/dsh-subprocess'
-import type { SandboxExecutionPolicy } from '@deepseek-ai/dsh-sandbox'
+import { effectiveMode, type SandboxExecutionPolicy } from '@deepseek-ai/dsh-sandbox'
 import type {} from '@deepseek-ai/dsh-sandbox-policy'
 import type {} from '@deepseek-ai/dsh-session-projection'
 import { ENCODING_PREAMBLE } from '@deepseek-ai/dsh-pwsh-local'
@@ -99,13 +99,13 @@ export const PWSH_PROMPT_SETUP =
 
 async function spawnArgv(ctx: Context, config: ResolvedConfig, policy: SandboxExecutionPolicy, signal?: AbortSignal): Promise<string[]> {
   const argv = [config.shellPath, ...config.shellArgs]
-  if (policy.mode === 'danger-full-access') return argv
+  const mode = effectiveMode(policy)
+  if (mode === 'danger-full-access') return argv
   const sandbox = ctx.get('sandbox')
   if (sandbox === undefined) {
-    throw new Error(`terminal-bash: sandbox mode "${policy.mode}" requires a ctx.sandbox provider in the execution world`)
+    throw new Error(`terminal-bash: sandbox mode "${mode}" requires a ctx.sandbox provider in the execution world`)
   }
-  // Re-state the discriminant because object spread does not preserve its narrowed type.
-  return (await sandbox.confine(argv, { ...policy, mode: policy.mode }, signal)).argv
+  return (await sandbox.confine(argv, { ...policy, mode }, signal)).argv
 }
 
 // TODO(pty-initialize-race-home): Fold this outer abort race into

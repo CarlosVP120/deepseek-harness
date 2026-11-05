@@ -36,6 +36,34 @@
     path: ':memory:'
     openAt: never
 
+# With sign-in accounts (EQIDIS_CUENTAS=1) several people share one server:
+# every confined command and file tool stays out of the people's folders and
+# the harness home, except its own project and attachments opened by name.
+# Hiding roots also withholds full access, so only the two confined presets
+# remain selectable.
+- id: sandbox-policy
+  config:
+    mode: !!js process.env.DSH_PERMISSION_MODE ?? 'workspace-write'
+    workspaceRoot: !!js process.cwd()
+    hiddenRoots: !!js "process.env.EQIDIS_CUENTAS === '1' ? [process.env.EQIDIS_CARPETAS ?? dshHomePath('usuarios'), dshHomePath()] : []"
+    fileRoots: !!js "process.env.EQIDIS_CUENTAS === '1' ? [dshHomePath('attachments')] : []"
+
+- id: permission
+  config:
+    presets: !!js |-
+      process.env.EQIDIS_CUENTAS === '1'
+        ? {
+          proyecto: { sandbox: 'workspace-write', approval: 'never', name: 'Proyecto', description: 'Trabaja dentro del proyecto sin pedir permisos; lo que salga del proyecto se rechaza.' },
+          'read-only': { sandbox: 'read-only', approval: 'never' },
+        }
+        : {
+          proyecto: { sandbox: 'workspace-write', approval: 'never', name: 'Proyecto', description: 'Trabaja dentro del proyecto sin pedir permisos; lo que salga del proyecto se rechaza.' },
+          'read-only': { sandbox: 'read-only', approval: 'ask' },
+          'workspace-write': { sandbox: 'workspace-write', approval: 'ask' },
+          'danger-full-access': { sandbox: 'danger-full-access', approval: 'never' },
+        }
+    defaultPreset: proyecto
+
 - id: tools
   config:
     # TEMPORARY workaround: DSH_TOOLS_MODE (native|ptc|both) opts a whole dsh

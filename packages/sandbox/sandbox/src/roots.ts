@@ -13,8 +13,9 @@
  * @module dsh-sandbox/roots
  */
 
-import { realpathSync } from 'node:fs'
+import { readdirSync, realpathSync } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { join, sep } from 'node:path'
 import type { SandboxExecutionPolicy } from './index.ts'
 
 /**
@@ -52,4 +53,69 @@ export function canonicalPath(path: string): string {
 export function writableRoots(policy: SandboxExecutionPolicy): string[] {
   if (policy.mode !== 'workspace-write') return []
   return [...new Set([policy.workspaceRoot, '/tmp', tmpdir()].map(canonicalPath))]
+}
+
+function under(path: string, root: string): boolean {
+  return path === root || path.startsWith(root.endsWith(sep) ? root : root + sep)
+}
+
+/**
+ * Whether a confined execution is refused an access to a path because of the
+ * policy's {@link SandboxExecutionPolicy.hiddenRoots}. The workspace root stays
+ * fully reachable; a {@link SandboxExecutionPolicy.fileRoots} entry admits only
+ * reading a file by name.
+ * @param policy - the file-effect policy carrying the hidden and file roots.
+ * @param path - canonical absolute path being accessed.
+ * @param access - `read` opens a file; `list` reads a directory's entries or searches beneath it.
+ * @returns true when the policy hides the path for that access.
+ */
+export function hiddenAccess(policy: SandboxExecutionPolicy, path: string, access: 'read' | 'list'): boolean {
+  const hidden = policy.hiddenRoots ?? []
+  if (hidden.length === 0 || under(path, canonicalPath(policy.workspaceRoot))) return false
+  // A search rooted above a hidden root would descend into it.
+  if (access === 'list' && hidden.some(root => under(root, path))) return true
+  if (!hidden.some(root => under(path, root))) return false
+  return !(access === 'read' && (policy.fileRoots ?? []).some(root => under(path, root)))
+}
+
+/**
+ * The directories a confined execution may read beneath when the policy hides
+ * roots: every directory reachable from the filesystem root that is neither a
+ * hidden root nor an ancestor of one, found by listing only the ancestors of
+ * hidden roots. The workspace and file roots are granted separately.
+ * @param policy - the file-effect policy carrying the hidden roots.
+ * @returns `['/']` without hidden roots, else the readable siblings of every hidden root's ancestors.
+ */
+export function visibleRoots(policy: SandboxExecutionPolicy): string[] {
+  const hidden = (policy.hiddenRoots ?? []).map(canonicalPath)
+  if (hidden.length === 0) return ['/']
+  const out: string[] = []
+  const walk = (directory: string): void => {
+    let names: string[]
+    try {
+      names = readdirSync(directory)
+    } catch {
+      // An unreadable ancestor grants nothing beneath it, the conservative outcome.
+      return
+    }
+    for (const name of names) {
+      const child = join(directory, name)
+      if (hidden.includes(child)) continue
+      if (hidden.some(root => under(root, child))) walk(child)
+      else out.push(child)
+    }
+  }
+  walk('/')
+  return out
+}
+
+/**
+ * The mode an enforcing capability applies: a policy that hides roots never
+ * runs unconfined, so `danger-full-access` (from a session override or an
+ * approved escalation) applies as `workspace-write`.
+ * @param policy - the resolved per-call policy.
+ * @returns the mode to enforce.
+ */
+export function effectiveMode(policy: SandboxExecutionPolicy): SandboxExecutionPolicy['mode'] {
+  return policy.mode === 'danger-full-access' && (policy.hiddenRoots ?? []).length > 0 ? 'workspace-write' : policy.mode
 }

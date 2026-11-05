@@ -14,7 +14,7 @@
 
 import { Context } from '@deepseek-ai/cordis'
 import type { ShellExecRequest, ShellExecSpec, ShellExecution, ShellProcess, ShellRunResult } from '@deepseek-ai/dsh-shell'
-import { SandboxUnavailableError } from '@deepseek-ai/dsh-sandbox'
+import { SandboxUnavailableError, effectiveMode } from '@deepseek-ai/dsh-sandbox'
 import type {
   ConfinedArgv,
   ConfinedSandboxMode,
@@ -95,7 +95,7 @@ export class SandboxPwshExecutor extends PwshLocalExecutor {
 
   override async execute(spec: ShellExecSpec): Promise<ShellExecution> {
     const policy = spec.sandboxPolicy as SandboxExecutionPolicy
-    const { mode } = policy
+    const mode = effectiveMode(policy)
     if (mode === 'danger-full-access') {
       return SandboxPwshExecutor.decorateResult(
         await super.execute(spec),

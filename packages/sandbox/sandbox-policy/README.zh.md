@@ -46,6 +46,8 @@ kind: "package-reference"
 |---|---|---|
 | `mode` | `read-only` | 会话起始的部署默认模式，加载时验证 |
 | `workspaceRoot` | `process.cwd()` | 无 agent 调用或没有 cwd 的会话所用的绝对回退根目录；相对值在加载时拒绝。普通 agent 调用使用会话的不可变 cwd |
+| `hiddenRoots` | `[]` | 受限执行与文件工具不得读取、列出或写入的绝对目录，但每个会话的工作区及其中的 `fileRoots` 除外。只要隐藏任一根目录，来自会话或已批准提权的 `danger-full-access` 都按 `workspace-write` 执行。多人共用的服务器以此隐藏各人的文件夹与 harness home |
+| `fileRoots` | `[]` | `hiddenRoots` 内可按名称读取文件但不能列出目录的绝对目录，例如附件存储 |
 
 生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-sandbox-policy)是每个受支持字段及其 JSDoc 的穷尽式真源。
 

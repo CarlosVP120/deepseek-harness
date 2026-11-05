@@ -12,11 +12,12 @@
  *
  * CLI contract (mirrors the `bwrap` runner argv shape the executor wraps):
  *
- *   landlock-run [--ro <path>]... [--rw <path>]... -- <argv>...
+ *   landlock-run [--ro <path>]... [--rf <path>]... [--rw <path>]... -- <argv>...
  *   landlock-run --probe
  *
- * `--ro` grants read+execute beneath the path; `--rw` grants full filesystem
- * access beneath the path. Everything else is denied (Landlock is an
+ * `--ro` grants read+execute beneath the path; `--rf` grants reading files
+ * beneath the path by name without listing its directories; `--rw` grants
+ * full filesystem access beneath the path. Everything else is denied (Landlock is an
  * allow-list). `--probe` builds a maximal ruleset and reports whether the
  * running kernel actually enforces it — the executor's functional probe.
  *
@@ -134,20 +135,23 @@ struct cli {
   int probe;
   const char **ro;
   size_t ro_count;
+  const char **rf;
+  size_t rf_count;
   const char **rw;
   size_t rw_count;
   char **command; /* NULL-terminated tail of main's argv */
 };
 
 /*
- * Hand-rolled argv parsing — four flags do not justify a parsing library.
+ * Hand-rolled argv parsing — five flags do not justify a parsing library.
  * Returns 0 on success, else the process exit code (message already printed).
  */
 static int parse(int argc, char **argv, struct cli *cli) {
   /* argc bounds each grant list; the launcher execs or exits, so no free. */
   cli->ro = calloc(argc > 0 ? (size_t)argc : 1, sizeof *cli->ro);
+  cli->rf = calloc(argc > 0 ? (size_t)argc : 1, sizeof *cli->rf);
   cli->rw = calloc(argc > 0 ? (size_t)argc : 1, sizeof *cli->rw);
-  if (cli->ro == NULL || cli->rw == NULL) return fail("out of memory", NULL);
+  if (cli->ro == NULL || cli->rf == NULL || cli->rw == NULL) return fail("out of memory", NULL);
 
   int index = 1;
   while (index < argc) {
@@ -158,12 +162,14 @@ static int parse(int argc, char **argv, struct cli *cli) {
       }
       cli->probe = 1;
       index += 1;
-    } else if (strcmp(arg, "--ro") == 0 || strcmp(arg, "--rw") == 0) {
+    } else if (strcmp(arg, "--ro") == 0 || strcmp(arg, "--rf") == 0 || strcmp(arg, "--rw") == 0) {
       if (index + 1 >= argc) {
         return fail_usage(arg, " requires a path");
       }
       if (strcmp(arg, "--ro") == 0) {
         cli->ro[cli->ro_count++] = argv[index + 1];
+      } else if (strcmp(arg, "--rf") == 0) {
+        cli->rf[cli->rf_count++] = argv[index + 1];
       } else {
         cli->rw[cli->rw_count++] = argv[index + 1];
       }
@@ -221,7 +227,8 @@ static int add_rule(int ruleset_fd, const char *path, uint64_t access) {
  * Install the ruleset on the current thread, negotiating the kernel's ABI
  * down from MAX_ABI. `--ro` paths get the read side of the vocabulary (read
  * file/dir + execute — the wrapped `bash` and everything it spawns must
- * remain executable); `--rw` paths get every filesystem access the
+ * remain executable); `--rf` paths get file reads only, so a known file
+ * opens while its directories cannot be listed; `--rw` paths get every filesystem access the
  * negotiated ABI can grant. Sets `no_new_privs` first (mandatory for an
  * unprivileged restrict, and it neutralizes setuid/setgid escalation inside
  * the sandbox). On success `*partial` reports whether the kernel governs
@@ -244,6 +251,10 @@ static int restrict_self(const struct cli *cli, int *partial) {
   const uint64_t read_side = LL_FS_EXECUTE | LL_FS_READ_FILE | LL_FS_READ_DIR;
   for (size_t i = 0; i < cli->ro_count; i++) {
     int code = add_rule(ruleset_fd, cli->ro[i], read_side & handled);
+    if (code != 0) return code;
+  }
+  for (size_t i = 0; i < cli->rf_count; i++) {
+    int code = add_rule(ruleset_fd, cli->rf[i], LL_FS_READ_FILE & handled);
     if (code != 0) return code;
   }
   for (size_t i = 0; i < cli->rw_count; i++) {

@@ -25,6 +25,7 @@ import { Context, Service } from '@deepseek-ai/cordis'
 import { z as zod } from 'zod'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-agent'
+import { canonicalPath, effectiveMode } from '@deepseek-ai/dsh-sandbox'
 import type { SandboxExecutionPolicy, SandboxMode } from '@deepseek-ai/dsh-sandbox'
 import type { Session } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-projection'
@@ -76,6 +77,14 @@ export interface Config {
    * `process.cwd()`). Normal agent calls use their session cwd instead.
    */
   workspaceRoot?: string
+  /**
+   * Absolute directories confined execution may not read, list, or write,
+   * except each session's workspace and the {@link fileRoots} inside them
+   * (default: none). Hiding any root also withholds `danger-full-access`.
+   */
+  hiddenRoots?: string[]
+  /** Absolute directories inside {@link hiddenRoots} whose files stay readable by name (default: none). */
+  fileRoots?: string[]
 }
 
 /** Inputs that select the sandbox policy for one capability call. */
@@ -114,6 +123,8 @@ export class SandboxPolicyService extends Service {
     // No schema default: process.cwd() is resolved in the constructor so the
     // stored root is always absolute regardless of how it was supplied.
     workspaceRoot: z.string(),
+    hiddenRoots: z.array(z.string()).default([]),
+    fileRoots: z.array(z.string()).default([]),
   })
 
   static inject = ['sessionProjections']
@@ -122,6 +133,10 @@ export class SandboxPolicyService extends Service {
   readonly defaultMode: SandboxMode
   /** The absolute `workspace-write` fallback root for calls without a session cwd. */
   readonly workspaceRoot: string
+  /** Canonical roots hidden from confined execution; see {@link Config.hiddenRoots}. */
+  readonly hiddenRoots: readonly string[]
+  /** Canonical file-readable roots inside the hidden ones; see {@link Config.fileRoots}. */
+  readonly fileRoots: readonly string[]
   constructor(ctx: Context, config: Config) {
     super(ctx, 'sandboxPolicy')
     // schemastery (static Config) already filled `mode`; the cast records that
@@ -129,6 +144,8 @@ export class SandboxPolicyService extends Service {
     // the process cwd is real branching, resolved absolute either way.
     this.defaultMode = config.mode as SandboxMode
     this.workspaceRoot = resolveWorkspaceRoot(config.workspaceRoot ?? process.cwd())
+    this.hiddenRoots = (config.hiddenRoots ?? []).map(root => canonicalPath(resolveWorkspaceRoot(root)))
+    this.fileRoots = (config.fileRoots ?? []).map(root => canonicalPath(resolveWorkspaceRoot(root)))
 
     ctx.sessionProjections.register({
       key: 'sandboxMode',
@@ -157,17 +174,19 @@ export class SandboxPolicyService extends Service {
    * mode outranks the session's last `sandbox/mode` event, which outranks the
    * deployment default. A session cwd is its workspace-write boundary; the
    * configured root is the fallback for agentless calls and sessions without a
-   * cwd.
+   * cwd. With hidden roots, `danger-full-access` resolves to `workspace-write`.
    * @param request - optional session and approved mode override.
-   * @returns the fully resolved per-call mode and absolute workspace root.
+   * @returns the fully resolved per-call mode, absolute workspace root, and hidden roots.
    */
   resolve(request: SandboxPolicyRequest = {}): SandboxExecutionPolicy {
     const { session } = request
-    return {
+    const policy: SandboxExecutionPolicy = {
       mode: request.mode ?? (session === undefined ? undefined : this.overrideOf(session)) ?? this.defaultMode,
       workspaceRoot: resolveWorkspaceRoot(session?.header.cwd ?? this.workspaceRoot),
       ...session === undefined ? {} : { sessionId: session.id },
+      ...this.hiddenRoots.length > 0 ? { hiddenRoots: this.hiddenRoots, fileRoots: this.fileRoots } : {},
     }
+    return { ...policy, mode: effectiveMode(policy) }
   }
 
   /**

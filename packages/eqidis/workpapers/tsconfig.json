@@ -19,6 +19,12 @@
     },
     {
       "path": "../../core/agent"
+    },
+    {
+      "path": "../../sandbox/sandbox"
+    },
+    {
+      "path": "../../sandbox/sandbox-policy"
     }
   ]
 }

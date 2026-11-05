@@ -6,7 +6,7 @@ import z from '@deepseek-ai/schemastery'
 import { PtcRuntime } from '@deepseek-ai/dsh-ptc-runtime'
 import type { PtcBindingNamespace, PtcJsonValue, PtcRunFailure, PtcRunRequest, PtcRunResult, PtcRunSandbox, PtcRunSpec } from '@deepseek-ai/dsh-ptc-runtime'
 import { MAX_TIMER_DELAY_MS, clampTimeout } from '@deepseek-ai/dsh-timeout'
-import { SandboxUnavailableError, classifyRunnerFailure, isRunnerSpawnFailure } from '@deepseek-ai/dsh-sandbox'
+import { SandboxUnavailableError, classifyRunnerFailure, effectiveMode, isRunnerSpawnFailure } from '@deepseek-ai/dsh-sandbox'
 import type { ConfinedArgv, SandboxExecutionPolicy, SandboxMode } from '@deepseek-ai/dsh-sandbox'
 import type { SubprocessHandle, SubprocessOutcome } from '@deepseek-ai/dsh-subprocess'
 import type {} from '@deepseek-ai/dsh-sandbox-policy'
@@ -221,7 +221,8 @@ export class NodePtcRuntime extends PtcRuntime {
       const packaged = 'pkg' in process && this.config.bootstrapPath === undefined
       const heapFlag = `--max-old-space-size=${this.config.maxOldGenerationSizeMb}`
       const argv = [executable, ...packaged ? [] : [heapFlag], ...bootstrapArgs(this.ctx.fs, this.config, this.config.maxMessageBytes)]
-      confined = policy.mode === 'danger-full-access' ? undefined : await this.ctx.sandbox.confine(argv, { ...policy, mode: policy.mode }, signal)
+      const mode = effectiveMode(policy)
+      confined = mode === 'danger-full-access' ? undefined : await this.ctx.sandbox.confine(argv, { ...policy, mode }, signal)
       // oxlint-disable-next-line typescript/no-unnecessary-condition -- Cancellation can settle during awaited confinement.
       if (settled) return await result.promise
       if (confined !== undefined) sandbox.enforcement = confined.enforcement

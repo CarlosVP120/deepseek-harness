@@ -94,6 +94,21 @@ describe('profile dialects', () => {
     expect(landlockProfileArgs(WW)).toEqual(['--ro', '/', '--rw', '/dev/null', '--rw', '/tmp', '--rw', '/ws'])
   })
 
+  it('hidden roots: bwrap empties them and rebinds the workspace and file roots; landlock grants around them', () => {
+    const hidden = { mode: 'read-only' as const, workspaceRoot: '/no-such-hidden/ana/p', hiddenRoots: ['/no-such-hidden'], fileRoots: ['/no-such-hidden/files'] }
+    expect(bwrapProfileArgs(hidden)).toEqual([
+      '--ro-bind', '/', '/', '--dev', '/dev', '--unshare-pid', '--proc', '/proc', '--die-with-parent',
+      '--tmpfs', '/no-such-hidden', '--ro-bind-try', '/no-such-hidden/files', '/no-such-hidden/files',
+      '--ro-bind', '/no-such-hidden/ana/p', '/no-such-hidden/ana/p',
+    ])
+    const args = landlockProfileArgs(hidden)
+    expect(args).not.toContain('/')
+    expect(args.slice(-6)).toEqual(['--ro', '/no-such-hidden/ana/p', '--rf', '/no-such-hidden/files', '--rw', '/dev/null'])
+    expect(args).toContain('/usr')
+    expect(landlockProfileArgs({ ...hidden, mode: 'workspace-write' }).slice(-6))
+      .toEqual(['--rf', '/no-such-hidden/files', '--rw', '/dev/null', '--rw', '/tmp', '--rw', '/no-such-hidden/ana/p'].slice(-6))
+  })
+
   it('seatbelt read-only: allow-default with every file write denied except the /dev/null literal', () => {
     expect(seatbeltProfileArgs(RO)).toEqual(['-p', SEATBELT_RO_PROFILE])
   })

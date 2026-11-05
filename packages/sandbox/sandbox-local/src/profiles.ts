@@ -5,7 +5,7 @@
  */
 
 import { grantArgs as landlockGrantArgs } from '@deepseek-ai/node-addon-system/landlock-run'
-import { writableRoots } from '@deepseek-ai/dsh-sandbox'
+import { canonicalPath, visibleRoots, writableRoots } from '@deepseek-ai/dsh-sandbox'
 import type { SandboxPolicy } from '@deepseek-ai/dsh-sandbox'
 
 /**
@@ -15,9 +15,15 @@ import type { SandboxPolicy } from '@deepseek-ai/dsh-sandbox'
  */
 export function bwrapProfileArgs(policy: SandboxPolicy): string[] {
   const args = ['--ro-bind', '/', '/', '--dev', '/dev', '--unshare-pid', '--proc', '/proc', '--die-with-parent']
+  const hidden = policy.hiddenRoots ?? []
+  // Empty mounts hide each root; the workspace and file roots inside them come back as binds.
+  for (const root of hidden) args.push('--tmpfs', root)
+  for (const root of policy.fileRoots ?? []) args.push('--ro-bind-try', root, root)
   if (policy.mode === 'workspace-write') {
     args.push('--tmpfs', '/tmp')
     args.push('--bind', policy.workspaceRoot, policy.workspaceRoot)
+  } else if (hidden.length > 0) {
+    args.push('--ro-bind', policy.workspaceRoot, policy.workspaceRoot)
   }
   return args
 }
@@ -29,10 +35,13 @@ export function bwrapProfileArgs(policy: SandboxPolicy): string[] {
  */
 export function landlockProfileArgs(policy: SandboxPolicy): string[] {
   const readWrite = ['/dev/null']
+  const readOnly = visibleRoots(policy)
   if (policy.mode === 'workspace-write') {
     readWrite.push('/tmp', policy.workspaceRoot)
+  } else if ((policy.hiddenRoots ?? []).length > 0) {
+    readOnly.push(canonicalPath(policy.workspaceRoot))
   }
-  return landlockGrantArgs({ readOnly: ['/'], readWrite })
+  return landlockGrantArgs({ readOnly, readFiles: policy.fileRoots ?? [], readWrite })
 }
 
 /** Quote one path as an SBPL string literal. */
@@ -50,6 +59,12 @@ function sbplString(path: string): string {
  */
 export function seatbeltProfileArgs(policy: SandboxPolicy): string[] {
   const forms = ['(version 1)', '(allow default)', '(deny file-write*)', `(allow file-write* (literal ${sbplString('/dev/null')}))`]
+  const hidden = policy.hiddenRoots ?? []
+  if (hidden.length > 0) {
+    forms.push(`(deny file-read* ${hidden.map(root => `(subpath ${sbplString(root)})`).join(' ')})`)
+    forms.push(`(allow file-read* (subpath ${sbplString(canonicalPath(policy.workspaceRoot))}))`)
+    for (const root of policy.fileRoots ?? []) forms.push(`(allow file-read-data (subpath ${sbplString(root)}))`)
+  }
   const roots = writableRoots(policy)
   if (roots.length > 0) {
     forms.push(`(allow file-write* ${roots.map(root => `(subpath ${sbplString(root)})`).join(' ')})`)

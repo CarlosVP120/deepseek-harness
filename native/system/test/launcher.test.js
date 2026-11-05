@@ -121,6 +121,23 @@ const expectedNotice = enforcement === 'partial' ? `${PARTIAL_NOTICE}\n` : '';
   assert.equal(nestedRun.status, 0, nestedRun.stderr);
   assert.ok(!fs.existsSync(nested), 'a denied write from a nested child must not land either');
 
+  // `--rf` opens a known file but refuses to list its directory; paths outside
+  // every grant stay unreadable.
+  const files = path.join(work, 'files');
+  const hidden = path.join(work, 'hidden');
+  fs.mkdirSync(files);
+  fs.mkdirSync(hidden);
+  fs.writeFileSync(path.join(files, 'known.txt'), 'known');
+  fs.writeFileSync(path.join(hidden, 'secret.txt'), 'secret');
+  const shell = ['/bin', '/usr', '/lib', ...['/lib64', '/etc'].filter(fs.existsSync)];
+  const known = run([...grantArgs({ readOnly: shell, readFiles: [files] }), '--', '/bin/sh', '-c', `cat ${path.join(files, 'known.txt')}`]);
+  assert.equal(known.status, 0, known.stderr);
+  assert.equal(known.stdout, 'known');
+  const listing = run([...grantArgs({ readOnly: shell, readFiles: [files] }), '--', '/bin/sh', '-c', `ls ${files}`]);
+  assert.notEqual(listing.status, 0, 'a --rf root must not be listable');
+  const secret = run([...grantArgs({ readOnly: shell, readFiles: [files] }), '--', '/bin/sh', '-c', `cat ${path.join(hidden, 'secret.txt')}`]);
+  assert.notEqual(secret.status, 0, 'a path outside every grant must stay unreadable');
+
   fs.rmSync(work, { recursive: true, force: true });
 }
 

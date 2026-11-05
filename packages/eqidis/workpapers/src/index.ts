@@ -5,11 +5,13 @@
  * workbook, write only into a dated copy of the template, recalculate it with the
  * bundled LibreOffice and remember the client's confirmed criteria.
  */
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, realpath, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool, type ToolExecution } from '@deepseek-ai/dsh-tools'
 import type {} from '@deepseek-ai/dsh-agent'
+import { hiddenAccess } from '@deepseek-ai/dsh-sandbox'
+import type {} from '@deepseek-ai/dsh-sandbox-policy'
 import { calculate, type Calculation, copyTemplate, describe, disposeConverter, find, pasteGrid, readGrid, table, writeCells, writeFormulas, type CellWrite } from './workbook.ts'
 import { writeSummary } from './summary.ts'
 import { compareGrids, dependents, ledger, readCompact, sheetBlocks } from './analysis.ts'
@@ -116,6 +118,15 @@ async function previousCopy(dir: string, base: string, label: string): Promise<s
 }
 
 export function apply(ctx: Context): void {
+  /** A spreadsheet this conversation may read, refusing a path its sandbox policy hides (another person's folder on a shared server). */
+  const readableIn = async (exec: ToolExecution, ruta: string): Promise<string> => {
+    const path = await readable(root(exec), ruta)
+    const policy = ctx.get('sandboxPolicy')?.resolve(exec.agent === undefined ? {} : { session: exec.agent.session })
+    if (policy !== undefined && hiddenAccess(policy, await realpath(path), 'read')) {
+      throw new Error(`No se puede abrir «${ruta}»: está fuera de este proyecto.`)
+    }
+    return path
+  }
   // The LibreOffice engine is shared by every tool call and stopped with the plugin.
   ctx.effect(() => () => { void disposeConverter() }, 'eqidis-workpapers: spreadsheet engine')
 
@@ -148,7 +159,7 @@ export function apply(ctx: Context): void {
     parameters: { ruta: { type: 'string', required: true, description: RUTA } },
     output: text,
     execute: async (args, exec) => {
-      const path = await readable(root(exec), args.ruta)
+      const path = await readableIn(exec, args.ruta)
       return json({ ...await describe(path), bloques_repetidos: await sheetBlocks(path) })
     },
   }))
@@ -162,7 +173,7 @@ export function apply(ctx: Context): void {
       rango: { type: 'string', description: 'Rango A1, por ejemplo A1:H60. Si se omite, todo el rango usado.' },
     },
     output: text,
-    execute: async (args, exec) => json(await readCompact(await readable(root(exec), args.ruta), args.hoja, args.rango)),
+    execute: async (args, exec) => json(await readCompact(await readableIn(exec, args.ruta), args.hoja, args.rango)),
   }))
 
   ctx.tools.register(defineTool({
@@ -173,7 +184,7 @@ export function apply(ctx: Context): void {
       texto: { type: 'string', required: true, description: 'Palabras a buscar.' },
     },
     output: text,
-    execute: async (args, exec) => json(await find(await readable(root(exec), args.ruta), args.texto)),
+    execute: async (args, exec) => json(await find(await readableIn(exec, args.ruta), args.texto)),
   }))
 
   ctx.tools.register(defineTool({
@@ -188,7 +199,7 @@ export function apply(ctx: Context): void {
       limite: { type: 'number', description: 'Máximo de filas a devolver (por omisión 200).' },
     },
     output: text,
-    execute: async (args, exec) => json(await table(await readable(root(exec), args.ruta), args.hoja, {
+    execute: async (args, exec) => json(await table(await readableIn(exec, args.ruta), args.hoja, {
       contains: args.filtro, headerRow: args.fila_encabezado, offset: args.desde, limit: args.limite,
     })),
   }))
@@ -207,9 +218,8 @@ export function apply(ctx: Context): void {
     },
     output: text,
     execute: async (args, exec) => {
-      const dir = root(exec)
-      const a = await readGrid(await readable(dir, args.ruta_a), args.hoja_a, args.rango_a)
-      const b = await readGrid(await readable(dir, args.ruta_b), args.hoja_b, args.rango_b)
+      const a = await readGrid(await readableIn(exec, args.ruta_a), args.hoja_a, args.rango_a)
+      const b = await readGrid(await readableIn(exec, args.ruta_b), args.hoja_b, args.rango_b)
       return json({ a: `${a.sheet}!${a.range}`, b: `${b.sheet}!${b.range}`, ...compareGrids(a, b, args.columna_clave) })
     },
   }))
@@ -223,7 +233,7 @@ export function apply(ctx: Context): void {
       hoja: { type: 'string', description: 'Hoja; por omisión la primera.' },
     },
     output: text,
-    execute: async (args, exec) => json(await ledger(await readable(root(exec), args.ruta), args.hoja, args.cuenta)),
+    execute: async (args, exec) => json(await ledger(await readableIn(exec, args.ruta), args.hoja, args.cuenta)),
   }))
 
   ctx.tools.register(defineTool({
@@ -234,7 +244,7 @@ export function apply(ctx: Context): void {
       referencia: { type: 'string', required: true, description: 'Área como Hoja!A1, Hoja!A1:H40 o columnas completas Hoja!BU:CB.' },
     },
     output: text,
-    execute: async (args, exec) => json(await dependents(await readable(root(exec), args.ruta), args.referencia)),
+    execute: async (args, exec) => json(await dependents(await readableIn(exec, args.ruta), args.referencia)),
   }))
 
   ctx.tools.register(defineTool({
@@ -275,7 +285,9 @@ export function apply(ctx: Context): void {
       const dir = root(exec)
       const label = period(args.periodo)
       const stored: string[] = []
-      for (const file of args.archivos) stored.push(await shown(dir, await storeInput(dir, file.ruta, label, file.nombre)))
+      for (const file of args.archivos) {
+        stored.push(await shown(dir, await storeInput(dir, await readableIn(exec, file.ruta), label, file.nombre)))
+      }
       return json({ archivados: stored })
     },
   }))
@@ -367,7 +379,7 @@ export function apply(ctx: Context): void {
       const dir = root(exec)
       const copy = await inside(dir, args.ruta)
       if (!await isOutput(dir, copy)) throw new Error(`Solo se escribe en copias dentro de «${OUTPUT_DIR}/» creadas con workpaper_start.`)
-      const source = await readGrid(await readable(dir, args.origen), args.hoja_origen, args.rango_origen)
+      const source = await readGrid(await readableIn(exec, args.origen), args.hoja_origen, args.rango_origen)
       const pasted = await pasteGrid(copy, args.hoja, args.celda, source.rows, args.limpiar_hasta_fila)
       const trace = traceFile(dir, copy)
       const record = await readTrace(trace)

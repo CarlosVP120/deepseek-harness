@@ -33,6 +33,7 @@ assert.deepEqual(
   ['--ro', '/', '--ro', '/opt', '--rw', '/tmp/work'],
 );
 assert.deepEqual(grantArgs({ readWrite: ['/a'], readOnly: ['/b'] }), ['--ro', '/b', '--rw', '/a']);
+assert.deepEqual(grantArgs({ readWrite: ['/a'], readFiles: ['/c'], readOnly: ['/b'] }), ['--ro', '/b', '--rf', '/c', '--rw', '/a']);
 
 // --- launcherPath: resolves the platform package next to its package.json ---
 const platformPackage = `@deepseek-ai/node-addon-system-${process.platform}-${process.arch}`;

@@ -7,10 +7,13 @@ import type { Context } from '@deepseek-ai/cordis'
 import { FsError } from '@deepseek-ai/dsh-fs'
 import type { FsInfo, FsTarget } from '@deepseek-ai/dsh-fs'
 import type { ToolExecution } from '@deepseek-ai/dsh-tools'
+import { hiddenAccess } from '@deepseek-ai/dsh-sandbox'
+import type {} from '@deepseek-ai/dsh-sandbox-policy'
 import { sessionResolveOptions } from './session-cwd.ts'
 
 /**
- * Resolve a model-supplied path, observe absence, and require a regular file.
+ * Resolve a model-supplied path, refuse one the session's sandbox policy hides,
+ * observe absence, and require a regular file.
  * @param ctx - the plugin context providing filesystem resolution and observation events.
  * @param exec - the current tool execution, including session cwd and cancellation.
  * @param requestedPath - the raw path supplied to the tool.
@@ -22,6 +25,10 @@ export async function resolveRegularReadTarget(
   requestedPath: string,
 ): Promise<{ target: FsTarget; info: FsInfo }> {
   const target = await ctx.fs.resolve(requestedPath, sessionResolveOptions(exec))
+  const policy = ctx.get('sandboxPolicy')?.resolve(exec.agent === undefined ? {} : { session: exec.agent.session })
+  if (policy !== undefined && hiddenAccess(policy, ctx.fs.processPath(target), 'read')) {
+    throw new FsError(`cannot read "${target.displayPath}": outside this project`, 'FS_SANDBOX_DENIED')
+  }
   const info = await ctx.fs.stat(target, exec.signal)
   if (info === undefined) {
     ctx.emit('fs/observed', target, { kind: 'absent' }, exec)

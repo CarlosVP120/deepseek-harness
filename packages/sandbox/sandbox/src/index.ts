@@ -19,7 +19,7 @@ export {
   validateEscalationArgs,
 } from './escalation.ts'
 export type { EscalationApproval, EscalationApprover, EscalationOutcome, EscalationRequest } from './escalation.ts'
-export { canonicalPath, writableRoots } from './roots.ts'
+export { canonicalPath, effectiveMode, hiddenAccess, visibleRoots, writableRoots } from './roots.ts'
 
 /**
  * File-effect policy for confined processes. `read-only` permits only required
@@ -50,6 +50,19 @@ export interface SandboxExecutionPolicy {
    * for agentless calls, which fall back to per-call backend state.
    */
   sessionId?: SessionId
+  /**
+   * Canonical directories hidden from confined execution: nothing beneath them
+   * can be read, listed, or written, except the workspace root and the
+   * {@link fileRoots} inside them. A deployment shared by several people
+   * hides their folders and the harness home this way.
+   */
+  hiddenRoots?: readonly string[]
+  /**
+   * Canonical directories inside {@link hiddenRoots} whose files stay readable
+   * by name while their directories cannot be listed, such as the attachment
+   * store whose paths conversations hand to the model.
+   */
+  fileRoots?: readonly string[]
 }
 
 /**

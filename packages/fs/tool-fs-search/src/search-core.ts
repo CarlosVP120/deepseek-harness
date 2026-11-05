@@ -28,6 +28,8 @@ import type { RetainedItems } from '@deepseek-ai/dsh-output-retention'
 import type { SubprocessHandle, SubprocessOutcome, SubprocessOutputRead, SubprocessSpawnSpec } from '@deepseek-ai/dsh-subprocess'
 import type { SaveTextSpill, SpillRef } from '@deepseek-ai/dsh-spill'
 import type { ToolExecution } from '@deepseek-ai/dsh-tools'
+import type {} from '@deepseek-ai/dsh-sandbox'
+import type {} from '@deepseek-ai/dsh-sandbox-policy'
 
 /**
  * Default cap on the complete raw `rg` stdout the tools will parse (the
@@ -191,8 +193,10 @@ export function resolveRgPath(): Promise<string> {
  * (`@deepseek-ai/dsh-tool-call-timeout-policy`) and caller cancellation terminate the
  * process tree.
  *
- * The spawn is unconfined (a plain `ctx.subprocess` call), so `--no-config`
- * is prepended: a host `RIPGREP_CONFIG_PATH` (or `rg.conf` next to the
+ * The spawn is unconfined (a plain `ctx.subprocess` call) unless the session's
+ * sandbox policy hides roots; then it runs read-only under `ctx.sandbox`, so
+ * the kernel keeps the search out of the hidden directories. `--no-config`
+ * is prepended either way: a host `RIPGREP_CONFIG_PATH` (or `rg.conf` next to the
  * binary) can otherwise inject `--pre` and make ripgrep execute an arbitrary
  * preprocessor for every matched file. The collect dispositions are the
  * seam's diagnostic-tail shape (no spill files): the tools never read a raw
@@ -233,10 +237,19 @@ export async function runRipgrep(
   }
   const cwd = exec.agent?.session.header.cwd
   const workdir = cwd ?? process.cwd()
+  const policy = ctx.get('sandboxPolicy')?.resolve(exec.agent === undefined ? {} : { session: exec.agent.session })
+  const sandbox = ctx.get('sandbox')
+  if (policy !== undefined && (policy.hiddenRoots ?? []).length > 0 && sandbox === undefined) {
+    throw new SearchError(`${toolName} needs the file sandbox to search here`, 'SEARCH_FAILED')
+  }
   let handle: SubprocessHandle
   try {
+    let command = [await resolveRgPath(), '--no-config', ...argv]
+    if (policy !== undefined && sandbox !== undefined && (policy.hiddenRoots ?? []).length > 0) {
+      command = (await sandbox.confine(command, { ...policy, mode: 'read-only' }, exec.signal)).argv
+    }
     handle = ctx.subprocess.spawn({
-      argv: [await resolveRgPath(), '--no-config', ...argv],
+      argv: command,
       cwd: workdir,
       stdio: {
         stdin: 'ignore',

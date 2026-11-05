@@ -5,11 +5,12 @@ This file pins the launcher's externally observable behavior — the cross-repo 
 ## Invocation grammar
 
 ```text
-landlock-run [--ro <path>]... [--rw <path>]... -- <argv>...
+landlock-run [--ro <path>]... [--rf <path>]... [--rw <path>]... -- <argv>...
 landlock-run --probe
 ```
 
 - `--ro <path>`: grant read + execute beneath `<path>`.
+- `--rf <path>`: grant reading files beneath `<path>` by name; its directories cannot be listed and nothing beneath it executes.
 - `--rw <path>`: grant full filesystem access beneath `<path>` (every access the negotiated kernel ABI can govern).
 - Everything not granted is denied — Landlock rulesets are allow-lists.
 - A grant on a non-directory keeps only its file-compatible access bits (this is how a `--rw /dev/null` grant works).

@@ -31,7 +31,7 @@ import { LocalFileSystem } from '@deepseek-ai/dsh-fs-local'
 import type { Config as LocalConfig } from '@deepseek-ai/dsh-fs-local'
 import { FsError } from '@deepseek-ai/dsh-fs'
 import type { FsEditOutcome, FsEditRequest, FsTarget, FsVersion, FsWriteIntent, FsWriteOutcome } from '@deepseek-ai/dsh-fs'
-import { writableRoots } from '@deepseek-ai/dsh-sandbox'
+import { effectiveMode, writableRoots } from '@deepseek-ai/dsh-sandbox'
 import type { SandboxExecutionPolicy, SandboxMode } from '@deepseek-ai/dsh-sandbox'
 import type {} from '@deepseek-ai/dsh-sandbox-policy'
 import { isPathUnder } from './containment.ts'
@@ -121,7 +121,7 @@ export class SandboxedFileSystem extends LocalFileSystem {
    */
   private async checkedTarget(target: FsTarget, sandboxPolicy?: SandboxExecutionPolicy): Promise<FsTarget> {
     const policy = sandboxPolicy ?? this.ctx.sandboxPolicy.resolve()
-    const { mode } = policy
+    const mode = effectiveMode(policy)
     if (mode === 'danger-full-access') return target
     if (mode === 'read-only') {
       throw new FsError(`cannot write "${target.displayPath}": file access denied under read-only mode`, 'FS_SANDBOX_DENIED')
